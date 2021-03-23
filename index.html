@@ -1,112 +1,65 @@
-<!DOCTYPE html>
+!DOCTYPE html>
 
-<html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="device-width, initial-scale=1.0">
-        <title>Louby's Portfolio Website</title>
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/7.0.0/normalize.min.css">
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/all.css" integrity="sha256-46qynGAkLSFpVbEBog43gvNhfrOj+BmwXdxFgVK/Kvc=" crossorigin="anonymous" />
+<html>
+<style>
+body, html {
+  height: 100%;
+  margin: 0;
+}
 
-    </head>
+.bgimg {
+  background-image: url('/w3images/forestbridge.jpg');
+  height: 100%;
+  background-position: center;
+  background-size: cover;
+  position: relative;
+  color: white;
+  font-family: "Courier New", Courier, monospace;
+  font-size: 25px;
+}
 
-    <body>
-        <header>
-            <div class="logo">
-                <img src="" alt="">
-            </div>
+.topleft {
+  position: absolute;
+  top: 0;
+  left: 16px;
+}
 
-            <button class="nav-toggle" aria-label= "toggle navigation">
-                <span class="hamburger"></span>
-            </button>
-            <nav class="nav">
-                <ul class="nav__list">
-                    <li class="nav__item"><a href="#home" class="nav__link">Home</a></li>
-                    <li class="nav__item"><a href="#services" class="nav__link">My Services</a></li>
-                    <li class="nav__item"><a href="#about" class="nav__link">About Me</a></li>
-                    <li class="nav__item"><a href="#work" class="nav__link">My Work</a></li>
-                </ul>
-            </nav>
-        </header>
+.bottomleft {
+  position: absolute;
+  bottom: 0;
+  left: 16px;
+}
 
-        <!-- Introduction -->
-        <section class="intro" id="home">
-            <h1 class="section__title section__title--intro">
-                Hi, I am <strong>Louby Trahan</strong>
-            </h1>
-            <p class="section__subtitle section__subtitle--intro">front-end dev</p>
-            <img src="" alt="a picture of Louby Trahan smiling">
-        </section>
+.middle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
 
+hr {
+  margin: auto;
+  width: 40%;
+}
+</style>
+<body>
 
-            <!-- My services -->
-            <section class="my-services" id="services">
-                <h2 class="section__title section__title--services">What I do</h2>
-                <div class="services">
-                    <div class="service">
-                        <h3>Design + Development</h3>
-                        <p> Enter info here... </p>
-                    </div> <!-- / service -->
-
-                    <div class="service">
-                        <h3>E-Commerce</h3>
-                        <p> Enter info here... </p>
-                    </div> <!-- / service -->
-
-                    <div class="service">
-                        <h3>WordPress</h3>
-                        <p> Enter info here... </p>
-                    </div> <!-- / service -->
-                </div> <!-- / services -->
-                <a href="#work" class="btn">My Work</a>
-            </section>
+<div class="bgimg">
+  <div class="topleft">
+    <p> <LoubyT> </p>
+  </div>
+  <div class="middle">
+    <h1>COMING SOON</h1>
+    <hr>
+    <p id="demo" style="font-size:30px"></p>
+  </div>
+  <div class="bottomleft">
+    <p>Front-End Developer</p>
+  </div>
+</div>
 
 
-            <!-- About Me -->
-            <section class="about-me" id="about">
-                <h2 class="section__title section__title--about">Who I am</h2>
-                <p class="section__subtitle section__subtitle--about"></p>
+</body>
 
-                <div class="about-me__body">
-                    <p>First paragraph</p>
-                    <p>Second Paragraph</p>
-                </div>
-
-                <img src="" alt="">
-            </section>
-
-            <!-- My Work -->
-            <section class="my-work" id="work">
-                <h2 class="section__title">My work</h2>
-                <p class="section__subtitle"></p>
-
-                <div class="portfolio">
-                    <!-- Portfolio item 01 -->
-                    <a href="#" class="portfolio__item">
-                        <img src="" alt="" class="portfolio__img">
-                    </a>
-
-                    <!-- Portfolio item 02 -->
-                    <a href="#" class="portfolio__item">
-                        <img src="" alt="" class="portfolio__img">
-                    </a>
-
-                    <!-- Portfolio item 03 -->
-                    <a href="#" class="portfolio__item">
-                        <img src="" alt="" class="portfolio__img">
-                    </a>
-
-                    <!-- Portfolio item 04 -->
-                    <a href="#" class="portfolio__item">
-                        <img src="" alt="" class="portfolio__img">
-                    </a>
-
-                    <!-- Portfolio item 05 -->
-                    <a href="#" class="portfolio__item">
-                        <img src="" alt="" class="portfolio__img">
-                    </a>
-                </div>
-            </section>
-
-    </body> 
 </html>
