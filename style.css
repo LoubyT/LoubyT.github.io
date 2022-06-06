@@ -73,18 +73,22 @@ body {
 }
 
 .midcontainer1 {
-    display: flex;
+    display: block;
     width: 100%;
     height: 750px;
+    align-items: center;
+    justify-items: center;
 }
 
-.complete-projects {
+.complete-proj {
     margin-top: 1em;
     font-size: 36px;
     font-weight: bolder;
     color: #1F2937;
     display: flex;
     flex-direction: column;
+    align-items: center;
+    justify-items: center;
 }
 
 .projects {
@@ -92,11 +96,18 @@ body {
     align-items: center;
     gap: 25px;
     flex-wrap: wrap;
-    display: flex;
+    display: inline-flex;
+    justify-content: center;
 }
 
 .project-pictures {
     width: 400px;
     height: 300px;
+    display: block;
 }
 
+.caption {
+    display: block;
+    width: 100%;
+    text-align: center;
+}
