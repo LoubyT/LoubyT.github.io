@@ -1,0 +1,64 @@
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    min-height: 100vh;
+    margin: 0;
+}
+
+.topcontainer1 {
+    display: flex;
+    height: 50px;
+    background-color: #64009e;
+    color: #F9FAF8;
+}
+
+.navbarlogo {
+    margin-left: 10em;
+    align-self: center;
+}
+
+.navlinks {
+    list-style: none;
+    display: inline-flex;
+    gap: 24px;
+    margin-left: auto;
+    margin-right: 10em;
+}
+
+.navlinks a{
+    text-decoration: none;
+    color: #E5E7EB;
+    font-size: 18px;
+
+}
+
+.topcontainer2 {
+    display: flex;
+    height: 350px;
+    background-image: url("/images/purpledrop.jpg");
+    background-position: center;
+    background-size: cover;
+    background-color: #64009e;
+    color: #F9FAF8;
+}
+
+.headertitle {
+    font-size: 48px;
+    font-weight: bolder;
+    max-width: 500px;
+    margin-left: 2em;
+    padding-top: 1em;
+}
+
+.headertext {
+    font-size: 18px;
+    color: #E5E7EB;
+    max-width: 400px;
+}
+
+.hshot {
+    max-height: 300px;
+    width: auto;
+    margin-left: auto;
+    margin-right: 19em;
+    align-self: center;
+}
