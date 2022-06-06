@@ -27,7 +27,7 @@ body {
 
 .navlinks a{
     text-decoration: none;
-    color: #E5E7EB;
+    color: #ffffff;
     font-size: 18px;
 
 }
@@ -39,7 +39,7 @@ body {
     background-position: center;
     background-size: cover;
     background-color: #64009e;
-    color: #F9FAF8;
+    color: #ffffff;
     width: 100%;
 }
 
@@ -54,7 +54,7 @@ body {
 
 .headertext {
     font-size: 18px;
-    color: #F9FAF8;
+    color: #ffffff;
     max-width: 400px;
     align-self: center;
     position: absolute;
@@ -67,7 +67,7 @@ body {
     max-height: 300px;
     width: auto;
     margin-left: auto;
-    margin-right: 19em;
+    margin-right: 13em;
     align-self: center;
     border-radius: 25px;
 }
@@ -75,7 +75,7 @@ body {
 .midcontainer1 {
     display: block;
     width: 100%;
-    height: 750px;
+    height: 700px;
     align-items: center;
     justify-items: center;
 }
@@ -84,17 +84,17 @@ body {
     margin-top: 1em;
     font-size: 36px;
     font-weight: bolder;
-    color: #1F2937;
+    color: #64009e;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-items: center;
+    width: 100%;
 }
 
 .projects {
     list-style: none;
     align-items: center;
-    gap: 25px;
     flex-wrap: wrap;
     display: inline-flex;
     justify-content: center;
@@ -104,10 +104,36 @@ body {
     width: 400px;
     height: 300px;
     display: block;
+    border-radius: 25px;
+    
 }
 
 .caption {
     display: block;
     width: 100%;
     text-align: center;
+    color: #64009e;
+}
+
+.midcontainer2 {
+    display: flex;
+    flex-direction: column-reverse;
+    width: 100%;
+    height: 400px;
+    background-color: #d09af0;
+    align-items: center;
+}
+
+.quote {
+    font-size: 48px;
+    font-style: italic;
+    font-weight: lighter;
+    color: #1F2937;
+    max-width: 1000px;
+}
+
+.author {
+    font-size: 18px;
+    font-weight: bold;
+
 }
