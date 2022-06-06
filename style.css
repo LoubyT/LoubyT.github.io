@@ -78,6 +78,7 @@ body {
     height: 700px;
     align-items: center;
     justify-items: center;
+    margin: 12px;
 }
 
 .complete-proj {
