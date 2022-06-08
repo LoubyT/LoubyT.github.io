@@ -41,6 +41,7 @@ body {
     font-size: 1.8rem;
     font-weight: 500;
     color: #C4FeFF;
+    transition: all 0.3s;
 }
 
 .main-nav-link.outline-cta:link,
@@ -54,8 +55,9 @@ body {
     background-color: #7E3887;
 }
 
-
-
+/********************************/
+/* HERO SECTION */
+/********************************/
 
 .topcontainer2 {
     display: flex;
