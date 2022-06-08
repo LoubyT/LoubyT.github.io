@@ -10,10 +10,10 @@ body {
 
 .topcontainer1 {
     display: flex;
-    height: 50px;
+    align-items: center;
     background-color: #64009e;
     color: #F9FAF8;
-    width: 100%;
+    gap: 3.2rem;
 }
 
 .navbarlogo {
@@ -23,10 +23,12 @@ body {
 
 .navlinks {
     list-style: none;
-    display: inline-flex;
-    gap: 24px;
-    margin-left: auto;
-    margin-right: 10em;
+    display: inline-block;
+    text-decoration: none;
+    padding: 1.2rem 2.4rem;
+    border-radius: 5.5px;
+    font-size: 1.8rem;
+    font-weight: 500;
 }
 
 .navlinks a{
