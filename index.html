@@ -8,6 +8,22 @@
     <link rel="stylesheet" href="style.css">
   </head>
   <body>
+    <div id="loader" class="loader">Thinking...</div>
+    <script>
+      document.onreadystatechange = function() {
+          if (document.readyState !== "complete") {
+              document.querySelector(
+                "body").style.visibility = "hidden";
+              document.querySelector(
+                "#loader").style.visibility = "visible";
+          } else {
+              document.querySelector(
+                "#loader").style.display = "none";
+              document.querySelector(
+                "body").style.visibility = "visible";
+          }
+      };
+    </script>
     <nav>
       <a href="#top">
         <img class="logo" src="/images/clearlogo.png" alt="Louby Trahan Logo"/>
