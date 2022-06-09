@@ -120,9 +120,9 @@ body {
 }
 
 .headshot {
-    height: 400px;
+    height: 450px;
     border-radius: 20px;
-    margin-top: 3.2rem;
+    margin: 1rem;
     padding: 3px;
     border: 5px solid #9C89FF;
 }
@@ -175,6 +175,7 @@ body {
     text-align: center;
     margin-bottom: 1rem;
     color: #99CCED;
+    font-size: 3rem;
 }
 
 .project-container {
@@ -190,11 +191,13 @@ body {
 .project-title {
     margin-bottom: 0.5rem;
     color: #541675;
+    font-size: 1.75rem;
 }
 
 .project-details {
     margin-bottom: 0.5rem;
     color: #7E3887;
+    font-size: 1.25rem;
 }
 
 .project-card {
