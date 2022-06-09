@@ -6,6 +6,7 @@
     padding: 0;
     margin: 0;
     box-sizing: border-box;
+    text-decoration: none;
 }
 
 html {
@@ -15,6 +16,7 @@ html {
 body {
     font-family: Montserrat Alternates, sans-serif;
 	line-height: 1;
+    background-color: #9C89FF;
 }
 
 /********************************/
@@ -74,7 +76,6 @@ body {
 
 .section-hero {
     padding: 9.6rem 0;
-    background-color: #F9FAF8;
 }
 
 .hero-background {
@@ -127,6 +128,28 @@ body {
 }
 
 /********************************/
+/* ABOUT ME SECTION */
+/********************************/
+
+.about {
+    padding: 1rem 6rem;
+    background: linear-gradient(134deg, #C4FEFF, #99CCED 99%);
+}
+
+.about h2 {
+    margin-bottom: 0.5rem;
+    text-align: center;
+    color: #541675;
+    font-size: 3rem;
+}
+
+.about p {
+    line-height: 1.7rem;
+    color: #7E3887;
+    font-size: 1.5rem;
+}
+
+/********************************/
 /* PROJECTS SECTION */
 /********************************/
 
@@ -145,6 +168,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    gap: 5rem;
 }
 
 .projects-title {
