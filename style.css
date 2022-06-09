@@ -27,7 +27,6 @@ body {
 nav {
     display: flex;
     height: 9rem;
-    position: sticky;
     top: 0;
     left: 0;
     z-index: 1;
