@@ -244,7 +244,73 @@ body {
 /* CONTACT SECTION */
 /********************************/
 
+.contact {
+    margin-top: 5.5rem;
+}
 
+.contact h2 {
+    text-align: center;
+    margin-bottom: 0.5rem;
+    color: #541675;
+    font-size: 3rem;
+}
+
+.contact-form-container {
+    max-width: 40.75rem;
+    margin: 0 auto;
+    padding: 0.938rem;
+    border-radius: 5px;
+    box-shadow: 0 3px 10px #541675;
+    background: linear-gradient(134deg, #C4FEFF, #99CCED 99%);
+}
+
+.contact-form-container label {
+    line-height: 2.7em;
+    font-weight: 700;
+    color: #541675;
+}
+
+.contact-form-container textarea {
+    min-height: 6.25rem;
+    font-size: 14px;
+}
+
+.contact-form-container .input-field {
+    width: 100%;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    border-radius: 5px;
+    border: none;
+    border: 2px outset #541675;
+    font-size: 0.875rem;
+    outline: none;
+    padding-left: 0.5rem;
+}
+
+.input-field::placeholder {
+    padding: 0.5rem;
+    color: #541675;
+}
+
+.submit-button {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    background: linear-gradient(134deg, #C4FEFF, #99CCED 99%);
+    border: 2px solid #541675;
+    border-radius: 5px;
+    font-size: 1rem;
+    font-weight: 700;
+    transition: 0.3s;
+    color: #541675;
+}
+
+.submit-button:hover {
+    background: #541675;
+    border: 2px solid #541675;
+    cursor: pointer;
+    color: #99CCED;
+}
 
 /********************************/
 /* FOOTER SECTION */
