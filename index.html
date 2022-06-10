@@ -8,40 +8,29 @@
     <link rel="stylesheet" href="style.css">
   </head>
   <body>
-    <div id="loader" class="loader">Thinking...</div>
-    <script>
-      document.onreadystatechange = function() {
-          if (document.readyState !== "complete") {
-              document.querySelector(
-                "body").style.visibility = "hidden";
-              document.querySelector(
-                "#loader").style.visibility = "visible";
-          } else {
-              document.querySelector(
-                "#loader").style.display = "none";
-              document.querySelector(
-                "body").style.visibility = "visible";
-          }
-      };
-    </script>
-    <nav>
-      <a href="#top">
-        <img class="logo" src="/images/clearlogo.png" alt="Louby Trahan Logo"/>
-      </a>
-        <ul class="navigation">
-          <li><a class="main-nav-link" href="#about">About</a></li>
-          <li><a class="main-nav-link" href="#projects">Projects</a></li>
-          <li>
-            <a class="main-nav-link nav-cta" href="#contact">Contact</a>
-          </li>
-          <li>
-            <a class="main-nav-link outline-cta" href="#resume">Resume</a>
-          </li>
-        </ul>
-        <button class="burger-menu" name="burger-menu">
-          <ion-icon class="bars" name="menu-outline"></ion-icon>
-        </button>
-        </nav>
+    <header>
+      <nav>
+        <a href="#">
+          <img class="logo" src="/images/clearlogo.png" alt="Louby Trahan Logo"/>
+       </a>
+          <ul class="navigation">
+            <li><a class="main-nav-link" href="#about">About</a></li>
+            <li><a class="main-nav-link" href="#projects">Projects</a></li>
+            <li>
+              <a class="main-nav-link nav-cta" href="#contact">Contact</a>
+            </li>
+            <li>
+              <a class="main-nav-link outline-cta" href="#resume">Resume</a>
+            </li>
+          </ul>
+          <div class="hamburger">
+            <span class="bar"></span>
+            <span class="bar"></span>
+            <span class="bar"></span>
+          </div>
+      </nav>
+    </header>
+    <script src="script.js"></script>
     <main>
       <section class="section-hero">
         <div class="hero-background">
