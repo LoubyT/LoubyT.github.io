@@ -68,7 +68,7 @@ nav ul li {
     margin: 5px auto;
     -webkit-transition: all 0.3s ease-in-out;
     transition: all 0.3s ease-in-out;
-    background-color: #99CCED;
+    background-color: #C4FEFF;
 }
 
 @media(max-width:768px) {
@@ -158,7 +158,6 @@ nav ul li {
     min-height: 500px;
     background: linear-gradient(134deg, #C4FEFF, #9C89FF 99%);
     transform: skewY(-3deg);
-    z-index: -1;
 }
 
 .hero {
@@ -201,6 +200,59 @@ nav ul li {
     border: 5px solid #541675;
 }
 
+@media(max-width: 768px) {
+   
+    .hero-background {
+        min-height: none;
+        max-width: 768px;
+        background: linear-gradient(134deg, #C4FEFF, #99CCED 99%);
+        transform: none;
+    }
+
+    .hero {
+        vertical-align: top;
+        display: inline-block;
+        text-align: center;
+    }
+
+    .headshot {
+        width: 200px;
+        height: auto;
+    }
+
+    .heading-primary {
+        margin: 0 auto 1.8rem;
+        font-size: 2.5rem;
+    }
+    
+    .heading-primary span {
+        font-size: 1.75rem;
+    }
+    
+    .hero-description {
+        font-size: 1.25rem;
+        width: 500px;
+    }
+}
+
+@media(max-width: 420px) {
+    .hero-background {
+        max-width: 420px;
+    }
+    
+    .hero-description {
+        font-size: 1rem;
+    }
+
+    .heading-primary {
+        font-size: 2rem;
+    }
+
+    .heading-primary span {
+        font-size: 1.5rem;
+    }
+}
+
 /********************************/
 /* ABOUT ME SECTION */
 /********************************/
@@ -222,6 +274,21 @@ nav ul li {
     color: #7E3887;
     font-size: 1.5rem;
     margin-bottom: 4rem;
+}
+
+@media(max-width: 768px) {
+    .about {
+        margin-top: 2rem;
+        padding: 1rem 3.5rem;
+    }
+
+    .about h2 {
+        text-align: center;
+    }
+
+    .about p {
+        text-align: justify;
+    }
 }
 
 /********************************/
@@ -283,6 +350,18 @@ nav ul li {
     margin: 10px;
 }
 
+@media(max-width: 768px) {
+    .projects-container {
+        flex-direction: column;
+    }
+}
+
+@media(max-width: 420px) {
+    .project-container {
+        width: 17.875rem;
+    }
+}
+
 /********************************/
 /* QUOTE SECTION */
 /********************************/
@@ -312,6 +391,20 @@ nav ul li {
     color: #541675;
     margin-left: 20em;
     margin-top: 1.5rem;
+}
+
+@media(max-width: 768px) {
+    .section-quote {
+        height: auto;
+    }
+
+    .quote {
+        font-size: 1.5rem;
+    }
+
+    .author {
+        font-size: 1rem;
+    }
 }
 
 /********************************/
@@ -387,6 +480,25 @@ nav ul li {
     color: #99CCED;
 }
 
+@media(max-width: 768px) {
+    .contact-form-container{
+        max-width: 23.75rem;
+    }
+
+    .contact h2 {
+        font-size: 1.75rem;
+    }
+}
+
+@media(max-width: 420px) {
+    .contact-form-container {
+        max-width: 17.75rem;
+    }
+
+    .contact h2 {
+        font-size: 1.25rem;
+    }
+}
 /********************************/
 /* FOOTER SECTION */
 /********************************/
@@ -397,4 +509,23 @@ footer {
     padding: 1.25rem;
     margin: 2rem 0 0;
     color: #99CCED;
+}
+
+.scroll-up {
+    position: fixed;
+    right: 0.5%;
+    bottom: 3%;
+    cursor: pointer;
+}
+
+.up-arrow {
+    width: 4rem;
+    height: 4rem;
+}
+
+@media(max-width: 768px) {
+    .up-arrow {
+        width: 3rem;
+        height: 3rem;
+    }
 }
