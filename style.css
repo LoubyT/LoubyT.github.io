@@ -200,7 +200,7 @@ nav ul li {
     border: 5px solid #541675;
 }
 
-@media(max-width: 768px) {
+@media screen and (max-width: 768px) {
     .section-hero {
         padding: 4rem 0;
     }
@@ -238,7 +238,7 @@ nav ul li {
     }
 }
 
-@media(max-width: 420px) {
+@media screen and (max-width: 420px) {
     .hero-background {
         max-width: auto;
     }
@@ -280,7 +280,7 @@ nav ul li {
     margin-bottom: 4rem;
 }
 
-@media(max-width: 768px) {
+@media screen and (max-width: 768px) {
     .about {
         margin-top: 2rem;
         padding: 1rem 3.5rem;
@@ -354,14 +354,14 @@ nav ul li {
     margin: 10px;
 }
 
-@media(max-width: 768px) {
+@media screen and (max-width: 768px) {
     .projects-container {
         flex-direction: column;
     }
 }
 
 
-@media(max-width: 576px) {
+@media screen and (max-width: 576px) {
     .project-container {
         width: 15rem;
     }
@@ -415,9 +415,10 @@ nav ul li {
     margin-top: 1.5rem;
 }
 
-@media(max-width: 768px) {
+@media screen and (max-width: 768px) {
     .section-quote {
         height: auto;
+        padding: 3em;
     }
 
     .quote {
@@ -426,6 +427,7 @@ nav ul li {
 
     .author {
         font-size: 1rem;
+        margin-left: 15rem;
     }
 }
 
@@ -502,7 +504,7 @@ nav ul li {
     color: #99CCED;
 }
 
-@media(max-width: 767px) {
+@media screen and (max-width: 767px) {
     .contact-form-container{
         max-width: 23.75rem;
     }
@@ -512,9 +514,9 @@ nav ul li {
     }
 }
 
-@media(max-width: 420px) {
+@media screen and (max-width: 420px) {
     .contact-form-container {
-        max-width: 17.75rem;
+        max-width: 15rem;
     }
 
     .contact h2 {
@@ -545,7 +547,7 @@ footer {
     height: 4rem;
 }
 
-@media(max-width: 768px) {
+@media screen and (max-width: 768px) {
     .up-arrow {
         width: 3rem;
         height: 3rem;
