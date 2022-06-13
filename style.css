@@ -363,12 +363,12 @@ nav ul li {
 
 @media(max-width: 576px) {
     .project-container {
-        width: 17.875rem;
+        width: 15rem;
     }
 
     .project-pic {
-        width: 16rem;
-        height: 16rem;
+        width: 13.5rem;
+        height: 13.5rem;
     }
 
     .project-title {
