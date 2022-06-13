@@ -201,10 +201,12 @@ nav ul li {
 }
 
 @media(max-width: 768px) {
-   
+    .section-hero {
+        padding: 4rem 0;
+    }
+
     .hero-background {
-        min-height: none;
-        max-width: 768px;
+        max-width: auto;
         background: linear-gradient(134deg, #C4FEFF, #99CCED 99%);
         transform: none;
     }
@@ -213,6 +215,7 @@ nav ul li {
         vertical-align: top;
         display: inline-block;
         text-align: center;
+        padding: auto;
     }
 
     .headshot {
@@ -221,8 +224,8 @@ nav ul li {
     }
 
     .heading-primary {
-        margin: 0 auto 1.8rem;
         font-size: 2.5rem;
+        margin: 0 auto 1.8rem;
     }
     
     .heading-primary span {
@@ -231,25 +234,26 @@ nav ul li {
     
     .hero-description {
         font-size: 1.25rem;
-        width: 500px;
+        width: 300px;
     }
 }
 
 @media(max-width: 420px) {
     .hero-background {
-        max-width: 420px;
+        max-width: auto;
     }
     
     .hero-description {
-        font-size: 1rem;
+        font-size: 0.75rem;
+        width: 250px;
     }
 
     .heading-primary {
-        font-size: 2rem;
+        font-size: 1.5rem;
     }
 
     .heading-primary span {
-        font-size: 1.5rem;
+        font-size: 1.25rem;
     }
 }
 
@@ -353,6 +357,21 @@ nav ul li {
 @media(max-width: 768px) {
     .projects-container {
         flex-direction: column;
+    }
+}
+
+@media(max-width: 576px) {
+    .project-pic {
+        width: 200px;
+        height: 200px;
+    }
+
+    .project-title {
+        font-size: 1.5rem;
+    }
+
+    .project-details {
+        font-size: 1rem;
     }
 }
 
@@ -480,7 +499,7 @@ nav ul li {
     color: #99CCED;
 }
 
-@media(max-width: 768px) {
+@media(max-width: 767px) {
     .contact-form-container{
         max-width: 23.75rem;
     }

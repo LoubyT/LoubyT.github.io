@@ -13,12 +13,29 @@ document.querySelectorAll(".main-nav-link").forEach(n => n. addEventListener("cl
 }))
 
 //scroll to top functionality
-const scrollUp = document.querySelector("#scroll-up");
+.document,addEventListener("scroll", handleScroll);
 
-scrollUp.addEventListener("click", () => {
+var scrollToTopBtn = document.querySelector(".scroll-up");
+
+function handleScroll() {
+    var scrollableHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+    var GOLDEN_RATIO = 0.5;
+
+    if ((document.documentElement.scrollTop / scrollableHeight ) > GOLDEN_RATIO) {
+        //show button
+        scrollToTopBtn.style.display = "block";
+    } else {
+        //hide button
+        scrollToTopBtn.style.display = "none";
+    }
+}
+
+scrollToTopBtn.addEventListener("click", scrollToTop);
+
+function scrollUp() {
     window.scrollTo({
         top: 0,
-        left: 0,
-        behavior: "smooth",
+        behavior: "smooth"
     });
-});
+}
+
