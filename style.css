@@ -360,10 +360,15 @@ nav ul li {
     }
 }
 
+
 @media(max-width: 576px) {
+    .project-container {
+        width: 17.875rem;
+    }
+
     .project-pic {
-        width: 200px;
-        height: 200px;
+        width: 16rem;
+        height: 16rem;
     }
 
     .project-title {
@@ -372,12 +377,6 @@ nav ul li {
 
     .project-details {
         font-size: 1rem;
-    }
-}
-
-@media(max-width: 420px) {
-    .project-container {
-        width: 17.875rem;
     }
 }
 
