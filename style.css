@@ -71,7 +71,7 @@ nav ul li {
     background-color: #C4FEFF;
 }
 
-@media(max-width:768px) {
+@media(max-width:850px) {
     .hamburger {
         display: block;
     }
@@ -110,7 +110,7 @@ nav ul li {
 }
 
 .logo {
-    height: 15rem;
+    height: 5rem;
 }
 
 .navigation {
@@ -150,6 +150,8 @@ nav ul li {
 
 .section-hero {
     padding: 9.6rem 0;
+    height: 100vh;
+    width: 100vw;
 }
 
 .hero-background {
@@ -198,6 +200,61 @@ nav ul li {
     margin: 1rem;
     padding: 3px;
     border: 5px solid #541675;
+}
+
+@media screen and (max-width: 1000px) {
+    .hero-background {
+        max-width: auto;
+    }
+    
+    .hero-description {
+        font-size: 1rem;
+        width: 250px;
+    }
+
+    .heading-primary {
+        font-size: 1.5rem;
+    }
+
+    .heading-primary span {
+        font-size: 1.25rem;
+    }
+
+    .section-hero {
+        padding: 4rem 0;
+    }
+
+    .hero-background {
+        max-width: auto;
+        background: linear-gradient(134deg, #C4FEFF, #99CCED 99%);
+        transform: none;
+    }
+
+    .hero {
+        vertical-align: top;
+        display: flex;
+        text-align: center;
+        padding: auto;
+    }
+
+    .headshot {
+        width: 300px;
+        height: auto;
+    }
+
+    .heading-primary {
+        font-size: 2.5rem;
+        margin: 0 auto 1.8rem;
+    }
+    
+    .heading-primary span {
+        font-size: 1.75rem;
+    }
+    
+    .hero-description {
+        font-size: 1.25rem;
+        width: 300px;
+    }
 }
 
 @media screen and (max-width: 768px) {
@@ -257,14 +314,18 @@ nav ul li {
     }
 }
 
+
+
 /********************************/
 /* ABOUT ME SECTION */
 /********************************/
 
 .about {
-    padding: 1rem 6rem;
+    padding: 3rem 6rem;
     background: linear-gradient(134deg, #C4FEFF, #99CCED 99%);
 }
+
+
 
 .about h2 {
     margin-bottom: 0.5rem;
@@ -277,7 +338,9 @@ nav ul li {
     line-height: 1.7rem;
     color: #7E3887;
     font-size: 1.5rem;
-    margin-bottom: 4rem;
+    margin: 4rem auto;
+    text-align: center;
+    max-width: 1000px;
 }
 
 @media screen and (max-width: 768px) {
@@ -349,9 +412,14 @@ nav ul li {
 .project-card {
     background-color: #99CCED;
     border-radius: 11px;
-    box-shadow: 0 3px 10px #541675;
+    border: #541675 2px solid;
     padding: 20px;
     margin: 10px;
+    transition: box-shadow .3s;
+}
+
+.project-card:hover {
+    box-shadow: 0 3px 10px #541675;
 }
 
 @media screen and (max-width: 768px) {
@@ -415,7 +483,7 @@ nav ul li {
     margin-top: 1.5rem;
 }
 
-@media screen and (max-width: 768px) {
+@media screen and (max-width: 1500px) {
     .section-quote {
         height: auto;
         padding: 3em;
