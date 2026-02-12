@@ -5,119 +5,121 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Louby's Portfolio</title>
+        <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat+Alternates:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="style.css">
   </head>
-  <body>
+
+  <body id="top" class="home-page">
+    <!-- HEADER & NAVIGATION -->
     <header>
       <nav>
         <a href="http://www.louby.net">
-          <img class="logo" src="/images/logo2.png" alt="Louby Trahan Logo"/>
-       </a>
-          <ul class="navigation">
-            <li><a class="main-nav-link" href="#about">About</a></li>
-            <li><a class="main-nav-link" href="#projects">Projects</a></li>
-            <li>
-              <a class="main-nav-link nav-cta" href="#contact">Contact</a>
-            </li>
-            <li>
-              <a class="main-nav-link outline-cta" target="_blank" rel="noopener noreferrer" href="http://www.linkedin.com/in/louby">LinkedIn</a>
-            </li>
-          </ul>
-          <div class="hamburger">
-            <span class="bar"></span>
-            <span class="bar"></span>
-            <span class="bar"></span>
-          </div>
+          <img class="logo" src="/images/logo4.png" alt="Louby Trahan Logo"/>
+        </a>
+
+        <ul class="navigation">
+          <li><a class="main-nav-link" href="#about">About</a></li>
+          <li><a class="main-nav-link" href="#projects">Featured Project</a></li>
+          <li>
+            <a class="main-nav-link nav-cta" href="#contact">Contact</a>
+          </li>
+          <li>
+            <a class="main-nav-link outline-cta" target="_blank" rel="noopener noreferrer" href="http://www.linkedin.com/in/Louby">LinkedIn</a>
+          </li>
+        </ul>
+
+        <div class="hamburger" aria-label="Open navigation menu" aria-expanded="false" role="button" tabindex="0">
+          <span class="bar"></span>
+          <span class="bar"></span>
+          <span class="bar"></span>
+        </div>
       </nav>
     </header>
-    <script src="script.js"></script>
+
     <main>
-      <section class="section-hero">
-        <div class="hero-background">
-        <div class="hero">
-          <div class="hero-text">
-            <h1 class="heading-primary">
-              <span>Hello, my name is</span> <br />
-              Louby Trahan
-            </h1>
-            <p class="hero-description">
-              I can help your business achieve their goals with innovative, interactive and creative learning experiences.
-            </p>
+      <!-- HERO SECTION -->
+      <section class="section-hero fp-hero" data-reveal>
+        <div class="hero-background fp-hero-background" aria-hidden="true">
+          <div class="hero">
+            <div class="hero-text" data-reveal data-reveal-delay="1">
+              <h1 class="heading-primary">
+                <span>Hello, my name is</span> <br />
+                Louby Trahan
+              </h1>
+              <p class="hero-description">
+                I design strategic, scalable learning programs that drive tool adoption, operational clarity, and measurable performance improvement.
+              </p>
+            </div>
+
+            <img
+              class="headshot"
+              src="/images/headshotNObg.png"
+              alt="Louby's Headshot"
+              loading="eager"
+              data-reveal
+              data-reveal-delay="2"
+            >
           </div>
-          <img class="headshot" src="/images/headshotNObg.png" alt="Louby's Headshot">
         </div>
       </section>
 
-      <section id="about" class="about">
+      <!-- ABOUT SECTION -->
+      <section id="about" class="about" data-reveal>
         <div class="about-container">
-          <h2>Who is Louby?</h2>
-          <p>
-            I am a <strong>Learning and Development Specialist</strong> at <strong>Respawn Entertainment</strong>, where I lead training 
-            initiatives for <strong>Quality Verification & Standards (QVS)</strong>. With two years at <strong>EA/Respawn</strong> and a 
-            background in education, I design and implement comprehensive training programs that equip <strong>new hires across multiple QVS roles</strong> 
-            with the skills and knowledge they need to succeed in a fast-paced, AAA game development environment.
-          </p>
-          <p>
-            Wearing multiple hats as an <strong>instructional designer, project manager, subject matter expert, and training lead</strong>, I create 
-            structured onboarding materials, develop process documentation, and optimize learning pathways to enhance team efficiency. My work ensures that 
-            employees—from <strong>QA testers to other critical QVS roles</strong>—not only understand <strong>QA methodologies, tools, and workflows</strong> 
-            but also integrate seamlessly into Respawn’s unique development culture.
-          </p>
-          <p>
-            Beyond training, I leverage my experience in <strong>curriculum design, process improvement, and team development</strong> to support continuous 
-            learning initiatives within QVS. Whether crafting interactive training modules, refining workflows, or mentoring new hires, my goal is to build a 
-            learning ecosystem that empowers all QVS team members to elevate game quality and contribute meaningfully to Respawn’s success.
-          </p>
-        </div>        
-      </section>
+          <h2 data-reveal>Who is Louby?</h2>
 
-      <section id="projects" class="projects">
-        <h2 class="projects-title">Most Recent Project</h2>
-        <div class="projects-container">
-          <a target="_blank" rel="noopener noreferrer" href="https://www.naileditbykait.com/">
-            <div class="project-container project-card">
-              <img class="project-pic" src="/images/nibklogo2.png" alt="Logo for Nailed It by Kait" loading="lazy">
-              <h3 class="project-title">Nailed It by Kait</h3>
-              <p class="project-details">
-                I designed this ecommerce website for a local small business owner and helped to dramatically 
-                increase sale volume by roughly 300% by creating a user friendly and straight-forward design 
-                for the customer to sell their products nationally without prior communication.
-              </p>
-            </div>
-          </a>
-          <!-- <a href="#">
-            <div class="project-container project-card">
-              <img class="project-pic" src="/images/sketch.jpg" alt="A woman is preparing to sketch by dipping a utensil in ink." loading="lazy">
-              <h3 class="project-title">Etch-a-Sketch</h3>
-              <p class="project-details">
-                Enter details here about the etch-a-sketch project.
-              </p>
-            </div>
-          </a>
-          <a href="#">
-            <div class="project-container project-card">
-              <img class="project-pic" src="/images/calc.jpg" alt="A man is doing math on a calculator." loading="lazy">
-              <h3 class="project-title">Calculator</h3>
-              <p class="project-details">
-                Enter details here about the calculator project.
-              </p>
-            </div>
-          </a> -->
+          <p data-reveal data-reveal-delay="1">
+            I’m a <strong>Senior Instructional Designer / Learning Program</strong> partner who turns complex systems into learning people actually use. At <strong>Respawn Entertainment (EA)</strong>, I design <strong>technical enablement</strong> for internal tools and workflows that support live service operations—building role-based onboarding, scalable learning paths, and performance support that improves adoption and reduces friction.
+          </p>
+
+          <p data-reveal data-reveal-delay="2">
+            My work sits at the intersection of <strong>operations, instructional design, and change management</strong>. I partner closely with <strong>Product, engineering-adjacent teams, and technical SMEs</strong> to translate system logic, workflows, and edge cases into clear, learner-centric experiences—often delivered as <strong>SCORM-compliant eLearning</strong>, simulations, job aids, and live enablement sessions. I’ve supported teams working on major titles including <strong>Apex Legends,</strong> <strong>Battlefield 6,</strong> and the <strong>Star Wars Jedi</strong> series.
+          </p>
+
+          <p data-reveal data-reveal-delay="3">
+            I’m equally comfortable building polished eLearning in <strong>Articulate Storyline</strong> as I am facilitating <strong>remote and in-person</strong> sessions—leading learners through tools, decisions, and real scenarios. I use feedback and performance signals to iterate fast, and I automate where it makes sense (ex: <strong>Google Apps Script</strong>) to keep programs maintainable. My focus is always the same: <strong>make it usable, make it stick, and make it valuable</strong>.
+          </p>
         </div>
       </section>
 
-      <section class="section-quote">
-        <h3 class="quote">
+      <!-- FEATURED PROJECT SECTION -->
+      <section id="projects" class="projects" data-reveal>
+        <h2 class="projects-title" data-reveal>Featured Project</h2>
+
+        <div class="projects-container">
+          <a rel="noopener noreferrer" href="featured-project.html" data-reveal data-reveal-delay="1">
+            <div class="project-container project-card">
+              <img class="project-pic" src="/images/project-hero.png" alt="AI at Work Module Screenshot" loading="lazy">
+              <h3 class="project-title">AI at Work: Making Informed, Responsible Decisions</h3>
+              <p class="project-details">
+                A scenario-based learning experience designed to build AI judgment and accountability at work. Learners evaluate risk, verify outputs, and practice structured decision-making in realistic moments.
+              </p>
+            </div>
+          </a>
+        </div>
+      </section>
+
+      <!-- QUOTE SECTION -->
+      <section class="section-quote" data-reveal>
+        <h3 class="quote" data-reveal>
           That’s been one of my mantras—focus and simplicity. Simple can be harder than complex; you have to work hard to get your thinking clean to make it simple.
         </h3>
-          <p class="author">
+        <p class="author" data-reveal data-reveal-delay="1">
           Steve Jobs
-          </p>
+        </p>
       </section>
 
-      <section id="contact" class="contact">
-        <h2>Let's Discuss Opportunities</h2>
-        <div class="contact-form-container">
+      <!-- CONTACT SECTION -->
+      <section id="contact" class="contact" data-reveal>
+        <h2 data-reveal>Let's Discuss Opportunities</h2>
+
+        <div class="contact-form-container" data-reveal data-reveal-delay="1">
           <div class="contact-form">
             <form action="https://formspree.io/f/myyovwbz" method="POST">
               <div class="form-control">
@@ -131,6 +133,7 @@
                   required
                 />
               </div>
+
               <div class="form-control">
                 <label for="email">Email</label>
                 <input
@@ -142,18 +145,20 @@
                   required
                 />
               </div>
+
               <div class="form-control">
-                  <label for="message">Message</label>
-                  <textarea
-                    id="message"
-                    cols="60"
-                    rows="10"
-                    placeholder="Enter Your Message"
-                    name="message"
-                    class="input-field"
-                    required
-                  ></textarea>
+                <label for="message">Message</label>
+                <textarea
+                  id="message"
+                  cols="60"
+                  rows="10"
+                  placeholder="Enter Your Message"
+                  name="message"
+                  class="input-field"
+                  required
+                ></textarea>
               </div>
+
               <input
                 type="submit"
                 value="Submit"
@@ -164,16 +169,19 @@
           </div>
         </div>
       </section>
-      <a href="#top" class="scroll-up" id="scroll-up"
-        ><img
-          src="images/scroll.gif"
-          class="up-arrow"
-          alt="scroll-up"
-      /></a>
+
+      <a href="#top" class="scroll-up" id="scroll-up" aria-label="Scroll to top">
+        <img src="images/scroll.gif" class="up-arrow" alt="scroll-up" loading="lazy"/>
+      </a>
+
       <footer>
-        <p class="copyright">&copy; Copyright 2022</p>
+        <p class="copyright">&copy; Copyright 2026</p>
         <p class="copyright">Built with &#x2661; by Louby Trahan</p>
       </footer>
     </main>
+
+    <script src="script.js" defer></script>
+
   </body>
 </html>
+
