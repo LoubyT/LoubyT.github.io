@@ -8,12 +8,6 @@
   /* =========================
      Helpers
   ========================= */
-  function isHomePage() {
-    // Accepts "/", "/index.html", "index.html" variants
-    const p = (window.location.pathname || "/").replace(/\/+$/, "");
-    return p === "" || p === "/" || p === "/index.html" || p === "index.html";
-  }
-
   function getHeaderOffset() {
     const nav = document.querySelector("nav");
     return nav ? nav.offsetHeight : 0;
@@ -37,14 +31,12 @@
 
   function normalizePathForComparison(path) {
     if (!path) return "/";
-    // Remove query/hash and trailing slashes
     try {
       const u = new URL(path, window.location.origin);
       let p = u.pathname.replace(/\/+$/, "");
       if (p === "" || p === "/index.html" || p === "/") return "/";
       return p;
     } catch (e) {
-      // fallback for relative paths
       let p = path.split("?")[0].split("#")[0].replace(/\/+$/, "");
       if (p === "" || p === "index.html") return "/";
       return p;
@@ -52,11 +44,18 @@
   }
 
   function debugLog(...args) {
-    if (window && window.location && window.location.hostname === "localhost") {
+    if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
       console.debug("[site script]", ...args);
-    } else {
-      // minimal logging on non-local
-      // console.debug("[site script]", ...args);
+    }
+  }
+
+  function sanitizeHashFromUrl() {
+    if (!history.replaceState) return;
+    const cleanUrl = window.location.pathname + window.location.search;
+    try {
+      history.replaceState(null, "", cleanUrl);
+    } catch (e) {
+      /* ignore */
     }
   }
 
@@ -67,10 +66,7 @@
     try {
       const hamburger = document.querySelector(".hamburger");
       const navigation = document.querySelector(".navigation");
-      if (!hamburger || !navigation) {
-        debugLog("hamburger or navigation not found, skipping hamburger init");
-        return;
-      }
+      if (!hamburger || !navigation) return;
 
       const setExpanded = (expanded) => {
         hamburger.setAttribute("aria-expanded", expanded ? "true" : "false");
@@ -96,99 +92,114 @@
         }
       });
 
-      // close menu when nav links clicked
       safeQueryAll(".main-nav-link").forEach((link) => link.addEventListener("click", closeMenu));
-
       setExpanded(hamburger.classList.contains("active"));
-      debugLog("hamburger initialized");
     } catch (err) {
       console.warn("Hamburger init failed:", err);
     }
   })();
 
   /* =========================
-     Smooth scroll for in-page links (delegated)
-     - Handles anchors like #x, /#x, index.html#x, /index.html#x
-     - Only intercepts same-document anchors
+     Anchor behavior + URL sanitizing (ALL pages)
+     - Smooth scroll when possible
+     - ALWAYS strip the hash after navigation via hashchange fallback
   ========================= */
-  (function initSmoothScroll() {
+  (function initAnchors() {
     try {
-      if (prefersReducedMotion()) {
-        debugLog("prefers-reduced-motion enabled: skipping smooth scroll");
-        return;
-      }
-
-      document.addEventListener("click", function (event) {
-        const link = event.target.closest && event.target.closest('a[href*="#"]');
-        if (!link) return;
-
-        // opt-out data attribute
-        if (link.hasAttribute("data-skip-smooth")) return;
-
-        const hash = link.hash;
-        if (!hash || hash === "#") return;
-
-        // Only handle same-origin links
-        const linkHost = link.hostname || window.location.hostname;
-        if (linkHost !== window.location.hostname) return;
-
-        // Normalize pathnames: treat "/" and "/index.html" as equal
-        const linkPath = normalizePathForComparison(link.getAttribute("href") || link.pathname || "");
-        const currentPath = normalizePathForComparison(window.location.pathname || "/");
-
-        if (linkPath !== currentPath) {
-          // not the same document (let browser navigate)
-          return;
-        }
-
-        const target = document.querySelector(hash);
-        if (!target) return;
-
-        event.preventDefault();
-
-        const headerHeight = getHeaderOffset();
-        const rect = target.getBoundingClientRect();
-        const targetY = rect.top + window.pageYOffset - headerHeight - 8;
-
-        window.scrollTo({ top: Math.max(0, Math.round(targetY)), behavior: "smooth" });
-
-        // remove fragment from URL on homepage to keep it clean
-        if (history.replaceState && isHomePage()) {
-          const cleanUrl = window.location.origin + window.location.pathname;
-          // small delay so browser completes scroll behavior nicely
-          setTimeout(() => {
-            try {
-              history.replaceState(null, "", cleanUrl);
-            } catch (e) {
-              /* ignore history errors */
-            }
-          }, 450);
+      // 1) If page loads with a hash (direct link), strip it after load.
+      window.addEventListener("load", () => {
+        if (window.location.hash) {
+          // Let initial jump happen, then clean URL.
+          setTimeout(sanitizeHashFromUrl, 0);
         }
       });
 
-      debugLog("smooth scroll initialized (delegated)");
+      // 2) If hash changes for any reason, clean it.
+      // This makes sanitizing work even when click handlers don't run.
+      window.addEventListener("hashchange", () => {
+        // Only sanitize if the hash actually points to an element on THIS page
+        const hash = window.location.hash;
+        if (!hash || hash === "#") return;
+
+        const el = document.querySelector(hash);
+        if (!el) return;
+
+        // Give the browser one tick to finish the built-in anchor jump
+        setTimeout(sanitizeHashFromUrl, 0);
+      });
+
+      // 3) Smooth scroll interception (nice-to-have). Sanitizing is handled above regardless.
+      document.addEventListener(
+        "click",
+        function (event) {
+          const link = event.target.closest && event.target.closest('a[href*="#"]');
+          if (!link) return;
+
+          // allow new tab / modifier clicks
+          if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+          if (link.target && link.target !== "_self") return;
+
+          if (link.hasAttribute("data-skip-smooth")) return;
+
+          const href = link.getAttribute("href");
+          if (!href) return;
+
+          let u;
+          try {
+            u = new URL(href, window.location.href);
+          } catch (e) {
+            return;
+          }
+
+          // same-origin only
+          if (u.origin !== window.location.origin) return;
+
+          // same-document only (treat "/" and "/index.html" as the same)
+          const linkPathNorm = normalizePathForComparison(u.pathname || "/");
+          const currentPathNorm = normalizePathForComparison(window.location.pathname || "/");
+          if (linkPathNorm !== currentPathNorm) return;
+
+          // must have a hash target
+          if (!u.hash || u.hash === "#") return;
+
+          const target = document.querySelector(u.hash);
+          if (!target) return;
+
+          // If reduced motion is on, allow default jump; hashchange listener will sanitize.
+          if (prefersReducedMotion()) return;
+
+          // Smooth scroll ourselves
+          event.preventDefault();
+
+          const headerHeight = getHeaderOffset();
+          const rect = target.getBoundingClientRect();
+          const targetY = rect.top + window.pageYOffset - headerHeight - 8;
+
+          window.scrollTo({ top: Math.max(0, Math.round(targetY)), behavior: "smooth" });
+
+          // Clean URL shortly after scroll begins
+          setTimeout(sanitizeHashFromUrl, 450);
+        },
+        true // capture: helps when something else stops propagation
+      );
+
+      debugLog("anchor behavior initialized");
     } catch (err) {
-      console.warn("Smooth scroll init failed:", err);
+      console.warn("Anchors init failed:", err);
     }
   })();
 
   /* =========================
      Scroll reveal
-     - data-reveal attribute used on elements
-     - Adds .reveal class then uses IntersectionObserver
   ========================= */
   (function initScrollReveal() {
     try {
       const boot = () => {
         const revealEls = safeQueryAll("[data-reveal]");
-        if (!revealEls.length) {
-          debugLog("no [data-reveal] elements found");
-          return;
-        }
+        if (!revealEls.length) return;
 
         if (prefersReducedMotion() || typeof IntersectionObserver === "undefined") {
           revealEls.forEach((el) => el.classList.add("reveal-visible"));
-          debugLog("reveal: reduced-motion or no IO -> showing all immediately");
           return;
         }
 
@@ -213,7 +224,6 @@
         );
 
         revealEls.forEach((el) => io.observe(el));
-        debugLog("reveal: IntersectionObserver observing", revealEls.length, "elements");
       };
 
       if (document.readyState === "loading") {
@@ -232,10 +242,7 @@
   (function initExpandableCards() {
     try {
       const cards = safeQueryAll("[data-expandable]");
-      if (!cards.length) {
-        debugLog("no expandable cards found");
-        return;
-      }
+      if (!cards.length) return;
 
       cards.forEach((card) => {
         const contents = Array.from(card.querySelectorAll("p, ul"));
@@ -256,7 +263,6 @@
         };
 
         card.addEventListener("click", (e) => {
-          // let links inside card behave normally
           if (e.target.closest && e.target.closest("a")) return;
           toggle();
         });
@@ -268,8 +274,6 @@
           }
         });
       });
-
-      debugLog("expandable cards initialized:", cards.length);
     } catch (err) {
       console.warn("Expandable cards init failed:", err);
     }
@@ -281,14 +285,10 @@
   (function initLightbox() {
     try {
       const candidates = safeQueryAll("img[data-lightbox]");
-      if (!candidates.length) {
-        debugLog("no lightbox images present");
-        return;
-      }
+      if (!candidates.length) return;
 
       let overlayEl = null;
       let imgEl = null;
-      let closeBtn = null;
       let captionEl = null;
       let lastFocused = null;
 
@@ -311,7 +311,6 @@
         document.body.appendChild(overlayEl);
 
         imgEl = overlayEl.querySelector(".lb-img");
-        closeBtn = overlayEl.querySelector(".lb-close");
         captionEl = overlayEl.querySelector(".lb-caption");
 
         overlayEl.addEventListener("click", (e) => {
@@ -328,12 +327,16 @@
       function show({ src, alt = "" }) {
         if (!overlayEl) build();
         lastFocused = document.activeElement;
+
         imgEl.src = src;
         imgEl.alt = alt || "Image preview";
         captionEl.textContent = alt || "";
+
         overlayEl.classList.add("open");
         document.body.classList.add("lb-noscroll");
-        closeBtn.focus();
+
+        const btn = overlayEl.querySelector(".lb-close");
+        if (btn) btn.focus();
       }
 
       function hide() {
@@ -345,7 +348,6 @@
       }
 
       candidates.forEach((img) => {
-        // skip linked images
         if (img.closest && img.closest("a")) return;
         img.style.cursor = "zoom-in";
         img.addEventListener("click", (e) => {
@@ -357,19 +359,8 @@
           show({ src, alt });
         });
       });
-
-      debugLog("lightbox initialized for", candidates.length, "images");
     } catch (err) {
       console.warn("Lightbox init failed:", err);
     }
   })();
-
-  /* Final small message */
-  try {
-    setTimeout(() => {
-      console.debug("site script loaded — features: smooth scroll, reveal, hamburger, expandable cards, lightbox (if present)");
-    }, 250);
-  } catch (e) {
-    /* ignore */
-  }
 })();

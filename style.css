@@ -24,14 +24,57 @@ img {
 body {
   font-family: Montserrat Alternates, sans-serif;
   line-height: 1;
-  background-color: #9C89FF;
+  background-color: var(--bg);
 }
 
 /* Better focus visibility */
 :focus-visible {
-  outline: 3px solid rgba(84, 22, 117, 0.55);
+  outline: 3px solid rgba(181,107,255,0.55);
   outline-offset: 3px;
 }
+
+
+/********************************/
+/* THEME TOKENS (DARK) */
+/********************************/
+
+:root {
+  /* Backgrounds */
+  --bg: #0E0918;
+  --bg-2: #120A1F;
+  --bg-3: #171027;
+
+  /* Panels (glass) */
+  --panel: rgba(255,255,255,0.06);
+  --panel-2: rgba(255,255,255,0.09);
+  --panel-strong: rgba(255,255,255,0.12);
+  --panel-hover: rgba(181,107,255,0.10);
+
+
+  /* Text */
+  --text: #F5F0FF;
+  --text-2: rgba(245,240,255,0.78);
+  --text-3: rgba(245,240,255,0.60);
+
+  /* Brand */
+  --brand: #B56BFF;
+  --brand-2: #8A5CFF;
+  --brand-soft: rgba(181,107,255,0.45);
+  --link: #D9C9FF;
+
+  /* Lines / shadows */
+  --border: rgba(245,240,255,0.14);
+  --border-2: rgba(181,107,255,0.28);
+  --shadow: rgba(0,0,0,0.45);
+
+  /* Gradients */
+  --grad-hero: radial-gradient(1200px 700px at 15% 25%, rgba(181,107,255,0.18), transparent 55%),
+              radial-gradient(900px 600px at 85% 10%, rgba(138,92,255,0.12), transparent 55%),
+              linear-gradient(135deg, var(--bg-3), var(--bg));
+  --grad-section: linear-gradient(135deg, var(--bg-3), var(--bg));
+  --grad-cta: linear-gradient(135deg, rgba(181,107,255,0.20), rgba(255,255,255,0.06));
+}
+
 
 
 /********************************/
@@ -54,17 +97,17 @@ nav {
   min-height: 72px;
   padding: 0.35rem 1rem;
 
-  background-color: #9C89FF;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.10);
+  background-color: var(--bg-2);
+  box-shadow: 0 8px 24px var(--shadow);
 }
 
 nav a {
-  color: #99CCED;
+  color: var(--text-3);
   transition: 0.3s;
 }
 
 nav a:hover {
-  color: #7E3887;
+  color: var(--text-2);
   border-bottom: 2px solid #7E3887;
 }
 
@@ -98,7 +141,7 @@ nav ul li {
   border-radius: 8px;
   font-size: 1.05rem;
   font-weight: 600;
-  color: #C4FeFF;
+  color: var(--text);
   transition: all 0.3s;
 }
 
@@ -110,7 +153,7 @@ nav ul li {
 
 .main-nav-link.outline-cta:hover,
 .main-nav-link.outline-cta:active {
-  background-color: #7E3887;
+  background-color: var(--text-2);
   box-shadow: inset 0 0 0 3px #7E3887;
   border-bottom: none;
 }
@@ -122,7 +165,7 @@ nav ul li {
 }
 
 .hamburger:focus-visible {
-  outline: 3px solid #541675;
+  outline: 3px solid rgba(181,107,255,0.70);
   outline-offset: 6px;
   border-radius: 10px;
 }
@@ -133,7 +176,7 @@ nav ul li {
   height: 3px;
   margin: 5px auto;
   transition: all 0.3s ease-in-out;
-  background-color: #C4FEFF;
+  background-color: var(--text);
 }
 
 /* Mobile nav */
@@ -150,7 +193,7 @@ nav ul li {
     top: 72px;
     gap: 0;
     flex-direction: column;
-    background-color: #9C89FF;
+    background-color: var(--bg-2);
     width: 100%;
     text-align: center;
     transition: 0.3s;
@@ -180,7 +223,7 @@ nav ul li {
   left: 0px;
   width: 100%;
   min-height: 520px;
-  background: linear-gradient(134deg, #C4FEFF, #9C89FF 99%);
+  background: var(--grad-hero);
   transform: skewY(-3deg);
   transform-origin: top left;
 }
@@ -206,18 +249,18 @@ nav ul li {
 .heading-primary {
   margin: 0 auto 2.4rem;
   font-size: 5rem;
-  color: #541675;
+  color: var(--brand-soft);
   line-height: 1.05;
 }
 
 .heading-primary span {
   font-size: 3.25rem;
-  color: #7E3887;
+  color: var(--text-2);
 }
 
 .hero-description {
   font-size: 1.75rem;
-  color: #7E3887;
+  color: var(--text-2);
   width: min(800px, 100%);
   line-height: 1.25;
 }
@@ -229,7 +272,7 @@ nav ul li {
   border-radius: 20px;
   margin: 1rem;
   padding: 3px;
-  border: 5px solid #541675;
+  border: 2px solid var(--brand);
   background: rgba(255,255,255,0.3);
 }
 
@@ -237,7 +280,7 @@ nav ul li {
 @media screen and (max-width: 1000px) {
   .section-hero { padding: 4rem 0; }
   .hero-background {
-    background: linear-gradient(134deg, #C4FEFF, #99CCED 99%);
+    background: var(--grad-section);
     transform: none;
   }
   .hero { flex-direction: column; text-align: center; padding-top: 0.75rem; }
@@ -258,19 +301,19 @@ nav ul li {
 
 .about {
   padding: 3rem 6rem;
-  background: linear-gradient(134deg, #C4FEFF, #99CCED 99%);
+  background: var(--grad-section);
 }
 
 .about h2 {
   margin-bottom: 0.5rem;
   text-align: center;
-  color: #541675;
+  color: var(--brand-soft);
   font-size: 3rem;
 }
 
 .about p {
   line-height: 1.7rem;
-  color: #7E3887;
+  color: var(--text-2);
   font-size: 1.5rem;
   margin: 2.5rem auto;
   text-align: center;
@@ -288,7 +331,7 @@ nav ul li {
 /********************************/
 
 .projects {
-  background: linear-gradient(134deg, #C4FEFF, #99CCED 99%);
+  background: var(--grad-section);
   padding: 32px 0;
   margin-top: 5.5rem;
 }
@@ -303,8 +346,8 @@ nav ul li {
 
 
 .project-card {
-  background: #f3f0fa;
-  border: 2px solid #541675;
+  background: var(--panel);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 1.5rem;
   cursor: pointer;
@@ -319,7 +362,7 @@ nav ul li {
 .project-card:hover {
   transform: translateY(-5px) scale(1.02);
   box-shadow: 0 8px 20px rgba(0,0,0,0.15);
-  background: #e0f7ff;
+  background: var(--panel-hover);
 }
 
 
@@ -335,7 +378,7 @@ nav ul li {
 .projects-title {
   text-align: center;
   margin-bottom: 1rem;
-  color: #541675;
+  color: var(--brand-soft);
   font-size: 3rem;
 }
 
@@ -348,14 +391,14 @@ nav ul li {
 
 .project-title {
   margin-bottom: 0.5rem;
-  color: #541675;
+  color: var(--brand-soft);
   font-size: 1.75rem;
   line-height: 1.25;
 }
 
 
 .project-details {
-  color: #7E3887;
+  color: var(--text-2);
   font-size: 1.1rem;
   line-height: 1.35;
 }
@@ -374,7 +417,7 @@ nav ul li {
 .section-quote {
   display: flex;
   flex-direction: column;
-  background: linear-gradient(134deg, #C4FEFF, #99CCED 99%);
+  background: var(--grad-section);
   align-items: center;
   padding: 5em;
   margin-top: 5.5em;
@@ -384,7 +427,7 @@ nav ul li {
   font-size: 2.2rem;
   font-style: italic;
   font-weight: 500;
-  color: #7E3887;
+  color: var(--text-2);
   max-width: 1100px;
   line-height: 1.25;
   text-align: center;
@@ -393,7 +436,7 @@ nav ul li {
 .author {
   font-size: 1.2rem;
   font-weight: bold;
-  color: #541675;
+  color: var(--brand-soft);
   margin-top: 1.5rem;
   align-self: center;
 }
@@ -416,7 +459,7 @@ nav ul li {
 .contact h2 {
   text-align: center;
   margin-bottom: 0.5rem;
-  color: #541675;
+  color: var(--brand-soft);
   font-size: 3rem;
 }
 
@@ -425,14 +468,14 @@ nav ul li {
   margin: 0 auto;
   padding: 0.938rem;
   border-radius: 5px;
-  box-shadow: 0 3px 10px #541675;
-  background: linear-gradient(134deg, #C4FEFF, #99CCED 99%);
+  box-shadow: 0 10px 26px var(--shadow);
+  background: var(--grad-section);
 }
 
 .contact-form-container label {
   line-height: 2.7em;
   font-weight: 700;
-  color: #541675;
+  color: var(--brand-soft);
 }
 
 .contact-form-container textarea {
@@ -444,29 +487,29 @@ nav ul li {
   width: 100%;
   padding: 10px 0.5rem;
   border-radius: 5px;
-  border: 2px solid #541675;
+  border: 1px solid var(--border);
   font-size: 0.875rem;
   outline: none;
 }
 
-.input-field::placeholder { color: #541675; }
+.input-field::placeholder { color: var(--brand-soft); }
 
 .submit-button {
   width: 100%;
   padding: 10px;
   margin: 10px 0;
-  background: linear-gradient(134deg, #C4FEFF, #99CCED 99%);
-  border: 2px solid #541675;
+  background: var(--grad-section);
+  border: 1px solid var(--border);
   border-radius: 5px;
   font-size: 1rem;
   font-weight: 700;
-  color: #541675;
+  color: var(--brand-soft);
 }
 
 .submit-button:hover {
-  background: #541675;
+  background: var(--bg-2);
   cursor: pointer;
-  color: #99CCED;
+  color: var(--text-3);
 }
 
 
@@ -476,10 +519,10 @@ nav ul li {
 
 footer {
   text-align: center;
-  background-color: #541675;
+  background-color: var(--bg-2);
   padding: 1.25rem;
   margin: 2rem 0 0;
-  color: #99CCED;
+  color: var(--text-3);
 }
 
 .scroll-up {
@@ -491,12 +534,12 @@ footer {
 }
 
 .up-arrow {
-  width: 4rem;
-  height: 4rem;
+  width: 3rem;
+  height: 3rem;
 }
 
 @media screen and (max-width: 768px) {
-  .up-arrow { width: 3rem; height: 3rem; }
+  .up-arrow { width: 2rem; height: 2rem; }
 }
 
 
@@ -506,12 +549,12 @@ footer {
 
 /* Section striping: cyan blocks + purple separators */
 .fp-section--cyan {
-  background: linear-gradient(134deg, #C4FEFF, #99CCED 99%);
+  background: var(--grad-section);
 }
 
 .fp-sep {
   height: 5.5rem;
-  background: #9C89FF;
+  background: var(--bg);
 }
 
 /* =========================
@@ -525,7 +568,7 @@ footer {
   overflow: hidden;
 
   /* keep the purple “page” around it like the homepage */
-  background: #9C89FF;
+  background: var(--bg);
 
   /* featured-project hero should not use the global tall hero spacing */
   padding: 3.25rem 0 7.5rem;
@@ -542,7 +585,7 @@ footer {
   /* IMPORTANT: cancel the global min-height that creates the big blue block */
   min-height: 0;
 
-  background: linear-gradient(134deg, #C4FEFF, #9C89FF 99%);
+  background: var(--grad-hero);
   transform: skewY(-3deg);
   transform-origin: top left;
 
@@ -560,20 +603,20 @@ footer {
 
 /* ✅ IMPORTANT: Hero should remain “purple hero” like homepage. */
 .section-hero.fp-section--cyan {
-  background: #9C89FF;
+  background: var(--bg);
 }
 
 /* Featured project lead text */
 .fp-lead {
   max-width: 920px;
   margin: 1.25rem auto 0 auto;
-  color: #7E3887;
+  color: var(--text-2);
   font-size: 1.2rem;
   line-height: 1.55;
 }
 
 .fp-muted {
-  color: #7E3887;
+  color: var(--text-2);
   font-size: 1rem;
   line-height: 1.45;
 }
@@ -581,7 +624,7 @@ footer {
 /* Optional helpers used by the updated HTML (won't break anything if unused) */
 .section-title {
   font-size: 3rem;
-  color: #541675;
+  color: var(--brand-soft);
   margin-bottom: 1.25rem;
   letter-spacing: -0.4px;
 }
@@ -589,7 +632,7 @@ footer {
 .section-intro {
   max-width: 980px;
   margin: 0.75rem auto 0;
-  color: #7E3887;
+  color: var(--text-2);
   font-size: 1.1rem;
   line-height: 1.6;
 }
@@ -605,7 +648,7 @@ footer {
 .fp-subtitle {
   margin: 0 auto 0.75rem;
   font-size: 2rem;
-  color: #541675;
+  color: var(--brand-soft);
 }
 
 .fp-mini-sep {
@@ -622,18 +665,18 @@ footer {
 .hero-button {
   display: inline-block;
   padding: 1rem 2rem;
-  background: linear-gradient(134deg, #C4FEFF, #99CCED 99%);
-  border: 2px solid #541675;
+  background: var(--grad-section);
+  border: 1px solid var(--border);
   border-radius: 10px;
-  color: #541675;
+  color: var(--brand-soft);
   font-weight: 800;
   font-size: 1.15rem;
   margin-top: 1.5rem;
 }
 
 .hero-button:hover {
-  background: #541675;
-  color: #99CCED;
+  background: var(--bg-2);
+  color: var(--text-3);
   cursor: pointer;
   transform: translateY(-1px);
   box-shadow: 0 10px 26px rgba(0,0,0,0.14);
@@ -642,14 +685,14 @@ footer {
 /* Ghost button variant */ 
 .hero-button--ghost { 
   background: transparent;
-  color: #541675;
-  border: 2px solid #541675;
+  color: var(--brand-soft);
+  border: 1px solid var(--border);
   margin-left: 0.75rem; 
 } 
   
 .hero-button--ghost:hover { 
   background: rgba(84, 22, 117, 0.12); 
-  color: #541675; 
+  color: var(--brand-soft); 
 }
 
 /* Overview + snapshot layout */
@@ -660,7 +703,7 @@ footer {
 
 .project-overview h2 {
   font-size: 3rem;
-  color: #541675;
+  color: var(--brand-soft);
   margin-bottom: 1.25rem;
 }
 
@@ -749,8 +792,8 @@ footer {
 .process-card,
 .outcomes-card,
 .interaction-card {
-  background: rgba(243, 240, 250, 0.94);
-  border: 2px solid #541675;
+  background: var(--panel);
+  border: 1px solid var(--border);
   border-radius: 14px;
   padding: 1.6rem;
 
@@ -773,7 +816,7 @@ footer {
 .interaction-card h3 {
   margin: 0 0 0.75rem 0;
   font-size: 1.8rem;
-  color: #541675;
+  color: var(--brand-soft);
   line-height: 1.1;
   letter-spacing: -0.2px;
   text-align: center;
@@ -787,7 +830,7 @@ footer {
 .interaction-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 10px 28px rgba(0,0,0,0.14);
-  background: rgba(224, 247, 255, 0.96);
+  background: var(--panel-hover);
 }
 
 /* Shared typography inside cards */
@@ -800,7 +843,7 @@ footer {
 .outcomes-card strong,
 .interaction-card strong {
   font-weight: 800;
-  color: #541675;
+  color: var(--brand-soft);
 }
 
 .overview-card p,
@@ -958,7 +1001,7 @@ footer {
 .outcomes-card li,
 .interaction-card li {
   text-align: left;
-  color: #7E3887;
+  color: var(--text-2);
 }
 
 
@@ -980,8 +1023,8 @@ footer {
 .process-step {
   flex: 1 1 240px;
   max-width: 320px;
-  background: rgba(243, 240, 250, 0.92);
-  border: 2px solid #541675;
+  background: var(--panel);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 1.5rem;
   overflow: hidden;
@@ -1000,7 +1043,7 @@ footer {
 .process-step:hover {
   transform: translateY(-5px) scale(1.02);
   box-shadow: 0 8px 22px rgba(0,0,0,0.12);
-  background: rgba(224, 247, 255, 0.95);
+  background: var(--panel-hover);
 }
 
 .process-step img {
@@ -1013,7 +1056,7 @@ footer {
 }
 
 .process-step h3 {
-  color: #541675;
+  color: var(--brand-soft);
   margin-bottom: 0.5rem;
   font-size: 1.35rem;
   line-height: 1.1;
@@ -1021,7 +1064,7 @@ footer {
 }
 
 .process-step p {
-  color: #7E3887;
+  color: var(--text-2);
   font-size: 1.05rem;
   line-height: 1.35;
 }
@@ -1050,7 +1093,7 @@ footer {
 
 .project-takeaways h2 {
   font-size: 3rem;
-  color: #541675;
+  color: var(--brand-soft);
   margin-bottom: 2rem;
 }
 
@@ -1063,8 +1106,8 @@ footer {
 }
 
 .project-takeaways .project-container.project-card {
-  background: rgba(243, 240, 250, 0.92);
-  border: 2px solid #541675;
+  background: var(--panel);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 1.5rem;
   max-width: 320px;
@@ -1072,7 +1115,7 @@ footer {
 }
 
 .project-takeaways .project-container.project-card:hover {
-  background: rgba(224, 247, 255, 0.95);
+  background: var(--panel-hover);
 }
 
 .project-takeaways .project-pic {
@@ -1174,7 +1217,7 @@ footer {
   width: min(92vw, 1100px);
   max-height: 86vh;
   padding: 1rem 1rem 1.25rem 1rem;
-  background: rgba(255,255,255,0.96);
+  background: rgba(18,10,31,0.92);
   border-radius: 14px;
   box-shadow: 0 12px 40px rgba(0,0,0,0.35);
   overflow: hidden;
@@ -1189,7 +1232,7 @@ footer {
   font-size: 2rem;
   line-height: 1;
   cursor: pointer;
-  color: #541675;
+  color: var(--brand-soft);
 }
 
 .lb-img {
@@ -1197,13 +1240,13 @@ footer {
   max-height: 72vh;
   object-fit: contain;
   border-radius: 10px;
-  background: #fff;
+  background: rgba(0,0,0,0.08);
 }
 
 .lb-caption {
   margin-top: 0.75rem;
   font-size: 1rem;
-  color: #541675;
+  color: var(--brand-soft);
   text-align: center;
 }
 
@@ -1357,7 +1400,7 @@ footer {
 ========================= */
 
 .fp-page {
-  color: #7E3887; /* safety net: prevents stray default black text */
+  color: var(--text-2); /* safety net: prevents stray default black text */
 }
 
 /* Layout */
@@ -1372,8 +1415,8 @@ footer {
 
 /* Card */
 .overview-card {
-  background: rgba(243, 240, 250, 0.92);
-  border: 2px solid #541675;
+  background: var(--panel);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 1.5rem;
   cursor: pointer;
@@ -1388,14 +1431,14 @@ footer {
 .overview-card:hover {
   transform: translateY(-5px);
   box-shadow: 0 8px 22px rgba(0,0,0,0.12);
-  background: rgba(224, 247, 255, 0.95);
+  background: var(--panel-hover);
 }
 
 /* Headings centered */
 .overview-card h3 {
   margin: 0 0 0.75rem 0;
   font-size: 1.65rem;
-  color: #541675;
+  color: var(--brand-soft);
   line-height: 1.15;
   text-align: center;
 }
@@ -1403,7 +1446,7 @@ footer {
 /* Body text color (kills black text) */
 .overview-card p,
 .overview-card li {
-  color: #7E3887;
+  color: var(--text-2);
   font-size: 1.05rem;
   line-height: 1.6;
 }
@@ -1419,7 +1462,7 @@ footer {
 /* Strong styling */
 .overview-card strong {
   font-weight: 800;
-  color: #541675;
+  color: var(--brand-soft);
 }
 
 /* Expand/collapse behavior to match your other cards */
@@ -1450,10 +1493,10 @@ footer {
   display: inline-block;
   margin: 1rem auto 0;
   padding: 0.85rem 1.1rem;
-  border: 2px solid #541675;
+  border: 1px solid var(--border);
   border-radius: 12px;
-  background: rgba(243, 240, 250, 0.92);
-  color: #541675;
+  background: var(--panel);
+  color: var(--brand-soft);
   font-weight: 700;
   box-shadow: 0 8px 18px rgba(0,0,0,0.10);
 }
@@ -1485,7 +1528,7 @@ footer {
 
 /* Optional: nicer blockquote treatment inside the iteration section */
 #iteration blockquote {
-  color: #7E3887;
+  color: var(--text-2);
   font-size: 1.05rem;
   line-height: 1.55;
   margin: 0.6rem 0 0.9rem 0;
@@ -1495,8 +1538,8 @@ footer {
 
 /* New iteration cards (used in the rewritten HTML) */
 #iteration .iteration-card {
-  background: rgba(243, 240, 250, 0.96);
-  border: 2px solid #541675;
+  background: var(--panel);
+  border: 1px solid var(--border);
   border-radius: 14px;
   padding: 1.25rem;
   text-align: left;
@@ -1506,13 +1549,13 @@ footer {
 #iteration .iteration-card:hover {
   transform: translateY(-3px);
   box-shadow: 0 10px 24px rgba(0,0,0,0.12);
-  background: rgba(224, 247, 255, 0.96);
+  background: var(--panel-hover);
 }
 
 /* Iteration card headings */
 #iteration .iteration-card h4 {
   font-size: 1.35rem;
-  color: #541675;
+  color: var(--brand-soft);
   margin: 0 0 0.65rem 0;
   line-height: 1.15;
 }
@@ -1591,4 +1634,497 @@ footer {
   .interaction-card .fp-media--video {
     aspect-ratio: 16 / 9;
   }
+}
+
+
+/* =========================
+   DARK THEME POLISH PATCH
+========================= */
+
+/* Global */
+body {
+  background: var(--grad-hero);
+  color: var(--text);
+}
+
+/* Nav */
+nav {
+  background: rgba(18,10,31,0.82);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+}
+
+nav a {
+  color: var(--text-2);
+}
+
+nav a:hover {
+  color: var(--text);
+  border-bottom: 2px solid var(--brand);
+}
+
+/* Logo frame (optional, subtle) */
+.logo {
+  border-radius: 10px;
+}
+
+/* Hero background */
+.hero-background {
+  background: var(--grad-hero);
+}
+
+/* Headings + hero copy */
+.heading-primary { color: var(--text); }
+.heading-primary span { color: var(--brand); }
+.hero-description { color: var(--text-2); }
+
+/* Headshot card */
+.headshot {
+  border: 2px solid var(--border-2);
+  background: rgba(255,255,255,0.03);
+  box-shadow: 0 18px 55px rgba(0,0,0,0.45);
+}
+
+/* Section backgrounds (replace your cyan gradients visually) */
+.about,
+.projects,
+.section-quote,
+.contact-form-container,
+.fp-section--cyan {
+  background: var(--grad-section);
+}
+
+/* Section titles */
+.about h2,
+.projects-title,
+.contact h2,
+.section-title,
+.project-overview h2,
+.project-takeaways h2 {
+  color: var(--text);
+}
+
+/* Paragraph text */
+.about p,
+.project-details,
+.quote,
+.author,
+.section-intro,
+.fp-lead,
+.fp-muted {
+  color: var(--text-2);
+}
+
+/* Cards: unify to “glass” */
+.project-card,
+.overview-card,
+.snapshot-card,
+.decision-flow-card,
+.process-card,
+.outcomes-card,
+.interaction-card,
+.process-step,
+.project-takeaways .project-container.project-card,
+.fp-page .fp-center-note,
+#iteration .iteration-card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.04));
+  border: 1px solid var(--border);
+  box-shadow: 0 18px 55px rgba(0,0,0,0.35);
+  backdrop-filter: blur(10px);
+}
+
+/* Card headings */
+.overview-card h3,
+.snapshot-card h3,
+.decision-flow-card h3,
+.process-card h3,
+.outcomes-card h3,
+.interaction-card h3,
+.process-step h3,
+.project-title,
+.fp-subtitle {
+  color: var(--text);
+}
+
+/* Card body text */
+.overview-card p,
+.snapshot-card p,
+.decision-flow-card p,
+.process-card p,
+.outcomes-card p,
+.interaction-card p,
+.process-step p,
+.overview-card li,
+.snapshot-card li,
+.decision-flow-card li,
+.process-card li,
+.outcomes-card li,
+.interaction-card li {
+  color: var(--text-2);
+}
+
+/* Strong text */
+.overview-card strong,
+.snapshot-card strong,
+.decision-flow-card strong,
+.process-card strong,
+.outcomes-card strong,
+.interaction-card strong {
+  color: var(--text);
+}
+
+/* Hover: a little “lift” + brand edge, less teal */
+.project-card:hover,
+.overview-card:hover,
+.snapshot-card:hover,
+.decision-flow-card:hover,
+.process-card:hover,
+.outcomes-card:hover,
+.interaction-card:hover,
+.process-step:hover,
+#iteration .iteration-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--border-2);
+  background: linear-gradient(180deg, rgba(181,107,255,0.10), rgba(255,255,255,0.05));
+  box-shadow: 0 22px 70px rgba(0,0,0,0.45);
+}
+
+/* Buttons */
+.hero-button {
+  background: var(--grad-cta);
+  border: 1px solid var(--border-2);
+  color: var(--text);
+}
+
+.hero-button:hover {
+  background: rgba(181,107,255,0.18);
+  border-color: rgba(181,107,255,0.55);
+  color: var(--text);
+}
+
+/* LinkedIn outline button in nav */
+.main-nav-link.outline-cta:link,
+.main-nav-link.outline-cta:visited {
+  box-shadow: inset 0 0 0 2px var(--brand-soft);
+  color: var(--text);
+}
+
+.main-nav-link.outline-cta:hover,
+.main-nav-link.outline-cta:active {
+  background: rgba(181,107,255,0.18);
+  box-shadow: inset 0 0 0 2px rgba(181,107,255,0.55);
+}
+
+/* Pilot Highlights big light box: make it dark instead */
+#iteration .pilot-highlights,
+#iteration blockquote,
+.fp-iteration-evidence blockquote {
+  color: var(--text-2);
+}
+
+#iteration .pilot-highlights,
+#iteration .pilot-highlights * {
+  color: var(--text-2);
+}
+
+/* If that Pilot Highlights container is a card-like div, force it dark */
+.pilot-highlights,
+.fp-iteration-evidence .pilot-highlights,
+#iteration .pilot-highlights {
+  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.04)) !important;
+  border: 1px solid var(--border) !important;
+}
+
+/* Contact form: make inputs match dark theme */
+.contact-form-container {
+  border: 1px solid var(--border);
+}
+
+.contact-form-container label {
+  color: var(--text-2);
+}
+
+.contact-form-container .input-field,
+.contact-form-container textarea {
+  background: rgba(0,0,0,0.22);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+.contact-form-container .input-field:focus,
+.contact-form-container textarea:focus {
+  outline: none;
+  border-color: rgba(181,107,255,0.55);
+  box-shadow: 0 0 0 3px rgba(181,107,255,0.18);
+}
+
+.input-field::placeholder,
+textarea::placeholder {
+  color: rgba(245,240,255,0.45);
+}
+
+/* Submit button */
+.submit-button {
+  background: rgba(181,107,255,0.14);
+  border: 1px solid rgba(181,107,255,0.35);
+  color: var(--text);
+}
+
+.submit-button:hover {
+  background: rgba(181,107,255,0.24);
+  color: var(--text);
+}
+
+/* Footer */
+footer {
+  background: rgba(18,10,31,0.85);
+  color: var(--text-3);
+  border-top: 1px solid var(--border);
+}
+
+
+/* ===== CTA hierarchy ===== */
+
+/* Primary (View Live Experience) */
+.hero-button--primary {
+  background: linear-gradient(135deg, rgba(181,107,255,0.38), rgba(181,107,255,0.16));
+  border: 1px solid rgba(181,107,255,0.65);
+  color: var(--text);
+  box-shadow:
+    0 18px 60px rgba(0,0,0,0.45),
+    0 0 0 1px rgba(181,107,255,0.22) inset,
+    0 0 26px rgba(181,107,255,0.18);
+  position: relative;
+}
+
+/* Nice soft glow behind the primary button */
+.hero-button--primary::before {
+  content: "";
+  position: absolute;
+  inset: -10px;
+  background: radial-gradient(circle at 30% 40%, rgba(181,107,255,0.22), transparent 60%);
+  filter: blur(10px);
+  opacity: 0.9;
+  z-index: -1;
+}
+
+.hero-button--primary:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, rgba(181,107,255,0.48), rgba(181,107,255,0.18));
+  border-color: rgba(181,107,255,0.85);
+  box-shadow:
+    0 22px 70px rgba(0,0,0,0.55),
+    0 0 0 1px rgba(181,107,255,0.28) inset,
+    0 0 34px rgba(181,107,255,0.24);
+}
+
+/* Secondary (Jump to Case Study) */
+.hero-button--secondary {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(245,240,255,0.18);
+  color: var(--text-2);
+  box-shadow: none;
+}
+
+.hero-button--secondary:hover {
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(181,107,255,0.40);
+  color: var(--text);
+}
+
+/* ===== Card border polish (slightly more purple) ===== */
+.project-card,
+.overview-card,
+.snapshot-card,
+.decision-flow-card,
+.process-card,
+.outcomes-card,
+.interaction-card,
+.process-step,
+#iteration .iteration-card {
+  border: 1px solid rgba(181,107,255,0.22); /* subtle purple */
+}
+
+/* Hover aura (still tasteful) */
+.project-card:hover,
+.overview-card:hover,
+.snapshot-card:hover,
+.decision-flow-card:hover,
+.process-card:hover,
+.outcomes-card:hover,
+.interaction-card:hover,
+.process-step:hover,
+#iteration .iteration-card:hover {
+  border-color: rgba(181,107,255,0.45);
+  box-shadow:
+    0 22px 70px rgba(0,0,0,0.45),
+    0 0 0 1px rgba(181,107,255,0.10) inset,
+    0 0 28px rgba(181,107,255,0.14);
+}
+
+/* =========================
+   FINAL PATCH: CTA hierarchy + iteration grid sizing
+   (append at bottom of style.css)
+========================= */
+
+/* Primary CTA (View Live Experience) — clearly stronger than secondary */
+.hero-button--primary {
+  background: linear-gradient(135deg, rgba(181,107,255,0.38), rgba(181,107,255,0.16));
+  border: 1px solid rgba(181,107,255,0.65);
+  color: var(--text);
+  box-shadow:
+    0 18px 60px rgba(0,0,0,0.45),
+    0 0 0 1px rgba(181,107,255,0.22) inset,
+    0 0 26px rgba(181,107,255,0.18);
+  position: relative;
+}
+
+.hero-button--primary::before {
+  content: "";
+  position: absolute;
+  inset: -10px;
+  background: radial-gradient(circle at 30% 40%, rgba(181,107,255,0.22), transparent 60%);
+  filter: blur(10px);
+  opacity: 0.9;
+  z-index: -1;
+}
+
+.hero-button--primary:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, rgba(181,107,255,0.48), rgba(181,107,255,0.18));
+  border-color: rgba(181,107,255,0.85);
+  box-shadow:
+    0 22px 70px rgba(0,0,0,0.55),
+    0 0 0 1px rgba(181,107,255,0.28) inset,
+    0 0 34px rgba(181,107,255,0.24);
+}
+
+/* Secondary CTA (Jump to Case Study) */
+.hero-button--secondary {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(245,240,255,0.18);
+  color: var(--text-2);
+  box-shadow: none;
+}
+
+.hero-button--secondary:hover {
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(181,107,255,0.40);
+  color: var(--text);
+}
+
+/* Slightly more purple card borders (still classy) */
+.project-card,
+.overview-card,
+.snapshot-card,
+.decision-flow-card,
+.process-card,
+.outcomes-card,
+.interaction-card,
+.process-step,
+#iteration .iteration-card {
+  border: 1px solid rgba(181,107,255,0.22);
+}
+
+.project-card:hover,
+.overview-card:hover,
+.snapshot-card:hover,
+.decision-flow-card:hover,
+.process-card:hover,
+.outcomes-card:hover,
+.interaction-card:hover,
+.process-step:hover,
+#iteration .iteration-card:hover {
+  border-color: rgba(181,107,255,0.45);
+  box-shadow:
+    0 22px 70px rgba(0,0,0,0.45),
+    0 0 0 1px rgba(181,107,255,0.10) inset,
+    0 0 28px rgba(181,107,255,0.14);
+}
+
+/* Iteration spacing helpers */
+.fp-mini-sep {
+  height: 1rem;
+}
+
+/* Iteration grids: Pilot = single column, Targeted Changes = two columns */
+.iteration-grid--single {
+  grid-template-columns: 1fr;
+}
+
+.iteration-grid--two {
+  grid-template-columns: repeat(2, minmax(240px, 1fr));
+}
+
+/* Observed signals: keep list from stretching too wide */
+#iteration .iteration-observed {
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+/* Responsive: stack iteration grids on smaller screens */
+@media screen and (max-width: 1000px) {
+  .iteration-grid--two {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------- hamburger fixes (drop into the end of your CSS) ---------- */
+
+/* Ensure the hamburger button is visually neutral and accessible */
+.hamburger {
+  appearance: none;
+  -webkit-appearance: none;
+  border: none;
+  background: transparent;
+  padding: 8px;
+  display: none; /* keep existing mobile toggle behavior */
+  cursor: pointer;
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+/* Make the hit area square and consistent on mobile */
+@media (max-width: 850px) {
+  .hamburger {
+    display: block;
+  }
+}
+
+/* The three bars inside the hamburger */
+.hamburger .bar {
+  display: block;
+  width: 26px;
+  height: 3px;
+  margin: 5px auto;
+  transition: transform 0.28s ease, opacity 0.28s ease;
+  background-color: var(--text); /* bright on dark background */
+  border-radius: 2px;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.35);
+}
+
+/* Slightly larger tap target while preserving compact look */
+.hamburger:focus,
+.hamburger:hover {
+  outline: none;
+  background: rgba(255,255,255,0.02);
+}
+
+/* When hamburger is active change bars to X */
+.hamburger.active .bar:nth-child(1) {
+  transform: translateY(8px) rotate(45deg);
+}
+.hamburger.active .bar:nth-child(2) {
+  opacity: 0;
+}
+.hamburger.active .bar:nth-child(3) {
+  transform: translateY(-8px) rotate(-45deg);
+}
+
+/* Accessible focus-visible style (matches your theme) */
+.hamburger:focus-visible {
+  outline: 3px solid rgba(181,107,255,0.7);
+  outline-offset: 6px;
+  border-radius: 10px;
 }

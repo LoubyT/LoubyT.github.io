@@ -1,0 +1,1628 @@
+/********************************/
+/* GLOBAL STYLES */
+/********************************/
+
+* {
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+  text-decoration: none;
+  transition: 0.3s;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Universal image safety */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+body {
+  font-family: Montserrat Alternates, sans-serif;
+  line-height: 1;
+  background-color: #9C89FF;
+}
+
+/* Better focus visibility */
+:focus-visible {
+  outline: 3px solid rgba(84, 22, 117, 0.55);
+  outline-offset: 3px;
+}
+
+
+/********************************/
+/* THEME TOKENS (DARK) */
+/********************************/
+
+:root {
+  /* Backgrounds */
+  --bg: #120A1F;            /* site background */
+  --bg-2: #171027;          /* nav / deep sections */
+  --panel: rgba(255,255,255,0.06);  /* cards/panels */
+  --panel-2: rgba(255,255,255,0.09);
+
+  /* Text */
+  --text: #F2ECFF;          /* main text */
+  --text-2: #CFC2E8;        /* secondary text */
+  --text-3: #A99BCB;        /* muted */
+
+  /* Brand accents (match your banner vibe) */
+  --brand: #B56BFF;         /* primary purple */
+  --brand-2: #8A5CFF;       /* deeper purple */
+  --brand-soft: #E6D6FF;    /* light lavender for outlines */
+  --link: #D6C6FF;
+
+  /* Lines / shadows */
+  --border: rgba(214, 198, 255, 0.35);
+  --shadow: rgba(0,0,0,0.35);
+
+  /* Gradients */
+  --grad-hero: linear-gradient(135deg, #1A1030 0%, #120A1F 55%, #0E0918 100%);
+  --grad-section: linear-gradient(135deg, #171027 0%, #120A1F 100%);
+  --grad-cta: linear-gradient(135deg, rgba(181,107,255,0.18), rgba(255,255,255,0.06));
+}
+
+
+
+/********************************/
+/* NAVIGATION SECTION */
+/********************************/
+
+/* Sticky header across the site */
+header {
+  position: sticky;
+  top: 0;
+  z-index: 3000;
+}
+
+/* Cleaner, shorter nav */
+nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  min-height: 72px;
+  padding: 0.35rem 1rem;
+
+  background-color: #9C89FF;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.10);
+}
+
+nav a {
+  color: #99CCED;
+  transition: 0.3s;
+}
+
+nav a:hover {
+  color: #7E3887;
+  border-bottom: 2px solid #7E3887;
+}
+
+nav ul {
+  display: flex;
+  gap: 1.2rem;
+  list-style: none;
+  align-items: center;
+}
+
+nav ul li {
+  font-weight: 700;
+}
+
+.logo {
+  height: 4.25rem; /* smaller so nav isn’t tall */
+}
+
+/* Navigation links */
+.navigation {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  list-style: none;
+}
+
+.main-nav-link:link,
+.main-nav-link:visited {
+  display: inline-block;
+  padding: 0.75rem 1.1rem;
+  border-radius: 8px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #C4FeFF;
+  transition: all 0.3s;
+}
+
+/* LinkedIn button outline (unique styling) */
+.main-nav-link.outline-cta:link,
+.main-nav-link.outline-cta:visited {
+  box-shadow: inset 0 0 0 3px #C4FEFF;
+}
+
+.main-nav-link.outline-cta:hover,
+.main-nav-link.outline-cta:active {
+  background-color: #7E3887;
+  box-shadow: inset 0 0 0 3px #7E3887;
+  border-bottom: none;
+}
+
+/* Hamburger */
+.hamburger {
+  cursor: pointer;
+  display: none;
+}
+
+.hamburger:focus-visible {
+  outline: 3px solid #541675;
+  outline-offset: 6px;
+  border-radius: 10px;
+}
+
+.bar {
+  display: block;
+  width: 25px;
+  height: 3px;
+  margin: 5px auto;
+  transition: all 0.3s ease-in-out;
+  background-color: #C4FEFF;
+}
+
+/* Mobile nav */
+@media (max-width: 850px) {
+  .hamburger { display: block; }
+
+  .hamburger.active .bar:nth-child(2) { opacity: 0; }
+  .hamburger.active .bar:nth-child(1) { transform: translateY(8px) rotate(45deg); }
+  .hamburger.active .bar:nth-child(3) { transform: translateY(-8px) rotate(-45deg); }
+
+  .navigation {
+    position: fixed;
+    left: -100%;
+    top: 72px;
+    gap: 0;
+    flex-direction: column;
+    background-color: #9C89FF;
+    width: 100%;
+    text-align: center;
+    transition: 0.3s;
+    padding: 1rem 0;
+  }
+
+  .navigation.active { left: 0; }
+
+  .main-nav-link {
+    margin: 10px 0;
+  }
+}
+
+
+/********************************/
+/* HERO SECTION */
+/********************************/
+
+.section-hero {
+  padding: 6rem 0;
+  min-height: auto;
+  width: 100%;
+}
+
+/* Hero background stays the same across pages */
+.hero-background {
+  left: 0px;
+  width: 100%;
+  min-height: 520px;
+  background: linear-gradient(134deg, #C4FEFF, #9C89FF 99%);
+  transform: skewY(-3deg);
+  transform-origin: top left;
+}
+
+/* Interior hero layout */
+.hero {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 4.8rem;
+  max-width: 130rem;
+  margin: 0 auto;
+  padding: 0 3.2rem;
+
+  /* a little breathing room under sticky nav */
+  padding-top: 1.25rem;
+}
+
+.hero-text {
+  flex: 1;
+}
+
+.heading-primary {
+  margin: 0 auto 2.4rem;
+  font-size: 5rem;
+  color: #541675;
+  line-height: 1.05;
+}
+
+.heading-primary span {
+  font-size: 3.25rem;
+  color: #7E3887;
+}
+
+.hero-description {
+  font-size: 1.75rem;
+  color: #7E3887;
+  width: min(800px, 100%);
+  line-height: 1.25;
+}
+
+.headshot {
+  height: 450px;
+  width: 450px;
+  object-fit: cover;
+  border-radius: 20px;
+  margin: 1rem;
+  padding: 3px;
+  border: 5px solid #541675;
+  background: rgba(255,255,255,0.3);
+}
+
+/* Responsive hero */
+@media screen and (max-width: 1000px) {
+  .section-hero { padding: 4rem 0; }
+  .hero-background {
+    background: linear-gradient(134deg, #C4FEFF, #99CCED 99%);
+    transform: none;
+  }
+  .hero { flex-direction: column; text-align: center; padding-top: 0.75rem; }
+  .heading-primary { font-size: 2.8rem; margin-bottom: 1.2rem; }
+  .heading-primary span { font-size: 1.7rem; }
+  .hero-description { font-size: 1.2rem; width: 92%; }
+  .headshot { width: 300px; height: 300px; }
+}
+
+@media screen and (max-width: 768px) {
+  .headshot { width: 220px; height: 220px; }
+}
+
+
+/********************************/
+/* ABOUT SECTION */
+/********************************/
+
+.about {
+  padding: 3rem 6rem;
+  background: linear-gradient(134deg, #C4FEFF, #99CCED 99%);
+}
+
+.about h2 {
+  margin-bottom: 0.5rem;
+  text-align: center;
+  color: #541675;
+  font-size: 3rem;
+}
+
+.about p {
+  line-height: 1.7rem;
+  color: #7E3887;
+  font-size: 1.5rem;
+  margin: 2.5rem auto;
+  text-align: center;
+  max-width: 1000px;
+}
+
+@media screen and (max-width: 768px) {
+  .about { padding: 1.5rem 2rem; }
+  .about p { text-align: left; }
+}
+
+
+/********************************/
+/* PROJECTS SECTION */
+/********************************/
+
+.projects {
+  background: linear-gradient(134deg, #C4FEFF, #99CCED 99%);
+  padding: 32px 0;
+  margin-top: 5.5rem;
+}
+
+.project-pic {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 10px;
+  margin-bottom: 0.75rem;
+}
+
+
+.project-card {
+  background: #f3f0fa;
+  border: 2px solid #541675;
+  border-radius: 12px;
+  padding: 1.5rem;
+  cursor: pointer;
+  overflow: hidden;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease,
+    background 0.3s ease;
+}
+
+
+.project-card:hover {
+  transform: translateY(-5px) scale(1.02);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+  background: #e0f7ff;
+}
+
+
+.projects-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+
+.projects-title {
+  text-align: center;
+  margin-bottom: 1rem;
+  color: #541675;
+  font-size: 3rem;
+}
+
+.project-container {
+  text-align: center;
+  max-width: 320px;
+  width: 100%;
+  padding: 1rem;
+}
+
+.project-title {
+  margin-bottom: 0.5rem;
+  color: #541675;
+  font-size: 1.75rem;
+  line-height: 1.25;
+}
+
+
+.project-details {
+  color: #7E3887;
+  font-size: 1.1rem;
+  line-height: 1.35;
+}
+
+
+@media screen and (max-width: 768px) {
+  .projects-container { flex-direction: column; }
+  .project-container { width: min(90vw, 420px); }
+}
+
+
+/********************************/
+/* QUOTE SECTION */
+/********************************/
+
+.section-quote {
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(134deg, #C4FEFF, #99CCED 99%);
+  align-items: center;
+  padding: 5em;
+  margin-top: 5.5em;
+}
+
+.quote {
+  font-size: 2.2rem;
+  font-style: italic;
+  font-weight: 500;
+  color: #7E3887;
+  max-width: 1100px;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.author {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #541675;
+  margin-top: 1.5rem;
+  align-self: center;
+}
+
+@media screen and (max-width: 768px) {
+  .section-quote { padding: 2.5em 1.5em; }
+  .quote { font-size: 1.25rem; }
+}
+
+
+/********************************/
+/* CONTACT SECTION */
+/********************************/
+
+.contact {
+  margin-top: 5.5rem;
+  margin-bottom: 5.5rem;
+}
+
+.contact h2 {
+  text-align: center;
+  margin-bottom: 0.5rem;
+  color: #541675;
+  font-size: 3rem;
+}
+
+.contact-form-container {
+  max-width: 40.75rem;
+  margin: 0 auto;
+  padding: 0.938rem;
+  border-radius: 5px;
+  box-shadow: 0 3px 10px #541675;
+  background: linear-gradient(134deg, #C4FEFF, #99CCED 99%);
+}
+
+.contact-form-container label {
+  line-height: 2.7em;
+  font-weight: 700;
+  color: #541675;
+}
+
+.contact-form-container textarea {
+  min-height: 6.25rem;
+  font-size: 14px;
+}
+
+.contact-form-container .input-field {
+  width: 100%;
+  padding: 10px 0.5rem;
+  border-radius: 5px;
+  border: 2px solid #541675;
+  font-size: 0.875rem;
+  outline: none;
+}
+
+.input-field::placeholder { color: #541675; }
+
+.submit-button {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  background: linear-gradient(134deg, #C4FEFF, #99CCED 99%);
+  border: 2px solid #541675;
+  border-radius: 5px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #541675;
+}
+
+.submit-button:hover {
+  background: #541675;
+  cursor: pointer;
+  color: #99CCED;
+}
+
+
+/********************************/
+/* FOOTER + SCROLL UP */
+/********************************/
+
+footer {
+  text-align: center;
+  background-color: #541675;
+  padding: 1.25rem;
+  margin: 2rem 0 0;
+  color: #99CCED;
+}
+
+.scroll-up {
+  position: fixed;
+  right: 1%;
+  bottom: 3%;
+  cursor: pointer;
+  z-index: 4000;
+}
+
+.up-arrow {
+  width: 4rem;
+  height: 4rem;
+}
+
+@media screen and (max-width: 768px) {
+  .up-arrow { width: 3rem; height: 3rem; }
+}
+
+
+/********************************/
+/* FEATURED PROJECT PAGE (CASE STUDY) */
+/********************************/
+
+/* Section striping: cyan blocks + purple separators */
+.fp-section--cyan {
+  background: linear-gradient(134deg, #C4FEFF, #99CCED 99%);
+}
+
+.fp-sep {
+  height: 5.5rem;
+  background: #9C89FF;
+}
+
+/* =========================
+   FEATURED PROJECT HERO FIX
+   - Put the blue skewed background BEHIND the hero content
+   - Prevent it from pushing the hero down into the purple
+========================= */
+
+.fp-page .section-hero.fp-hero {
+  position: relative;
+  overflow: hidden;
+
+  /* keep the purple “page” around it like the homepage */
+  background: #9C89FF;
+
+  /* featured-project hero should not use the global tall hero spacing */
+  padding: 3.25rem 0 7.5rem;
+  min-height: auto;
+}
+
+/* Override the global .hero-background behavior on this page */
+.fp-page .section-hero.fp-hero .hero-background.fp-hero-background {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+
+  /* IMPORTANT: cancel the global min-height that creates the big blue block */
+  min-height: 0;
+
+  background: linear-gradient(134deg, #C4FEFF, #9C89FF 99%);
+  transform: skewY(-3deg);
+  transform-origin: top left;
+
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Keep hero content above the background */
+.fp-page .section-hero.fp-hero .hero {
+  position: relative;
+  z-index: 1;
+  padding-top: 0.5rem; /* optional small breathing room under sticky nav */
+}
+
+
+/* ✅ IMPORTANT: Hero should remain “purple hero” like homepage. */
+.section-hero.fp-section--cyan {
+  background: #9C89FF;
+}
+
+/* Featured project lead text */
+.fp-lead {
+  max-width: 920px;
+  margin: 1.25rem auto 0 auto;
+  color: #7E3887;
+  font-size: 1.2rem;
+  line-height: 1.55;
+}
+
+.fp-muted {
+  color: #7E3887;
+  font-size: 1rem;
+  line-height: 1.45;
+}
+
+/* Optional helpers used by the updated HTML (won't break anything if unused) */
+.section-title {
+  font-size: 3rem;
+  color: #541675;
+  margin-bottom: 1.25rem;
+  letter-spacing: -0.4px;
+}
+
+.section-intro {
+  max-width: 980px;
+  margin: 0.75rem auto 0;
+  color: #7E3887;
+  font-size: 1.1rem;
+  line-height: 1.6;
+}
+
+
+/* --- Merged Iteration Evidence + Outcomes helpers --- */
+.fp-iteration-evidence {
+  max-width: 1100px;
+  margin: 2rem auto 0;
+  text-align: center;
+}
+
+.fp-subtitle {
+  margin: 0 auto 0.75rem;
+  font-size: 2rem;
+  color: #541675;
+}
+
+.fp-mini-sep {
+  height: 2.75rem;
+}
+
+.fp-caption {
+  margin-top: 1rem;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+/* CTA button used on featured project page */
+.hero-button {
+  display: inline-block;
+  padding: 1rem 2rem;
+  background: linear-gradient(134deg, #C4FEFF, #99CCED 99%);
+  border: 2px solid #541675;
+  border-radius: 10px;
+  color: #541675;
+  font-weight: 800;
+  font-size: 1.15rem;
+  margin-top: 1.5rem;
+}
+
+.hero-button:hover {
+  background: #541675;
+  color: #99CCED;
+  cursor: pointer;
+  transform: translateY(-1px);
+  box-shadow: 0 10px 26px rgba(0,0,0,0.14);
+}
+
+/* Ghost button variant */ 
+.hero-button--ghost { 
+  background: transparent;
+  color: #541675;
+  border: 2px solid #541675;
+  margin-left: 0.75rem; 
+} 
+  
+.hero-button--ghost:hover { 
+  background: rgba(84, 22, 117, 0.12); 
+  color: #541675; 
+}
+
+/* Overview + snapshot layout */
+.project-overview {
+  padding: 4rem 2rem;
+  text-align: center;
+}
+
+.project-overview h2 {
+  font-size: 3rem;
+  color: #541675;
+  margin-bottom: 1.25rem;
+}
+
+/* =========================
+   OVERVIEW + SNAPSHOT (2x2)
+   Legacy flex system + New grid system support
+========================= */
+
+/* LEGACY: if your HTML still uses #snapshot .overview-grid */
+#snapshot .overview-grid,
+#overview .overview-grid {
+  max-width: 1100px;
+  margin: 2rem auto 0;
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+/* LEGACY: cards 2 per row */
+#snapshot .overview-card,
+#overview .overview-card {
+  flex: 0 1 calc(50% - 1rem);
+  max-width: calc(50% - 1rem);
+}
+
+/* NEW: snapshot grid if your updated HTML uses .snapshot-grid */
+.snapshot-grid {
+  max-width: 1120px;
+  margin: 2rem auto 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(280px, 1fr));
+  gap: 2rem;
+  align-items: stretch;
+}
+
+/* NEW: decision flow, outcomes, interactions, iteration grids */
+.decision-flow-grid {
+  max-width: 1120px;
+  margin: 2rem auto 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(280px, 1fr));
+  gap: 2rem;
+  align-items: stretch;
+}
+
+.outcomes-grid {
+  max-width: 1120px;
+  margin: 2rem auto 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(280px, 1fr));
+  gap: 2rem;
+  align-items: stretch;
+}
+
+.interactions-grid {
+  max-width: 1120px;
+  margin: 2rem auto 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(240px, 1fr));
+  gap: 2rem;
+  align-items: stretch;
+}
+
+.iteration-grid {
+  max-width: 1120px;
+  margin: 2rem auto 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(220px, 1fr));
+  gap: 2rem;
+  align-items: stretch;
+}
+
+.fp-overview-row2 {
+  margin-top: 2rem;
+}
+
+/* =========================
+   CARD BASE STYLES
+   Applies to legacy + new card classes
+========================= */
+
+.overview-card,
+.snapshot-card,
+.decision-flow-card,
+.process-card,
+.outcomes-card,
+.interaction-card {
+  background: rgba(243, 240, 250, 0.94);
+  border: 2px solid #541675;
+  border-radius: 14px;
+  padding: 1.6rem;
+
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+  overflow: hidden;
+}
+
+.overview-card h3,
+.snapshot-card h3,
+.decision-flow-card h3,
+.process-card h3,
+.outcomes-card h3,
+.interaction-card h3 {
+  margin: 0 0 0.75rem 0;
+  font-size: 1.8rem;
+  color: #541675;
+  line-height: 1.1;
+  letter-spacing: -0.2px;
+  text-align: center;
+}
+
+.overview-card:hover,
+.snapshot-card:hover,
+.decision-flow-card:hover,
+.process-card:hover,
+.outcomes-card:hover,
+.interaction-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 28px rgba(0,0,0,0.14);
+  background: rgba(224, 247, 255, 0.96);
+}
+
+/* Shared typography inside cards */
+
+
+.overview-card strong,
+.snapshot-card strong,
+.decision-flow-card strong,
+.process-card strong,
+.outcomes-card strong,
+.interaction-card strong {
+  font-weight: 800;
+  color: #541675;
+}
+
+.overview-card p,
+.snapshot-card p,
+.decision-flow-card p,
+.process-card p,
+.outcomes-card p,
+.interaction-card p {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+
+/* Lists */
+.overview-card .fp-list {
+  margin: 0;
+  padding-left: 1.25rem;
+  text-align: left;
+  width: 100%;
+}
+
+.fp-list {
+  margin: 0.75rem auto 0;
+  padding-left: 1.25rem;
+  text-align: left;
+  width: fit-content;
+}
+
+
+.fp-list li {
+  margin: 0.7rem 0;
+  max-width: 70ch;
+}
+
+/* Optional: make bullets feel intentional */
+.fp-list--checks li::marker {
+  content: "✓  ";
+}
+
+/* =========================
+   EXPAND BEHAVIOR (hover + click)
+   Works for <p> AND <ul>
+   - Default shows first paragraph
+   - Additional paragraphs + lists reveal on hover (desktop) or click (all)
+========================= */
+
+[data-expandable]:focus-visible {
+  outline: 3px solid rgba(196, 254, 255, 0.75);
+  outline-offset: 4px;
+  border-radius: 14px;
+}
+
+/* Hide ALL but first paragraph + hide lists until expanded */
+.overview-card p:not(:first-of-type),
+.snapshot-card p:not(:first-of-type),
+.decision-flow-card p:not(:first-of-type),
+.process-card p:not(:first-of-type),
+.outcomes-card p:not(:first-of-type),
+.interaction-card p:not(:first-of-type),
+.overview-card ul,
+.snapshot-card ul,
+.decision-flow-card ul,
+.process-card ul,
+.outcomes-card ul,
+.interaction-card ul {
+  margin-top: 0;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 0.28s ease, opacity 0.28s ease, margin-top 0.28s ease;
+  width: 100%;
+  text-align: center;
+}
+
+/* Hover reveal (desktop only) */
+@media (hover: hover) and (pointer: fine) {
+  .overview-card:hover p:not(:first-of-type),
+  .overview-card:hover ul,
+  .snapshot-card:hover p:not(:first-of-type),
+  .snapshot-card:hover ul,
+  .decision-flow-card:hover p:not(:first-of-type),
+  .decision-flow-card:hover ul,
+  .process-card:hover p:not(:first-of-type),
+  .process-card:hover ul,
+  .outcomes-card:hover p:not(:first-of-type),
+  .outcomes-card:hover ul,
+  .interaction-card:hover p:not(:first-of-type),
+  .interaction-card:hover ul {
+    margin-top: 0.95rem;
+    max-height: 320px;
+    opacity: 0.98;
+  }
+}
+
+/* Click expand (your JS adds .expanded) */
+.overview-card p.expanded,
+.overview-card ul.expanded,
+.snapshot-card p.expanded,
+.snapshot-card ul.expanded,
+.decision-flow-card p.expanded,
+.decision-flow-card ul.expanded,
+.process-card p.expanded,
+.process-card ul.expanded,
+.outcomes-card p.expanded,
+.outcomes-card ul.expanded,
+.interaction-card p.expanded,
+.interaction-card ul.expanded {
+  margin-top: 0.95rem;
+  max-height: 1600px;
+  opacity: 1;
+}
+
+.overview-card ul.expanded li,
+.snapshot-card ul.expanded li,
+.decision-flow-card ul.expanded li,
+.process-card ul.expanded li,
+.outcomes-card ul.expanded li,
+.interaction-card ul.expanded li {
+  margin: 0.6rem 0;
+}
+
+/* --- PATCH: Center headings, left-align lists inside centered cards --- */
+
+/* 1) Ensure h3 stays centered even if card text-align changes elsewhere */
+.overview-card h3,
+.snapshot-card h3,
+.decision-flow-card h3,
+.process-card h3,
+.outcomes-card h3,
+.interaction-card h3 {
+  text-align: center;
+  width: 100%;
+}
+
+/* 2) Make the UL itself a centered block, but left-align its contents */
+.overview-card ul,
+.snapshot-card ul,
+.decision-flow-card ul,
+.process-card ul,
+.outcomes-card ul,
+.interaction-card ul {
+  display: inline-block;     /* key: prevents full-width centering weirdness */
+  text-align: left;          /* key: left-align list content */
+  width: auto;
+  margin: 0.9rem auto 0;     /* centers the UL block within the card */
+  padding-left: 1.25rem;     /* keeps bullets aligned nicely */
+  list-style-position: outside;
+}
+
+/* 3) Force list item color back to your purple and keep them left */
+.overview-card li,
+.snapshot-card li,
+.decision-flow-card li,
+.process-card li,
+.outcomes-card li,
+.interaction-card li {
+  text-align: left;
+  color: #7E3887;
+}
+
+
+/* =========================
+   PROCESS
+   Supports legacy .process-step + new .process-card
+========================= */
+
+/* LEGACY layout (kept) */
+.process-grid {
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 2rem;
+}
+
+/* LEGACY card (kept) */
+.process-step {
+  flex: 1 1 240px;
+  max-width: 320px;
+  background: rgba(243, 240, 250, 0.92);
+  border: 2px solid #541675;
+  border-radius: 12px;
+  padding: 1.5rem;
+  overflow: hidden;
+  cursor: pointer;
+
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s ease, transform 0.6s ease, background 0.3s, box-shadow 0.3s ease;
+}
+
+.process-step.appear {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.process-step:hover {
+  transform: translateY(-5px) scale(1.02);
+  box-shadow: 0 8px 22px rgba(0,0,0,0.12);
+  background: rgba(224, 247, 255, 0.95);
+}
+
+.process-step img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  border-radius: 10px;
+  margin-bottom: 1rem;
+  cursor: zoom-in;
+}
+
+.process-step h3 {
+  color: #541675;
+  margin-bottom: 0.5rem;
+  font-size: 1.35rem;
+  line-height: 1.1;
+  text-align: center;
+}
+
+.process-step p {
+  color: #7E3887;
+  font-size: 1.05rem;
+  line-height: 1.35;
+}
+
+/* NEW: if using .process-card inside .process-grid */
+.process-card img {
+  width: 100%;
+  height: 190px;
+  object-fit: cover;
+  border-radius: 12px;
+  margin-bottom: 1rem;
+  cursor: zoom-in;
+  border: 1px solid rgba(84, 22, 117, 0.18);
+}
+
+/* =========================
+   INTERACTIONS GALLERY
+   Supports legacy .project-takeaways + new .interactions-grid
+========================= */
+
+/* LEGACY section (kept) */
+.project-takeaways {
+  padding: 4rem 2rem;
+  text-align: center;
+}
+
+.project-takeaways h2 {
+  font-size: 3rem;
+  color: #541675;
+  margin-bottom: 2rem;
+}
+
+.project-takeaways .projects-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
+  justify-content: center;
+  margin-top: 2rem;
+}
+
+.project-takeaways .project-container.project-card {
+  background: rgba(243, 240, 250, 0.92);
+  border: 2px solid #541675;
+  border-radius: 12px;
+  padding: 1.5rem;
+  max-width: 320px;
+  overflow: hidden;
+}
+
+.project-takeaways .project-container.project-card:hover {
+  background: rgba(224, 247, 255, 0.95);
+}
+
+.project-takeaways .project-pic {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 10px;
+  margin-bottom: 0.75rem;
+  cursor: zoom-in;
+}
+
+/* NEW: interaction cards/images (if using .interaction-card) */
+.interaction-card img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 12px;
+  margin-bottom: 0.9rem;
+  cursor: zoom-in;
+  border: 1px solid rgba(84, 22, 117, 0.18);
+}
+
+/* Decision flow image support (new HTML) */
+.decision-flow-image img {
+  width: 100%;
+  max-width: 980px;
+  display: block;
+  margin: 1.5rem auto 0;
+  border-radius: 14px;
+  border: 2px solid rgba(84, 22, 117, 0.35);
+  cursor: zoom-in;
+}
+
+/* Iteration placeholder support (new HTML) */
+.iteration-placeholder img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 2px solid rgba(84, 22, 117, 0.35);
+}
+
+/********************************/
+/* SCROLL REVEAL ANIMATIONS */
+/********************************/
+
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+  will-change: opacity, transform;
+}
+
+.reveal.reveal-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.reveal[data-reveal-delay="1"] { transition-delay: 0.08s; }
+.reveal[data-reveal-delay="2"] { transition-delay: 0.16s; }
+.reveal[data-reveal-delay="3"] { transition-delay: 0.24s; }
+.reveal[data-reveal-delay="4"] { transition-delay: 0.32s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/********************************/
+/* LIGHTBOX */
+/********************************/
+
+.lb-noscroll { overflow: hidden; }
+
+.lb-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: none;
+}
+
+.lb-overlay.open { display: block; }
+
+.lb-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 10, 20, 0.85);
+  backdrop-filter: blur(4px);
+}
+
+.lb-content {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(92vw, 1100px);
+  max-height: 86vh;
+  padding: 1rem 1rem 1.25rem 1rem;
+  background: rgba(255,255,255,0.96);
+  border-radius: 14px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+  overflow: hidden;
+}
+
+.lb-close {
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  border: none;
+  background: transparent;
+  font-size: 2rem;
+  line-height: 1;
+  cursor: pointer;
+  color: #541675;
+}
+
+.lb-img {
+  width: 100%;
+  max-height: 72vh;
+  object-fit: contain;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.lb-caption {
+  margin-top: 0.75rem;
+  font-size: 1rem;
+  color: #541675;
+  text-align: center;
+}
+
+/* =========================
+   SCENARIO MAP (2-col cards + breathing room)
+========================= */
+
+.overview-grid--two-col {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(260px, 1fr));
+  gap: 2rem;
+  align-items: stretch;
+}
+
+@media screen and (max-width: 900px) {
+  .overview-grid--two-col {
+    grid-template-columns: 1fr;
+  }
+}
+
+#scenario-map .fp-lead {
+  margin-bottom: 2.25rem;
+}
+
+/* Keep the card row from spanning the full page */
+#scenario-map .overview-grid {
+  max-width: 980px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Make the two cards less wide (but still responsive) */
+#scenario-map .overview-card {
+  flex: 0 1 440px;
+  max-width: 440px;
+  padding: 1.1rem 1.4rem;
+}
+
+@media screen and (max-width: 1100px) {
+  #scenario-map .overview-card {
+    flex-basis: 420px;
+    max-width: 420px;
+  }
+}
+
+/* =========================
+   ITERATION (2x2 like Overview, consistent center gap)
+   FIX: remove max-width centering that created extra middle space
+========================= */
+
+#iteration .fp-lead {
+  margin-bottom: 2rem;
+}
+
+/* Use same flex-wrap system as Overview for consistent spacing */
+#iteration .overview-grid--two-by-two {
+  max-width: 1100px;
+  margin: 2rem auto 0;
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+/* Two per row on desktop, but capped so they don't feel huge */
+#iteration .overview-grid--two-by-two .overview-card {
+  flex: 0 1 calc(50% - 1rem);
+  max-width: 520px;
+}
+
+/********************************/
+/* RESPONSIVE */
+/********************************/
+
+@media screen and (max-width: 1000px) {
+  .hero-button { font-size: 1rem; padding: 0.8rem 1.5rem; }
+
+  /* Tablet/mobile: stack to 1 column (legacy + new grids) */
+  #snapshot .overview-grid,
+  #overview .overview-grid,
+  #iteration .overview-grid--two-by-two,
+  .process-grid,
+  .project-takeaways .projects-container {
+    flex-direction: column;
+    gap: 1.5rem;
+    align-items: center;
+  }
+
+  /* New grid layouts */
+  .snapshot-grid,
+  .decision-flow-grid,
+  .outcomes-grid,
+  .interactions-grid,
+  .iteration-grid {
+    grid-template-columns: 1fr;
+  }
+
+  #snapshot .overview-card,
+  #overview .overview-card,
+  #iteration .overview-grid--two-by-two .overview-card,
+  .process-step,
+  .project-takeaways .project-container.project-card {
+    flex: 0 1 auto;
+    max-width: 90%;
+    width: 100%;
+  }
+
+  .process-step img { height: 160px; }
+  .process-card img { height: 170px; }
+  .interaction-card img { height: 190px; }
+  .iteration-placeholder img { height: 190px; }
+}
+
+@media screen and (max-width: 768px) {
+  .hero-button { font-size: 0.9rem; padding: 0.6rem 1.2rem; }
+  .fp-sep { height: 4.25rem; }
+
+  .section-title { font-size: 2.4rem; }
+  .section-intro,
+  .fp-lead { font-size: 1.05rem; }
+}
+
+@media screen and (max-width: 600px) {
+  .project-overview h2,
+  .project-takeaways h2,
+  .about h2,
+  .projects-title,
+  .contact h2 { font-size: 2.2rem; }
+
+  .overview-card h3,
+  .snapshot-card h3,
+  .process-card h3,
+  .outcomes-card h3,
+  .interaction-card h3 { font-size: 1.6rem; }
+
+  .overview-card p,
+  .overview-card li,
+  .snapshot-card p,
+  .snapshot-card li,
+  .process-card p,
+  .process-card li,
+  .outcomes-card p,
+  .outcomes-card li,
+  .interaction-card p,
+  .interaction-card li { font-size: 1rem; }
+}
+
+/* =========================
+   FEATURED PROJECT: OVERVIEW CARDS (fix black text)
+   Your HTML uses .overview-grid + .overview-card
+========================= */
+
+.fp-page {
+  color: #7E3887; /* safety net: prevents stray default black text */
+}
+
+/* Layout */
+.overview-grid {
+  max-width: 1100px;
+  margin: 2rem auto 0;
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+/* Card */
+.overview-card {
+  background: rgba(243, 240, 250, 0.92);
+  border: 2px solid #541675;
+  border-radius: 12px;
+  padding: 1.5rem;
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform 0.3s, box-shadow 0.3s, background 0.3s;
+
+  /* IMPORTANT: you want headings centered, lists left */
+  text-align: center;
+}
+
+/* Hover matches your other cards */
+.overview-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 22px rgba(0,0,0,0.12);
+  background: rgba(224, 247, 255, 0.95);
+}
+
+/* Headings centered */
+.overview-card h3 {
+  margin: 0 0 0.75rem 0;
+  font-size: 1.65rem;
+  color: #541675;
+  line-height: 1.15;
+  text-align: center;
+}
+
+/* Body text color (kills black text) */
+.overview-card p,
+.overview-card li {
+  color: #7E3887;
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+
+/* Lists left-aligned */
+.overview-card ul,
+.overview-card ol {
+  text-align: left;
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+/* Strong styling */
+.overview-card strong {
+  font-weight: 800;
+  color: #541675;
+}
+
+/* Expand/collapse behavior to match your other cards */
+.overview-card p,
+.overview-card ul {
+  margin-top: 0;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 0.32s ease, opacity 0.32s ease, margin-top 0.32s ease;
+}
+
+.overview-card:hover p,
+.overview-card:hover ul {
+  margin-top: 0.95rem;
+  max-height: 260px;
+  opacity: 0.95;
+}
+
+.overview-card p.expanded,
+.overview-card ul.expanded {
+  margin-top: 0.95rem;
+  max-height: 1400px;
+  opacity: 1;
+}
+
+.fp-page .fp-center-note {
+  display: inline-block;
+  margin: 1rem auto 0;
+  padding: 0.85rem 1.1rem;
+  border: 2px solid #541675;
+  border-radius: 12px;
+  background: rgba(243, 240, 250, 0.92);
+  color: #541675;
+  font-weight: 700;
+  box-shadow: 0 8px 18px rgba(0,0,0,0.10);
+}
+
+
+/* --- Featured Project polish (optional) --- */
+.snapshot-card p,
+.outcomes-card p,
+.decision-flow-card p,
+.process-card p,
+.interaction-card p {
+  line-height: 1.55;
+}
+
+.snapshot-card ul,
+.outcomes-card ul,
+.decision-flow-card ul {
+  line-height: 1.55;
+}
+
+.fp-meta-line.fp-muted {
+  opacity: 0.9;
+}
+
+/* =========================
+   FEATURED PROJECT: Pilot Quotes + Iteration Cards (add at bottom)
+   - Styles the new iteration section elements without changing existing cards
+========================= */
+
+/* Optional: nicer blockquote treatment inside the iteration section */
+#iteration blockquote {
+  color: #7E3887;
+  font-size: 1.05rem;
+  line-height: 1.55;
+  margin: 0.6rem 0 0.9rem 0;
+  padding: 0.25rem 0 0.25rem 1rem;
+  border-left: 4px solid rgba(84, 22, 117, 0.18);
+}
+
+/* New iteration cards (used in the rewritten HTML) */
+#iteration .iteration-card {
+  background: rgba(243, 240, 250, 0.96);
+  border: 2px solid #541675;
+  border-radius: 14px;
+  padding: 1.25rem;
+  text-align: left;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+}
+
+#iteration .iteration-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px rgba(0,0,0,0.12);
+  background: rgba(224, 247, 255, 0.96);
+}
+
+/* Iteration card headings */
+#iteration .iteration-card h4 {
+  font-size: 1.35rem;
+  color: #541675;
+  margin: 0 0 0.65rem 0;
+  line-height: 1.15;
+}
+
+/* Make lists inside iteration cards readable and aligned */
+#iteration .iteration-card .fp-list {
+  width: 100%;
+  margin: 0;
+  padding-left: 1.25rem;
+  text-align: left;
+}
+
+#iteration .iteration-card .fp-list li {
+  margin: 0.55rem 0;
+  max-width: 80ch;
+}
+
+/* Pilot highlights container (keeps quote block feeling compact) */
+#iteration .pilot-highlights {
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+/* Responsive polish for the rewritten iteration grids */
+@media screen and (max-width: 1000px) {
+  #iteration .iteration-card { padding: 1.1rem; }
+  #iteration blockquote { font-size: 1rem; }
+}
+
+@media screen and (max-width: 768px) {
+  #iteration .iteration-card h4 { font-size: 1.25rem; }
+}
+
+/* === Portfolio MP4 loops (Selected Interactions) === */
+.fp-media--video {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 12px; /* match card rounding */
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
+  background: rgba(0, 0, 0, 0.15); /* avoids white flash while loading */
+}
+
+/* Optional: keep video heights visually consistent across cards */
+.interaction-card .fp-media--video {
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+
+/* --- Selected Interactions: unify media sizing (images + videos) --- */
+.interaction-card .fp-media {
+  width: 100%;
+  border-radius: 12px;
+  margin-bottom: 0.9rem;
+  border: 1px solid rgba(84, 22, 117, 0.18);
+  background: rgba(0, 0, 0, 0.12); /* subtle frame like your Decision Lens tile */
+}
+
+/* Make all three tiles feel consistent */
+.interaction-card .fp-media--img,
+.interaction-card .fp-media--video {
+  aspect-ratio: 16 / 9;
+  height: auto;              /* key: stop forcing a fixed height */
+  object-fit: contain;       /* key: prevents awkward cropping, matches "Decision Lens" feel */
+}
+
+/* Optional: keep video controls from looking too tall */
+.interaction-card .fp-media--video {
+  box-shadow: none;          /* Decision Lens tile looks cleaner; remove heavy shadow */
+}
+
+/* Mobile: ensure videos never overflow and remain tappable */
+@media screen and (max-width: 1000px) {
+  .interaction-card .fp-media--img,
+  .interaction-card .fp-media--video {
+    aspect-ratio: 16 / 9;
+  }
+}
