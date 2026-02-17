@@ -1679,6 +1679,7 @@ nav a:hover {
 .heading-primary span { color: var(--brand); }
 .hero-description { color: var(--text-2); }
 
+
 /* Headshot card */
 .headshot {
   border: 2px solid var(--border-2);
@@ -2140,3 +2141,43 @@ footer {
   .fp-sep { height: 4.25rem; }
 }
 
+/* =========================
+   HOME HERO (match featured-project hero behavior)
+========================= */
+
+.section-hero.home-hero {
+  position: relative;
+  overflow: hidden;
+
+  /* keep the page’s base purple behind it */
+  background: var(--bg);
+
+  /* tighter + cleaner like your featured project page */
+  padding: 3.25rem 0 6.5rem;
+  min-height: auto;
+}
+
+/* Make the background a true “layer” */
+.section-hero.home-hero .home-hero-background {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+
+  /* IMPORTANT: cancels your global min-height behavior */
+  min-height: 0;
+
+  background: var(--grad-hero);
+  transform: skewY(-3deg);
+  transform-origin: top left;
+
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Ensure hero content sits above the background */
+.section-hero.home-hero .hero {
+  position: relative;
+  z-index: 1;
+  padding-top: 0.5rem;
+}
