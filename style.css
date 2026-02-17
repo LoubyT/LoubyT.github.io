@@ -2128,3 +2128,15 @@ footer {
   outline-offset: 6px;
   border-radius: 10px;
 }
+
+/* ===== Home page: use fp-sep for spacing, remove legacy section margins ===== */
+.home-page .projects,
+.home-page .section-quote {
+  margin-top: 0 !important;
+}
+
+/* Optional: if you want a slightly smaller divider on mobile */
+@media (max-width: 768px) {
+  .fp-sep { height: 4.25rem; }
+}
+
