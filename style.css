@@ -1496,7 +1496,7 @@ footer {
   border: 1px solid var(--border);
   border-radius: 12px;
   background: var(--panel);
-  color: #7E3887;
+  color: rgba(181,107,255,0.7);
   font-weight: 700;
   box-shadow: 0 8px 18px rgba(0,0,0,0.10);
 }
