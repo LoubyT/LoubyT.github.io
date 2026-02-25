@@ -913,7 +913,7 @@ footer {
   max-height: 0;
   opacity: 0;
   overflow: hidden;
-  transition: max-height 0.28s ease, opacity 0.28s ease, margin-top 0.28s ease;
+  transition: max-height 0.4s ease, opacity 0.4s ease, margin-top 0.4s ease;
   width: 100%;
   text-align: center;
 }
@@ -1472,7 +1472,7 @@ footer {
   max-height: 0;
   opacity: 0;
   overflow: hidden;
-  transition: max-height 0.32s ease, opacity 0.32s ease, margin-top 0.32s ease;
+  transition: max-height 0.4s ease, opacity 0.4s ease, margin-top 0.4s ease;
 }
 
 .overview-card:hover p,
