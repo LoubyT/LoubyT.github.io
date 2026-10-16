@@ -2,236 +2,271 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Louby's Portfolio</title>
-        <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Montserrat+Alternates:wght@400;500;600;700;800&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="style.css">
-
-    <link rel="icon" href="/images/logo6.png" type="image/png">
-    <link rel="apple-touch-icon" href="/images/logo6.png">
-
-
-    <!-- Primary Meta -->
     <title>Louby’s Portfolio</title>
-    <meta name="title" content="Louby’s Portfolio">
     <meta name="description" content="I design strategic, scalable learning programs that drive tool adoption, operational clarity, and measurable performance improvement.">
+    <meta name="theme-color" content="#0c0814">
+    <link rel="canonical" href="https://www.louby.net/">
 
-    <!-- Open Graph / LinkedIn Preview -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://www.louby.net/">
     <meta property="og:title" content="Louby’s Portfolio">
     <meta property="og:description" content="I design strategic, scalable learning programs that drive tool adoption, operational clarity, and measurable performance improvement.">
     <meta property="og:image" content="https://www.louby.net/images/logo7.png">
-
-    <!-- Optional but recommended -->
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
-
-    <!-- Twitter (used by some platforms too) -->
     <meta property="twitter:card" content="summary_large_image">
     <meta property="twitter:title" content="Louby’s Portfolio">
     <meta property="twitter:description" content="I design strategic, scalable learning programs that drive tool adoption, operational clarity, and measurable performance improvement.">
     <meta property="twitter:image" content="https://www.louby.net/images/logo7.png">
 
+    <link rel="icon" href="/images/opt/favicon.png" type="image/png">
+    <link rel="apple-touch-icon" href="/images/opt/favicon.png">
+    <link rel="preload" href="/fonts/outfit-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" as="image" href="/images/opt/project-hero.webp" type="image/webp" fetchpriority="high">
+    <link rel="stylesheet" href="/style.css">
+    <script>
+      (function () {
+        var n = new Date();
+        var h = n.getHours() + n.getMinutes() / 60;
+        document.documentElement.classList.add("js");
+        document.documentElement.style.setProperty("--hue", (274 + Math.sin((h / 24) * Math.PI * 2) * 16).toFixed(1));
+        document.documentElement.style.setProperty("--sec", String(n.getSeconds() + n.getMilliseconds() / 1000));
+        try {
+          var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+          if (!reduce && !sessionStorage.getItem("louby-boot")) {
+            sessionStorage.setItem("louby-boot", "1");
+            document.documentElement.classList.add("intro");
+          }
+        } catch (err) {}
+      })();
+    </script>
   </head>
 
-  <body id="top" class="home-page">
-    <!-- HEADER & NAVIGATION -->
-    <header>
-      <nav>
-        <a href="https://www.louby.net">
-          <img class="logo" src="/images/logo6.png" alt="Louby Trahan Logo"/>
-        </a>
+  <body id="top">
+    <a class="skip" href="#main">Skip to content</a>
+    <div class="boot" id="boot">
+      <div class="boot-veil" aria-hidden="true"></div>
+      <div class="boot-bloom" aria-hidden="true"></div>
+      <div class="boot-ticks" aria-hidden="true"></div>
+      <div class="boot-ring" aria-hidden="true"></div>
+      <div class="boot-ring boot-ring-b" aria-hidden="true"></div>
+      <div class="boot-ring boot-ring-c" aria-hidden="true"></div>
+      <div class="boot-cross" aria-hidden="true"></div>
+      <div class="boot-scan" aria-hidden="true"></div>
+      <button class="boot-skip" id="boot-skip" type="button" aria-label="Skip intro">Skip</button>
+    </div>
+    <div class="field" aria-hidden="true"></div>
+    <svg class="trace" id="trace" aria-hidden="true" focusable="false">
+      <path class="trace-glow" d="M28 0 L28 800"></path>
+      <path class="trace-core" pathLength="1000" d="M28 0 L28 800"></path>
+      <circle class="trace-bead" r="4.5" cx="28" cy="0"></circle>
+    </svg>
 
-        <ul class="navigation">
-          <li><a class="main-nav-link" href="https://www.louby.net">Home</a></li>
+    <header class="bar">
+      <a class="brand" href="/" aria-label="Home">
+        <img src="/images/opt/logo.webp" alt="" width="128" height="128">
+      </a>
+      <p class="bar-readout">
+        <span class="live-dot" aria-hidden="true"></span>
+        <time id="clock" datetime="">--:--:--</time>
+      </p>
+      <nav aria-label="Primary">
+        <button class="hamburger" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Open menu">
+          <span></span><span></span><span></span>
+        </button>
+        <ul class="navigation" id="site-nav">
+          <li><a class="main-nav-link" href="/" aria-current="page">Home</a></li>
           <li><a class="main-nav-link" href="#about">About</a></li>
           <li><a class="main-nav-link" href="#projects">Featured Project</a></li>
-          <li>
-            <a class="main-nav-link nav-cta" href="#contact">Contact</a>
-          </li>
-          <li>
-            <a class="main-nav-link outline-cta" target="_blank" rel="noopener noreferrer" href="https://www.linkedin.com/in/Louby">LinkedIn</a>
-          </li>
+          <li><a class="main-nav-link nav-cta" href="#contact">Contact</a></li>
+          <li><a class="main-nav-link outline-cta" href="https://www.linkedin.com/in/Louby" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn (opens in a new tab)">LinkedIn</a></li>
         </ul>
-
-        <div class="hamburger" aria-label="Open navigation menu" aria-expanded="false" role="button" tabindex="0">
-          <span class="bar"></span>
-          <span class="bar"></span>
-          <span class="bar"></span>
-        </div>
       </nav>
     </header>
 
+    <main id="main">
+      <section class="hero" id="projects" data-station>
+        <div class="hero-grid">
+          <p class="index-label"><span>01</span> Featured project</p>
+          <h1>
+            AI at Work
+            <span>Making Informed, Responsible Decisions</span>
+          </h1>
 
-    <main>
-      <!-- HERO SECTION -->
-      <section class="section-hero home-hero" id="home" data-reveal>
-        <!-- Decorative background layer (behind content) -->
-        <div class="hero-background home-hero-background" aria-hidden="true"></div>
+          <div class="gate" id="gate">
+            <div class="gate-media">
+              <a href="/Featured-Project/" aria-label="Open the AI at Work case study">
+                <picture>
+                  <source srcset="/images/opt/project-hero.webp" type="image/webp">
+                  <img
+                    src="/images/opt/project-hero.jpg"
+                    alt="AI at Work module screenshot"
+                    width="1400"
+                    height="934"
+                    fetchpriority="high"
+                    decoding="async"
+                  >
+                </picture>
+              </a>
+              <div class="gate-shade" aria-hidden="true"></div>
+            </div>
+            <div class="reticle" aria-hidden="true"></div>
+            <svg class="sweep" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+              <rect x="1.2" y="1.2" width="97.6" height="97.6" rx="4" pathLength="60"></rect>
+            </svg>
+            <div class="gate-meta">
+              <p class="focus-readout" aria-hidden="true"><span>Focus</span> <strong id="focus">070</strong></p>
+              <button class="pulse-btn" id="pulse" type="button">Pulse</button>
+            </div>
+          </div>
 
-        <!-- Actual hero content -->
-        <div class="hero">
-          <div class="hero-text" data-reveal data-reveal-delay="1">
-            <h1 class="heading-primary">
-              <span>Hello, my name is</span> <br />
-              Louby Trahan
-            </h1>
-
+          <div class="hero-rest">
             <p class="hero-description">
+              A scenario-based learning experience designed to build AI judgment and accountability at work. Learners evaluate risk, verify outputs, and practice structured decision-making in realistic moments.
+            </p>
+            <div class="hero-actions">
+              <a class="btn btn-primary" href="/Featured-Project/">Open the case study</a>
+              <a class="btn btn-ghost" href="/projects/AIatWork/" target="_blank" rel="noopener noreferrer" aria-label="View live experience (opens in a new tab)">View live experience</a>
+            </div>
+            <p class="operator-line">Louby Trahan · Instructional Designer II at Starlink (SpaceX)</p>
+          </div>
+        </div>
+      </section>
+      <script>
+        (function () {
+          var root = document.documentElement;
+          if (!root.classList.contains("intro")) return;
+          var gate = document.querySelector("#gate .gate-media");
+          var boot = document.getElementById("boot");
+          if (!gate || !boot) {
+            root.classList.remove("intro");
+            return;
+          }
+          var r = gate.getBoundingClientRect();
+          var radius = Math.hypot(r.width, r.height) * 0.5 + 28;
+          boot.style.setProperty("--boot-x", ((r.left + r.width / 2) / window.innerWidth * 100).toFixed(2) + "%");
+          boot.style.setProperty("--boot-y", ((r.top + r.height / 2) / window.innerHeight * 100).toFixed(2) + "%");
+          boot.style.setProperty("--iris", Math.max(radius, 160).toFixed(0) + "px");
+          root.classList.add("boot-lock");
+        })();
+      </script>
+
+      <section class="about" id="about" data-station data-rise>
+        <div class="about-layout">
+          <figure class="about-portrait">
+            <img
+              src="/images/opt/headshot.webp"
+              alt="Louby's headshot"
+              width="751"
+              height="770"
+              loading="lazy"
+              decoding="async"
+            >
+          </figure>
+          <div class="about-copy">
+            <p class="index-label"><span>02</span> About</p>
+            <h2>Who is Louby?</h2>
+            <p class="tagline">
               I design strategic, scalable learning programs that drive tool adoption, operational clarity, and measurable performance improvement.
             </p>
+            <p>
+              I’m an <strong>Instructional Designer II at Starlink (SpaceX 🚀)</strong> who turns complex systems into learning people actually use. I build scalable onboarding, training, and enablement for <strong>fast-moving, highly technical environments</strong>, where speed, accuracy, and clarity matter.
+            </p>
+            <p>
+              Before joining SpaceX, I led <strong>Learning &amp; Development operations for Quality Verification at Respawn Entertainment (Electronic Arts)</strong>, supporting global teams across <strong>Apex Legends</strong>, <strong>Battlefield 6</strong>, and the <strong>Star Wars Jedi</strong> series.
+            </p>
+            <p>
+              In a QA onboarding redesign, I reduced time to independence from <strong>10 days to 4 days</strong>, a 60% improvement. First-month testers executed roughly <strong>3x more tests per day</strong> compared to prior cohorts. I also reduced “Needs More Info” defect returns by <strong>25%+</strong> while increasing overall defect submissions by nearly <strong>80%</strong>. My work sits at the intersection of <strong>operations, instructional design, and adoption</strong>, building systems that directly improve performance.
+            </p>
+            <p>
+              While at EA I directly onboarded <strong>226+ testers</strong>, supported <strong>1500+ additional learners</strong>, and built a <strong>9+ person facilitator bench</strong> delivering curriculum across regions. I’ve also partnered with executive leadership on AI enablement, building a <strong>role-based AI Hub serving 5,000 to 6,000 users</strong>. I’m an expert in <strong>Articulate Storyline 360</strong> and experienced in <strong>Cornerstone LMS, reporting automation, and content governance</strong>.
+            </p>
+            <dl class="ledger">
+              <div>
+                <dt>10 to 4 days</dt>
+                <dd>Time to independence, a 60% improvement</dd>
+              </div>
+              <div>
+                <dt>3x</dt>
+                <dd>Tests per day by first-month testers</dd>
+              </div>
+              <div>
+                <dt>25%+</dt>
+                <dd>Fewer “Needs More Info” defect returns</dd>
+              </div>
+              <div>
+                <dt>Nearly 80%</dt>
+                <dd>More defect submissions overall</dd>
+              </div>
+              <div>
+                <dt>226+</dt>
+                <dd>Testers onboarded directly</dd>
+              </div>
+              <div>
+                <dt>1500+</dt>
+                <dd>Additional learners supported</dd>
+              </div>
+              <div>
+                <dt>9+</dt>
+                <dd>Person facilitator bench</dd>
+              </div>
+              <div>
+                <dt>5,000–6,000</dt>
+                <dd>Users on the role-based AI Hub</dd>
+              </div>
+            </dl>
           </div>
-
-          <img
-            class="headshot"
-            src="/images/headshotNObg.png"
-            alt="Louby's Headshot"
-            loading="eager"
-            data-reveal
-            data-reveal-delay="2"
-          >
         </div>
       </section>
 
-      <div class="fp-sep" aria-hidden="true"></div>
-
-
-      <!-- ABOUT SECTION -->
-      <section id="about" class="about" data-reveal>
-        <div class="about-container">
-          <h2 data-reveal>Who is Louby?</h2>
-
-          <p data-reveal data-reveal-delay="1">
-            I’m an <strong>Instructional Designer II at Starlink (SpaceX 🚀)</strong> who turns complex systems into learning people actually use. I build scalable onboarding, training, and enablement for <strong>fast-moving, highly technical environments</strong>, where speed, accuracy, and clarity matter.
-          </p>
-
-          <p data-reveal data-reveal-delay="2">
-            Before joining SpaceX, I led <strong>Learning &amp; Development operations for Quality Verification at Respawn Entertainment (Electronic Arts)</strong>, supporting global teams across <strong>Apex Legends</strong>, <strong>Battlefield 6</strong>, and the <strong>Star Wars Jedi</strong> series.
-          </p>
-
-          <p data-reveal data-reveal-delay="3">
-            In a QA onboarding redesign, I reduced time to independence from <strong>10 days to 4 days</strong>, a 60% improvement. First-month testers executed roughly <strong>3x more tests per day</strong> compared to prior cohorts. I also reduced “Needs More Info” defect returns by <strong>25%+</strong> while increasing overall defect submissions by nearly <strong>80%</strong>. My work sits at the intersection of <strong>operations, instructional design, and adoption</strong>, building systems that directly improve performance.
-          </p>
-
-          <p data-reveal data-reveal-delay="4">
-            While at EA I directly onboarded <strong>226+ testers</strong>, supported <strong>1500+ additional learners</strong>, and built a <strong>9+ person facilitator bench</strong> delivering curriculum across regions. I’ve also partnered with executive leadership on AI enablement, building a <strong>role-based AI Hub serving 5,000 to 6,000 users</strong>. I’m an expert in <strong>Articulate Storyline 360</strong> and experienced in <strong>Cornerstone LMS, reporting automation, and content governance</strong>.
-          </p>
-
+      <section class="quote-block" id="reference" data-station data-rise>
+        <div class="quote-inner">
+          <p class="index-label"><span>03</span> Note</p>
+          <blockquote>
+            <p class="quote">That’s been one of my mantras—focus and simplicity. Simple can be harder than complex; you have to work hard to get your thinking clean to make it simple.</p>
+            <footer><cite>Steve Jobs</cite></footer>
+          </blockquote>
+          <hr class="quote-rule">
         </div>
       </section>
 
-      <div class="fp-sep" aria-hidden="true"></div>
-
-
-      <!-- FEATURED PROJECT SECTION -->
-      <section id="projects" class="projects" data-reveal>
-        <h2 class="projects-title" data-reveal>Featured Project</h2>
-
-        <div class="projects-container">
-          <a rel="noopener noreferrer" href="/Featured-Project/" data-reveal data-reveal-delay="1">
-            <div class="project-container project-card">
-              <img class="project-pic" src="/images/project-hero.png" alt="AI at Work Module Screenshot" loading="lazy">
-              <h3 class="project-title">AI at Work: Making Informed, Responsible Decisions</h3>
-              <p class="project-details">
-                A scenario-based learning experience designed to build AI judgment and accountability at work. Learners evaluate risk, verify outputs, and practice structured decision-making in realistic moments.
-              </p>
+      <section class="contact" id="contact" data-station data-rise>
+        <div class="contact-inner">
+          <div>
+            <p class="index-label"><span>04</span> Contact</p>
+            <h2>Let's Discuss Opportunities</h2>
+          </div>
+          <form action="https://formspree.io/f/myyovwbz" method="POST">
+            <div class="form-control">
+              <label for="name">Name</label>
+              <input class="input-field" type="text" id="name" name="sender-name" placeholder="Enter Your Name" autocomplete="name" required>
             </div>
-          </a>
+            <div class="form-control">
+              <label for="email">Email</label>
+              <input class="input-field" type="email" id="email" name="sender-email" placeholder="Enter Your Email" autocomplete="email" required>
+            </div>
+            <div class="form-control">
+              <label for="message">Message</label>
+              <textarea class="input-field" id="message" name="message" rows="6" placeholder="Enter Your Message" required></textarea>
+            </div>
+            <button class="submit-button" type="submit">Submit</button>
+          </form>
         </div>
       </section>
-      <div class="fp-sep" aria-hidden="true"></div>
-
-
-
-
-      <!-- QUOTE SECTION -->
-      <section class="section-quote" data-reveal>
-        <h3 class="quote" data-reveal>
-          That’s been one of my mantras—focus and simplicity. Simple can be harder than complex; you have to work hard to get your thinking clean to make it simple.
-        </h3>
-        <p class="author" data-reveal data-reveal-delay="1">
-          Steve Jobs
-        </p>
-      </section>
-
-      <div class="fp-sep" aria-hidden="true"></div>
-
-
-      <!-- CONTACT SECTION -->
-      <section id="contact" class="contact" data-reveal>
-        <h2 data-reveal>Let's Discuss Opportunities</h2>
-
-        <div class="contact-form-container" data-reveal data-reveal-delay="1">
-          <div class="contact-form">
-            <form action="https://formspree.io/f/myyovwbz" method="POST">
-              <div class="form-control">
-                <label for="name">Name</label>
-                <input
-                  type="text"
-                  id="name"
-                  name="sender-name"
-                  placeholder="Enter Your Name"
-                  class="input-field"
-                  required
-                />
-              </div>
-
-              <div class="form-control">
-                <label for="email">Email</label>
-                <input
-                  type="email"
-                  id="email"
-                  name="sender-email"
-                  placeholder="Enter Your Email"
-                  class="input-field"
-                  required
-                />
-              </div>
-
-              <div class="form-control">
-                <label for="message">Message</label>
-                <textarea
-                  id="message"
-                  cols="60"
-                  rows="10"
-                  placeholder="Enter Your Message"
-                  name="message"
-                  class="input-field"
-                  required
-                ></textarea>
-              </div>
-
-              <input
-                type="submit"
-                value="Submit"
-                id="submit-button"
-                class="submit-button"
-              />
-            </form>
-          </div>
-        </div>
-      </section>
-
-      <a href="#top" class="scroll-up" id="scroll-up" aria-label="Scroll to top">
-        <img src="images/up.png" class="up-arrow" alt="scroll-up" loading="lazy"/>
-      </a>
-
-      <footer>
-        <p class="copyright">&copy; Copyright 2026</p>
-        <p class="copyright">Built with &#x2661; by Louby Trahan</p>
-      </footer>
     </main>
 
-    <script src="script.js" defer></script>
+    <footer>
+      <p>&copy; Copyright 2026</p>
+      <p>Built with &#x2661; by Louby Trahan</p>
+    </footer>
 
+    <a class="scroll-up" href="#top" aria-label="Scroll to top">
+      <svg viewBox="0 0 18 18" aria-hidden="true" focusable="false">
+        <path d="M9 3.5 L9 14.5 M9 3.5 L4 8.5 M9 3.5 L14 8.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </a>
+
+    <script src="/script.js" defer></script>
   </body>
 </html>
-
