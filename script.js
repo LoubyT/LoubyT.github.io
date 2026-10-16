@@ -21,6 +21,58 @@
     catch (e) { return []; }
   }
 
+  /* ---------- opening shutter, once per session ---------- */
+  (function initBoot() {
+    if (!root.classList.contains("intro")) return;
+    var boot = qs("#boot");
+    if (!boot) {
+      root.classList.remove("intro");
+      return;
+    }
+    var held = [];
+    qsa("body > *").forEach(function (el) {
+      if (el === boot) return;
+      if (el.hasAttribute("inert")) return;
+      el.setAttribute("inert", "");
+      held.push(el);
+    });
+    var skipBtn = qs("#boot-skip");
+    if (skipBtn) skipBtn.focus({ preventScroll: true });
+
+    var done = false;
+    function end() {
+      if (done) return;
+      done = true;
+      root.classList.remove("intro");
+      held.forEach(function (el) { el.removeAttribute("inert"); });
+      if (boot.parentNode) boot.remove();
+      document.removeEventListener("keydown", onKey);
+      window.removeEventListener("wheel", blockScroll);
+      window.removeEventListener("touchmove", blockScroll);
+      var main = qs("#main");
+      if (main) {
+        if (!main.hasAttribute("tabindex")) main.setAttribute("tabindex", "-1");
+        main.focus({ preventScroll: true });
+      }
+    }
+    function onKey(e) {
+      if (!root.classList.contains("intro")) return;
+      e.preventDefault();
+      end();
+    }
+    function blockScroll(e) {
+      if (root.classList.contains("intro")) e.preventDefault();
+    }
+    boot.addEventListener("click", end);
+    document.addEventListener("keydown", onKey);
+    window.addEventListener("wheel", blockScroll, { passive: false });
+    window.addEventListener("touchmove", blockScroll, { passive: false });
+    boot.addEventListener("animationend", function (e) {
+      if (e.animationName === "shutter") end();
+    });
+    setTimeout(end, 2800);
+  })();
+
   /* ---------- clock + time-of-day hue (stays inside the purple range) ---------- */
   var clock = qs("#clock");
   var secSynced = false;

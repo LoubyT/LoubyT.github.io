@@ -32,12 +32,30 @@
         document.documentElement.classList.add("js");
         document.documentElement.style.setProperty("--hue", (274 + Math.sin((h / 24) * Math.PI * 2) * 16).toFixed(1));
         document.documentElement.style.setProperty("--sec", String(n.getSeconds() + n.getMilliseconds() / 1000));
+        try {
+          var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+          if (!reduce && !sessionStorage.getItem("louby-boot")) {
+            sessionStorage.setItem("louby-boot", "1");
+            document.documentElement.classList.add("intro");
+          }
+        } catch (err) {}
       })();
     </script>
   </head>
 
   <body id="top">
     <a class="skip" href="#main">Skip to content</a>
+    <div class="boot" id="boot">
+      <div class="boot-veil" aria-hidden="true"></div>
+      <div class="boot-bloom" aria-hidden="true"></div>
+      <div class="boot-ticks" aria-hidden="true"></div>
+      <div class="boot-ring" aria-hidden="true"></div>
+      <div class="boot-ring boot-ring-b" aria-hidden="true"></div>
+      <div class="boot-ring boot-ring-c" aria-hidden="true"></div>
+      <div class="boot-cross" aria-hidden="true"></div>
+      <div class="boot-scan" aria-hidden="true"></div>
+      <button class="boot-skip" id="boot-skip" type="button" aria-label="Skip intro">Skip</button>
+    </div>
     <div class="field" aria-hidden="true"></div>
     <svg class="trace" id="trace" aria-hidden="true" focusable="false">
       <path class="trace-glow" d="M28 0 L28 800"></path>
@@ -115,6 +133,24 @@
           </div>
         </div>
       </section>
+      <script>
+        (function () {
+          var root = document.documentElement;
+          if (!root.classList.contains("intro")) return;
+          var gate = document.querySelector("#gate .gate-media");
+          var boot = document.getElementById("boot");
+          if (!gate || !boot) {
+            root.classList.remove("intro");
+            return;
+          }
+          var r = gate.getBoundingClientRect();
+          var radius = Math.hypot(r.width, r.height) * 0.5 + 28;
+          boot.style.setProperty("--boot-x", ((r.left + r.width / 2) / window.innerWidth * 100).toFixed(2) + "%");
+          boot.style.setProperty("--boot-y", ((r.top + r.height / 2) / window.innerHeight * 100).toFixed(2) + "%");
+          boot.style.setProperty("--iris", Math.max(radius, 160).toFixed(0) + "px");
+          root.classList.add("boot-lock");
+        })();
+      </script>
 
       <section class="about" id="about" data-station data-rise>
         <div class="about-layout">
@@ -214,7 +250,7 @@
               <label for="message">Message</label>
               <textarea class="input-field" id="message" name="message" rows="6" placeholder="Enter Your Message" required></textarea>
             </div>
-            <input class="submit-button" type="submit" value="Submit">
+            <button class="submit-button" type="submit">Submit</button>
           </form>
         </div>
       </section>
