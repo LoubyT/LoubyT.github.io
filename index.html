@@ -33,6 +33,9 @@
         document.documentElement.style.setProperty("--hue", (274 + Math.sin((h / 24) * Math.PI * 2) * 16).toFixed(1));
         document.documentElement.style.setProperty("--sec", String(n.getSeconds() + n.getMilliseconds() / 1000));
         try {
+          if (sessionStorage.getItem("vx-07")) document.documentElement.classList.add("carrier-awake");
+        } catch (err) {}
+        try {
           var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
           if (!reduce && !sessionStorage.getItem("louby-boot")) {
             sessionStorage.setItem("louby-boot", "1");
@@ -62,6 +65,13 @@
       <path class="trace-core" pathLength="1000" d="M28 0 L28 800"></path>
       <circle class="trace-bead" r="4.5" cx="28" cy="0"></circle>
     </svg>
+    <svg class="margin-rocket" viewBox="0 0 20 48" aria-hidden="true" focusable="false">
+      <path class="rocket-flame" d="M8.2 31.5C8.2 36 6.2 40 10 45.5C13.8 40 11.8 36 11.8 31.5C11.2 33.2 8.8 33.2 8.2 31.5Z"></path>
+      <path class="rocket-body" d="M10 2.2L14.2 12.2V25.2L10 30.2L5.8 25.2V12.2Z"></path>
+      <path class="rocket-fin" d="M5.8 20.5L2.2 28.2L5.8 25.6"></path>
+      <path class="rocket-fin" d="M14.2 20.5L17.8 28.2L14.2 25.6"></path>
+      <circle class="rocket-port" cx="10" cy="16.2" r="1.55"></circle>
+    </svg>
 
     <header class="bar">
       <a class="brand" href="/" aria-label="Home">
@@ -69,7 +79,7 @@
       </a>
       <p class="bar-readout">
         <span class="live-dot" aria-hidden="true"></span>
-        <time id="clock" datetime="">--:--:--</time>
+        <time id="clock" datetime="">--:-- --</time>
       </p>
       <nav aria-label="Primary">
         <button class="hamburger" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Open menu">
