@@ -801,7 +801,7 @@
       if (e.metaKey || e.ctrlKey || e.altKey || e.repeat || e.isComposing) return;
       if (typingField(e.target)) return;
       var now = Date.now();
-      if (now - lastKeyAt > 4000) {
+      if (now - lastKeyAt > 12000) {
         chord = [];
         spell = "";
       }
