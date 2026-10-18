@@ -77,16 +77,25 @@
   var clock = qs("#clock");
   var secSynced = false;
 
+  function formatClock(now) {
+    var h24 = now.getHours();
+    var suffix = h24 >= 12 ? "PM" : "AM";
+    var h12 = h24 % 12;
+    if (h12 === 0) h12 = 12;
+    var hour = (h12 < 10 ? "\u2007" : "") + h12;
+    var mm = String(now.getMinutes()).padStart(2, "0");
+    var text = hour + ":" + mm;
+    if (!reduce) text += ":" + String(now.getSeconds()).padStart(2, "0");
+    return text + " " + suffix;
+  }
+
   function syncTime(resyncSweep) {
     var now = new Date();
     var hours = now.getHours() + now.getMinutes() / 60;
     var hue = 274 + Math.sin((hours / 24) * Math.PI * 2) * 16;
     root.style.setProperty("--hue", hue.toFixed(1));
     if (clock) {
-      var hh = String(now.getHours()).padStart(2, "0");
-      var mm = String(now.getMinutes()).padStart(2, "0");
-      var ss = String(now.getSeconds()).padStart(2, "0");
-      clock.textContent = reduce ? hh + ":" + mm : hh + ":" + mm + ":" + ss;
+      clock.textContent = formatClock(now);
       clock.setAttribute("datetime", now.toISOString());
     }
     if (resyncSweep || !secSynced) {
@@ -106,19 +115,28 @@
     var button = qs(".hamburger");
     var nav = qs(".navigation");
     if (!button || !nav) return;
-    var mq = window.matchMedia("(max-width: 860px)");
+    var veil = [qs("#main"), qs("footer"), qs(".scroll-up")].filter(Boolean);
+
+    function collapsed() {
+      return window.getComputedStyle(button).display !== "none";
+    }
 
     function setOpen(open) {
+      var docked = collapsed();
       button.setAttribute("aria-expanded", open ? "true" : "false");
       button.setAttribute("aria-label", open ? "Close menu" : "Open menu");
       nav.classList.toggle("is-open", open);
-      document.body.classList.toggle("nav-open", open);
-      if (mq.matches && !open) nav.setAttribute("inert", "");
+      document.body.classList.toggle("nav-open", open && docked);
+      if (docked && !open) nav.setAttribute("inert", "");
       else nav.removeAttribute("inert");
+      veil.forEach(function (el) {
+        if (open && docked) el.setAttribute("inert", "");
+        else el.removeAttribute("inert");
+      });
     }
 
     function sync() {
-      if (!mq.matches) setOpen(false);
+      if (!collapsed()) setOpen(false);
       else if (button.getAttribute("aria-expanded") !== "true") nav.setAttribute("inert", "");
     }
 
@@ -129,9 +147,9 @@
       link.addEventListener("click", function () { setOpen(false); });
     });
     document.addEventListener("keydown", function (e) {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape" && !root.classList.contains("carrier-open")) setOpen(false);
     });
-    if (mq.addEventListener) mq.addEventListener("change", sync);
+    window.addEventListener("resize", sync);
     sync();
   })();
 
@@ -413,8 +431,12 @@
     lens.style.setProperty("--lx", lx.toFixed(1) + "%");
     lens.style.setProperty("--ly", ly.toFixed(1) + "%");
     if (reticle && gateRect) {
+      var half = (reticle.offsetWidth || 64) / 2;
       var x = (lx / 100) * gateRect.width;
       var y = (ly / 100) * gateRect.height;
+      var maxY = Math.max(half + 8, gateRect.height - 72 - half);
+      if (y > maxY) y = maxY;
+      if (y < half) y = half;
       reticle.style.transform = "translate3d(" + x.toFixed(1) + "px," + y.toFixed(1) + "px,0) translate(-50%,-50%)";
     }
   }
@@ -528,6 +550,7 @@
   window.addEventListener("resize", function () {
     measure();
     cacheStations();
+    syncTime(false);
   });
 
   if ("ResizeObserver" in window) {
@@ -548,4 +571,277 @@
       raf = requestAnimationFrame(frame);
     }
   });
+
+  /* A name, a chord, or a restless clock. Nothing on the page points here. */
+  (function initCarrier() {
+    var carrierOn = false;
+    var held = [];
+    var warp = null;
+    var timers = [];
+    var timeLoop = 0;
+    var lastFocus = null;
+    var chord = [];
+    var spell = "";
+    var lastKeyAt = 0;
+    var taps = [];
+    var konami = ["arrowup", "arrowup", "arrowdown", "arrowdown", "arrowleft", "arrowright", "arrowleft", "arrowright", "b", "a"];
+
+    try {
+      console.info("%c◇  a name, spelled, will answer.", "color:#d8c6ff;font:500 13px/1.4 Outfit,sans-serif;letter-spacing:.04em");
+    } catch (err) {}
+
+    function typingField(el) {
+      if (!el || !el.tagName) return false;
+      var tag = el.tagName.toLowerCase();
+      return tag === "input" || tag === "textarea" || el.isContentEditable;
+    }
+
+    function later(fn, ms) {
+      timers.push(setTimeout(fn, ms));
+    }
+
+    function clearTimers() {
+      timers.forEach(function (id) { clearTimeout(id); });
+      timers = [];
+      if (timeLoop) clearInterval(timeLoop);
+      timeLoop = 0;
+    }
+
+    function lockPage(overlay) {
+      qsa("body > *").forEach(function (el) {
+        if (el === overlay) return;
+        el.setAttribute("inert", "");
+        held.push(el);
+      });
+      root.classList.add("carrier-open");
+    }
+
+    function unlockPage() {
+      held.forEach(function (el) { el.removeAttribute("inert"); });
+      held = [];
+      root.classList.remove("carrier-open");
+    }
+
+    function startWarp(canvas) {
+      var ctx = canvas.getContext("2d");
+      if (!ctx) return { stop: function () {}, resize: function () {} };
+      var stars = [];
+      var running = true;
+      var rafId = 0;
+      var dpr = Math.min(window.devicePixelRatio || 1, 1.75);
+      var started = performance.now();
+
+      function resize() {
+        var w = canvas.clientWidth || window.innerWidth;
+        var h = canvas.clientHeight || window.innerHeight;
+        canvas.width = Math.max(1, Math.floor(w * dpr));
+        canvas.height = Math.max(1, Math.floor(h * dpr));
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+
+      function seed() {
+        var count = reduce ? 70 : (window.innerWidth < 700 ? 100 : 160);
+        stars = [];
+        for (var i = 0; i < count; i++) {
+          stars.push({
+            x: Math.random() * 2 - 1,
+            y: Math.random() * 2 - 1,
+            z: Math.random(),
+            violet: Math.random() > 0.7
+          });
+        }
+      }
+
+      function frame(now) {
+        if (!running) return;
+        var w = canvas.clientWidth || window.innerWidth;
+        var h = canvas.clientHeight || window.innerHeight;
+        var age = reduce ? 1 : Math.min(1, (now - started) / 1700);
+        var speed = reduce ? 0 : 0.0035 + (1 - age) * 0.02;
+        ctx.clearRect(0, 0, w, h);
+        var cx = w * 0.5;
+        var cy = h * 0.4;
+        for (var i = 0; i < stars.length; i++) {
+          var s = stars[i];
+          if (!reduce) {
+            s.z -= speed;
+            if (s.z <= 0.04) {
+              s.x = Math.random() * 2 - 1;
+              s.y = Math.random() * 2 - 1;
+              s.z = 1;
+            }
+          }
+          var p = 1 - s.z;
+          var x = cx + s.x * cx * p * 1.4;
+          var y = cy + s.y * cy * p * 1.4;
+          var trail = Math.max(0, p - speed * 4);
+          var px = cx + s.x * cx * trail * 1.4;
+          var py = cy + s.y * cy * trail * 1.4;
+          ctx.strokeStyle = s.violet ? "rgba(214, 186, 255, 0.9)" : "rgba(255,255,255,0.82)";
+          ctx.lineWidth = Math.max(0.6, p * 2.15);
+          ctx.beginPath();
+          ctx.moveTo(px, py);
+          ctx.lineTo(x, y);
+          ctx.stroke();
+        }
+        if (!reduce) rafId = requestAnimationFrame(frame);
+      }
+
+      resize();
+      seed();
+      if (reduce) frame(started);
+      else rafId = requestAnimationFrame(frame);
+      return {
+        stop: function () {
+          running = false;
+          if (rafId) cancelAnimationFrame(rafId);
+        },
+        resize: resize
+      };
+    }
+
+    function closeCarrier() {
+      if (!carrierOn) return;
+      carrierOn = false;
+      clearTimers();
+      if (warp) warp.stop();
+      warp = null;
+      var overlay = qs("#carrier");
+      if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
+      unlockPage();
+      document.removeEventListener("keydown", onEsc);
+      window.removeEventListener("resize", onResize);
+      if (lastFocus && lastFocus.focus) lastFocus.focus();
+      if (!reduce && !document.hidden && !raf) raf = requestAnimationFrame(frame);
+      window.dispatchEvent(new Event("resize"));
+    }
+
+    function onEsc(e) {
+      if (e.key !== "Escape") return;
+      e.preventDefault();
+      closeCarrier();
+    }
+
+    function onResize() {
+      if (warp) warp.resize();
+    }
+
+    function openCarrier() {
+      if (carrierOn || root.classList.contains("intro")) return;
+      carrierOn = true;
+      var ham = qs(".hamburger");
+      var menu = qs(".navigation");
+      if (ham && menu) {
+        ham.setAttribute("aria-expanded", "false");
+        ham.setAttribute("aria-label", "Open menu");
+        menu.classList.remove("is-open");
+        if (collapsedMenu()) menu.setAttribute("inert", "");
+        document.body.classList.remove("nav-open");
+      }
+      lastFocus = document.activeElement;
+      var overlay = document.createElement("div");
+      overlay.id = "carrier";
+      overlay.className = "carrier" + (reduce ? " is-still" : " is-lit");
+      overlay.setAttribute("role", "dialog");
+      overlay.setAttribute("aria-modal", "true");
+      overlay.setAttribute("aria-label", "Launch window");
+      overlay.innerHTML =
+        '<canvas class="carrier-canvas" aria-hidden="true"></canvas>' +
+        '<button class="carrier-close" type="button" aria-label="Close launch window">Return</button>' +
+        '<div class="carrier-stage">' +
+          '<div class="carrier-hud">' +
+            '<p class="carrier-kicker">07 · Carrier lock</p>' +
+            '<h2 class="carrier-title" id="carrier-title">Louby</h2>' +
+            '<p class="carrier-line">the violet holds</p>' +
+            '<p class="carrier-sub">Starlink · Instructional Designer II</p>' +
+            '<dl class="carrier-stats"><dt>Local</dt><dd id="carrier-time"></dd><dt>Path</dt><dd>violet / nominal</dd></dl>' +
+          '</div>' +
+        '</div>';
+      var source = qs(".margin-rocket");
+      var stage = overlay.querySelector(".carrier-stage");
+      var hud = overlay.querySelector(".carrier-hud");
+      if (source && stage && hud) {
+        var rocket = source.cloneNode(true);
+        rocket.setAttribute("class", "carrier-rocket");
+        stage.insertBefore(rocket, hud);
+      }
+      document.body.appendChild(overlay);
+      lockPage(overlay);
+      try { sessionStorage.setItem("vx-07", "1"); } catch (err) {}
+      root.classList.add("carrier-awake");
+      if (raf) cancelAnimationFrame(raf);
+      raf = 0;
+      warp = startWarp(overlay.querySelector(".carrier-canvas"));
+      var timeEl = overlay.querySelector("#carrier-time");
+      function paintTime() { if (timeEl) timeEl.textContent = formatClock(new Date()); }
+      paintTime();
+      timeLoop = setInterval(paintTime, reduce ? 30000 : 1000);
+      if (!reduce) later(function () { overlay.classList.add("is-read"); }, 1550);
+      overlay.querySelector(".carrier-close").addEventListener("click", function (e) {
+        e.stopPropagation();
+        closeCarrier();
+      });
+      overlay.addEventListener("click", function (e) {
+        if (e.target.closest && e.target.closest(".carrier-stage")) return;
+        closeCarrier();
+      });
+      document.addEventListener("keydown", onEsc);
+      window.addEventListener("resize", onResize);
+      var closeBtn = overlay.querySelector(".carrier-close");
+      if (closeBtn) closeBtn.focus();
+    }
+
+    function collapsedMenu() {
+      var button = qs(".hamburger");
+      return !!(button && window.getComputedStyle(button).display !== "none");
+    }
+
+    document.addEventListener("keydown", function (e) {
+      if (carrierOn || root.classList.contains("intro")) return;
+      if (e.metaKey || e.ctrlKey || e.altKey || e.repeat || e.isComposing) return;
+      if (typingField(e.target)) return;
+      var now = Date.now();
+      if (now - lastKeyAt > 12000) {
+        chord = [];
+        spell = "";
+      }
+      lastKeyAt = now;
+      var key = (e.key || "").toLowerCase();
+      if (!key) return;
+      chord.push(key);
+      if (chord.length > konami.length) chord.shift();
+      var matched = chord.length === konami.length;
+      for (var i = 0; matched && i < konami.length; i++) {
+        if (chord[i] !== konami[i]) matched = false;
+      }
+      if (matched) {
+        chord = [];
+        spell = "";
+        openCarrier();
+        return;
+      }
+      if (key.length === 1 && key >= "a" && key <= "z") {
+        spell = (spell + key).slice(-8);
+        if (spell.slice(-5) === "louby") {
+          spell = "";
+          chord = [];
+          openCarrier();
+        }
+      }
+    });
+
+    var readout = qs(".bar-readout");
+    if (readout) {
+      readout.addEventListener("click", function () {
+        if (carrierOn || root.classList.contains("intro")) return;
+        var now = Date.now();
+        taps.push(now);
+        taps = taps.filter(function (t) { return now - t < 5000; });
+        if (taps.length >= 7) {
+          taps = [];
+          openCarrier();
+        }
+      });
+    }
+  })();
 })();
