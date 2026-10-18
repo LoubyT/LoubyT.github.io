@@ -836,7 +836,7 @@
         if (carrierOn || root.classList.contains("intro")) return;
         var now = Date.now();
         taps.push(now);
-        taps = taps.filter(function (t) { return now - t < 3200; });
+        taps = taps.filter(function (t) { return now - t < 5000; });
         if (taps.length >= 7) {
           taps = [];
           openCarrier();
