@@ -181,9 +181,9 @@ function render() {
 
   /* bills */
   const bills = (d.bills || []).map((b) => {
-    let when = b.due_day ? nextMonthly(b.due_day, t) : b.repeat === 'yearly' ? nextYearly(b.due_date, t) : parseD(b.due_date);
+    const when = FDRecur.nextOccurrence(b, t); // due_date is a START date for monthly/yearly — nothing before it
     return { ...b, when, days: daysBetween(t, when) };
-  }).filter((b) => b.days >= 0 && b.days <= 45).sort((a, b) => a.days - b.days);
+  }).filter((b) => b.when && b.days >= 0 && b.days <= 45).sort((a, b) => a.days - b.days);
   $('#billsSec').hidden = !(d.bills || []).length;
   const showAll = render.allBills, shown = showAll ? bills : bills.slice(0, 5);
   $('#bills').innerHTML = shown.map((b) => {
