@@ -149,6 +149,7 @@ function render() {
     const amt = hit ? hit.amount : d.paychecks.placeholder ? undefined : d.paychecks.amount;
     if (pd) cds.push({ id: 'payday', name: d.paychecks.label || 'Next payday', when: pd, days: daysBetween(t, pd), icon: '💵', kind: 'pay', budget: amt, note: amt != null ? 'take-home' : '' });
   }
+  renderMoneyCard(d, t);
   plans.sort((a, b) => a.when - b.when);
   const soon = plans.filter((x) => x.days <= 120);
   $('#plansSec').hidden = !soon.length;
@@ -291,6 +292,103 @@ function countUp(el, to, fmt) {
   requestAnimationFrame(step);
 }
 
+
+/* ---------------- timeline ----------------
+ * Totals rules (never double count):
+ *  - type "event" rows are informational (trip summaries AND their line items) → never counted
+ *  - type "transfer" rows move money between our own accounts → never counted
+ *  - income/in → "in"; bill/spending/out → "out"; savings/out → "saved"
+ */
+const TL_ICON = { income: '💵', bill: '🧾', spending: '🛒', savings: '🐷', transfer: '⇄', event: 'ⓘ' };
+function tlBucket(e) {
+  if (e.type === 'event' || e.type === 'transfer' || e.amount == null) return null;
+  if (e.direction === 'in') return 'in';
+  return e.type === 'savings' ? 'saved' : 'out';
+}
+function tlTotals(list) {
+  const t = { in: 0, out: 0, saved: 0 };
+  for (const e of list) { const b = tlBucket(e); if (b) t[b] += e.amount; }
+  return t;
+}
+const upcoming = (d, t) => (d.timeline || []).filter((e) => parseD(e.end_date || e.date) >= t);
+function tlRow(e) {
+  const b = tlBucket(e), cls = e.type === 'event' ? 'info' : e.type === 'transfer' ? 'move' : b === 'in' ? 'in' : 'out';
+  const est = e.estimated ? '~' : '';
+  const sign = cls === 'in' ? '+' : cls === 'out' ? '−' : '';
+  const amt = e.amount == null ? 'TBD' : est + sign + usdSmart(e.amount);
+  const subs = [];
+  if (e.due_date && e.due_date !== e.date) subs.push('due ' + fmtD(parseD(e.due_date)));
+  if (e.end_date) subs.push('through ' + fmtD(parseD(e.end_date)));
+  if (e.type === 'event') subs.push('info only');
+  if (e.type === 'transfer') subs.push('moving money');
+  if (e.account) subs.push(e.account);
+  if (e.note) subs.push(e.note);
+  const bal = e.balance_after != null ? `<span class="bal">bal ${usdSmart(e.balance_after)}</span>` : '';
+  return `<div class="row ${cls}"><div class="emoji">${TL_ICON[e.type] || '•'}</div>
+    <div class="grow"><div class="name">${esc(e.name)}${e.protected ? `<span class="badge prot">${SHIELD}Protected</span>` : ''}${e.estimated ? '<span class="badge est">Estimate</span>' : ''}</div>
+    <div class="sub">${esc(subs.join(' · '))}</div></div>
+    <div class="amt ${cls}">${esc(amt)}${bal}</div></div>`;
+}
+function renderMoneyCard(d, t) {
+  const up = upcoming(d, t);
+  $('#moneySec').hidden = !up.length;
+  if (!up.length) return;
+  const end = new Date(t.getFullYear(), t.getMonth(), t.getDate() + 14);
+  const next = up.filter((e) => parseD(e.date) < end);
+  const tot = tlTotals(next);
+  let low = null;
+  for (const e of next) if (e.balance_after != null && (low === null || e.balance_after < low.balance_after)) low = e;
+  const preview = next.filter((e) => e.type !== 'transfer').slice(0, 3);
+  $('#money').innerHTML = `<div class="mstats"><div class="in">Coming in<b>+${usd(tot.in)}</b></div><div>Going out<b>−${usd(tot.out)}</b></div><div>Saved<b>${usd(tot.saved)}</b></div></div>
+    ${low ? `<p class="mlow">Lowest balance: <b>${usdSmart(low.balance_after)}</b> on ${fmtD(parseD(low.date), { weekday: 'short', month: 'short', day: 'numeric' })}</p>` : ''}
+    ${preview.length ? `<div class="list">${preview.map((e) => tlRow({ ...e, note: undefined, account: undefined })).join('')}</div>` : ''}
+    <button class="see-all" type="button" data-timeline>See full timeline →</button>`;
+  $('#money').classList.add('reveal');
+}
+
+let tlWeeks = 3;
+function weekStart(dt) { return new Date(dt.getFullYear(), dt.getMonth(), dt.getDate() - dt.getDay()); }
+function renderTimeline() {
+  if (!DATA) return;
+  const t = today0(), up = upcoming(DATA, t);
+  const first = weekStart(t), cutoff = new Date(first.getFullYear(), first.getMonth(), first.getDate() + tlWeeks * 7);
+  const shown = up.filter((e) => parseD(e.date) < cutoff);
+  const weeks = new Map();
+  for (const e of shown) {
+    const dd = parseD(e.date) < t ? t : parseD(e.date); // multi-day item that started earlier → show today
+    const wk = +weekStart(dd); if (!weeks.has(wk)) weeks.set(wk, new Map());
+    const days = weeks.get(wk), key = +dd; if (!days.has(key)) days.set(key, []); days.get(key).push(e);
+  }
+  const html = [];
+  for (const [wk, days] of weeks) {
+    const ws = new Date(wk), diffW = Math.round(daysBetween(first, ws) / 7);
+    const title = diffW === 0 ? 'This week' : diffW === 1 ? 'Next week' : 'Week of ' + fmtD(ws);
+    const tot = tlTotals([...days.values()].flat());
+    html.push(`<section class="wk"><div class="wk-head"><h2>${title}</h2><span class="wk-tot"><span class="g">+${usd(tot.in)}</span> in · −${usd(tot.out)} out${tot.saved ? ` · ${usd(tot.saved)} saved` : ''}</span></div><div class="card list">`);
+    for (const [day, items] of days) {
+      const dd = new Date(day), n = daysBetween(t, dd);
+      const lbl = (n === 0 ? 'Today · ' : n === 1 ? 'Tomorrow · ' : '') + fmtD(dd, { weekday: 'long', month: 'short', day: 'numeric' });
+      html.push(`<div class="day ${n === 0 ? 'today' : ''}">${lbl}</div>` + items.map(tlRow).join(''));
+    }
+    html.push('</div></section>');
+  }
+  $('#tlList').innerHTML = html.join('') || '<div class="card empty">Nothing planned yet.</div>';
+  const more = up.some((e) => parseD(e.date) >= cutoff);
+  $('#tlMore').hidden = !more; $('#tlEnd').hidden = more || !up.length;
+}
+let tlScroll = 0;
+function showTimeline(on) {
+  if (on && !DATA) return;
+  if (on) { tlScroll = scrollY; tlWeeks = 3; renderTimeline(); $('#app').hidden = true; $('#tlView').hidden = false; scrollTo(0, 0); }
+  else if (!$('#tlView').hidden) { $('#tlView').hidden = true; $('#app').hidden = false; scrollTo(0, tlScroll); }
+}
+addEventListener('hashchange', () => showTimeline(location.hash === '#timeline'));
+$('#tlBack').addEventListener('click', () => { if (location.hash === '#timeline') history.back(); else showTimeline(false); });
+$('#tlMore').addEventListener('click', () => { tlWeeks += 3; renderTimeline(); });
+if ('IntersectionObserver' in window) {
+  new IntersectionObserver((ents) => { if (ents[0].isIntersecting && !$('#tlView').hidden && !$('#tlMore').hidden) { tlWeeks += 3; renderTimeline(); } }, { rootMargin: '200px' }).observe($('#tlMore'));
+}
+
 /* ---------------- add-spend sheet ---------------- */
 let sheetCat = null;
 function openSheet(id) {
@@ -315,8 +413,9 @@ let toastT;
 function toast(msg) { const el = $('#toast'); el.textContent = msg; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 2200); }
 
 document.addEventListener('click', (e) => {
-  const t = e.target.closest('[data-add],[data-close],[data-chip],[data-del],[data-more]'); if (!t) return;
-  if ('more' in t.dataset) { render.allBills = !render.allBills; refreshView(); }
+  const t = e.target.closest('[data-add],[data-close],[data-chip],[data-del],[data-more],[data-timeline]'); if (!t) return;
+  if ('timeline' in t.dataset) { location.hash = '#timeline'; }
+  else if ('more' in t.dataset) { render.allBills = !render.allBills; refreshView(); }
   else if (t.dataset.add) openSheet(t.dataset.add);
   else if ('close' in t.dataset) closeSheets();
   else if (t.dataset.chip) { const cur = parseFloat($('#amt').value) || 0; $('#amt').value = String(Math.round((cur + +t.dataset.chip) * 100) / 100); }
@@ -329,11 +428,11 @@ $('#spendForm').addEventListener('submit', (e) => {
   Spend.add(sheetCat.id, Math.round(v * 100) / 100);
   closeSheets(); refreshView(); toast(`Added ${usdSmart(v)} to ${sheetCat.name}`);
 });
-function refreshView() { const y = scrollY; render(); scrollTo(0, y); }
+function refreshView() { const y = scrollY; render(); if (!$('#tlView').hidden) renderTimeline(); scrollTo(0, y); }
 
 /* ---------------- boot / lock ---------------- */
-function showLock(msg) { $('#app').hidden = true; $('#lock').hidden = false; if (msg) $('#lockSub').innerHTML = msg; }
-function showApp() { $('#lock').hidden = true; $('#app').hidden = false; render(); }
+function showLock(msg) { $('#app').hidden = true; $('#tlView').hidden = true; $('#lock').hidden = false; if (msg) $('#lockSub').innerHTML = msg; }
+function showApp() { $('#lock').hidden = true; $('#app').hidden = false; render(); if (location.hash === '#timeline') showTimeline(true); }
 
 async function boot() {
   let stored = null;
@@ -403,7 +502,7 @@ setInterval(() => { if (!document.hidden) refreshData({ silent: true }); }, 15 *
 (() => {
   const ptr = $('#ptr'); let y0 = null, dy = 0;
   const sheetOpen = () => !$('#sheetWrap').hidden || !$('#menuWrap').hidden;
-  addEventListener('touchstart', (e) => { if (scrollY <= 0 && !refreshing && DATA && !sheetOpen() && !$('#app').hidden) { y0 = e.touches[0].clientY; dy = 0; } }, { passive: true });
+  addEventListener('touchstart', (e) => { if (scrollY <= 0 && !refreshing && DATA && !sheetOpen() && (!$('#app').hidden || !$('#tlView').hidden)) { y0 = e.touches[0].clientY; dy = 0; } }, { passive: true });
   addEventListener('touchmove', (e) => {
     if (y0 === null) return; dy = e.touches[0].clientY - y0;
     if (dy <= 0 || scrollY > 0) { ptr.style.transform = ''; ptr.style.opacity = ''; return; }

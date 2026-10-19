@@ -64,6 +64,13 @@
     <div class="countdowns" id="countdowns"></div>
   </section>
 
+  <section aria-labelledby="hMoney" id="moneySec" hidden>
+    <div class="sec-head">
+      <h2 id="hMoney" class="sec-title">Money · next 14 days</h2>
+    </div>
+    <div class="card money" id="money"></div>
+  </section>
+
   <section aria-labelledby="hPlans" id="plansSec">
     <h2 id="hPlans" class="sec-title">Plans</h2>
     <div class="card list" id="plans"></div>
@@ -90,6 +97,21 @@
   </section>
 
   <footer class="foot" id="foot"></footer>
+</main>
+
+<!-- ============ TIMELINE VIEW ============ -->
+<main id="tlView" class="app tl" hidden>
+  <header class="tl-top">
+    <button class="back" id="tlBack" type="button" aria-label="Back to dashboard">
+      <svg viewBox="0 0 24 24" width="22" height="22"><path d="M15 5l-7 7 7 7" fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Back</span>
+    </button>
+    <h1>Timeline</h1>
+    <span class="tl-spacer"></span>
+  </header>
+  <p class="tl-legend"><span class="dot in"></span>Coming in <span class="dot out"></span>Going out <span class="muted">· Trips/events (ⓘ) and moves between accounts (⇄) aren’t added to totals</span></p>
+  <div id="tlList"></div>
+  <button class="more-btn" id="tlMore" type="button">Show more</button>
+  <p class="fine" id="tlEnd" hidden>That’s everything planned so far.</p>
 </main>
 
 <!-- ============ ADD SPEND SHEET ============ -->
