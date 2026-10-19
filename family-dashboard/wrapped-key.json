@@ -1,0 +1,11 @@
+{
+  "v": 1,
+  "kdf": "PBKDF2-SHA256",
+  "iterations": 600000,
+  "salt": "NGAscoqPgMkgrELfYU8PFg==",
+  "wrap": "AES-256-GCM",
+  "iv": "m+yx1MCLoWgVJKkP",
+  "wrapped": "ddgSLlohF6L2BVXzx1VBHRmfxND95q7GpyA/sFiRVVpttWq5wiLhSyDHdVBfH4Em",
+  "kid": "a490e226e1fe2dbc",
+  "created_at": "2026-10-19T01:56:44.724Z"
+}
