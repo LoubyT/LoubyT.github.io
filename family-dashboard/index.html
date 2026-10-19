@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#0b0d14">
+<meta name="color-scheme" content="dark">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Family">
+<meta name="format-detection" content="telephone=no">
+<title>Family Dashboard</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="bg" aria-hidden="true"><i></i><i></i><i></i></div>
+
+<!-- ============ LOCK SCREEN ============ -->
+<main id="lock" class="lock" hidden>
+  <div class="lock-card">
+    <img class="lock-logo" src="icons/icon-192.png" alt="" width="84" height="84">
+    <h1>Family Dashboard</h1>
+    <p class="lock-sub" id="lockSub">Type the family passcode.<br>You only need to do this once on this phone.</p>
+    <form id="lockForm" autocomplete="off">
+      <label class="sr" for="pass">Family passcode</label>
+      <input id="pass" type="password" inputmode="text" autocomplete="current-password" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Passcode" enterkeyhint="go" required>
+      <button id="unlockBtn" class="btn-primary" type="submit"><span>Open</span></button>
+      <p id="lockErr" class="lock-err" role="alert"></p>
+    </form>
+    <button id="showPass" class="link" type="button">Show passcode</button>
+  </div>
+</main>
+
+<!-- ============ DASHBOARD ============ -->
+<div class="ptr" id="ptr" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M20 12a8 8 0 1 1-2.34-5.66" fill="none" stroke-width="2.4" stroke-linecap="round"/><path d="M20 4v5h-5" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+<main id="app" class="app" hidden>
+  <header class="top">
+    <div>
+      <p class="hello" id="hello">Hi</p>
+      <p class="today" id="today"></p>
+      <p class="updated" id="updated"></p>
+    </div>
+    <div class="top-btns">
+    <button class="icon-btn" id="refreshTop" aria-label="Refresh numbers">
+      <svg viewBox="0 0 24 24" width="22" height="22"><path d="M20 12a8 8 0 1 1-2.34-5.66" fill="none" stroke-width="2.4" stroke-linecap="round"/><path d="M20 4v5h-5" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <button class="icon-btn" id="menuBtn" aria-label="Menu">
+      <svg viewBox="0 0 24 24" width="22" height="22"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+    </button>
+    </div>
+  </header>
+
+  <div id="sampleBanner" class="banner" hidden>Sample numbers — real budget coming soon</div>
+
+  <section aria-labelledby="hCount">
+    <h2 id="hCount" class="sec-title">Coming up</h2>
+    <div class="countdowns" id="countdowns"></div>
+  </section>
+
+  <section aria-labelledby="hPlans" id="plansSec">
+    <h2 id="hPlans" class="sec-title">Plans</h2>
+    <div class="card list" id="plans"></div>
+  </section>
+
+  <section aria-labelledby="hBills" id="billsSec">
+    <h2 id="hBills" class="sec-title">Bills due</h2>
+    <div class="card list" id="bills"></div>
+  </section>
+
+  <section aria-labelledby="hBudget">
+    <div class="sec-head">
+      <h2 id="hBudget" class="sec-title">This month</h2>
+      <span class="sec-note" id="monthName"></span>
+    </div>
+    <div class="card summary" id="summary"></div>
+    <div class="cats" id="cats"></div>
+    <p class="fine">Spending you add is saved on this phone only. It doesn’t sync between phones yet.</p>
+  </section>
+
+  <section aria-labelledby="hDental" id="dentalSec">
+    <h2 id="hDental" class="sec-title">Savings goal</h2>
+    <div class="card dental" id="dental"></div>
+  </section>
+
+  <footer class="foot" id="foot"></footer>
+</main>
+
+<!-- ============ ADD SPEND SHEET ============ -->
+<div class="sheet-wrap" id="sheetWrap" hidden>
+  <div class="sheet-scrim" data-close></div>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <div class="grab" aria-hidden="true"></div>
+    <h3 id="sheetTitle">Add spending</h3>
+    <p class="sheet-sub" id="sheetSub"></p>
+    <form id="spendForm" autocomplete="off">
+      <label class="money-in">
+        <span>$</span>
+        <input id="amt" type="text" inputmode="decimal" placeholder="0" aria-label="Amount in dollars" enterkeyhint="done">
+      </label>
+      <div class="chips" id="chips"></div>
+      <button class="btn-primary" type="submit" id="saveSpend">Save</button>
+      <button class="btn-ghost" type="button" data-close>Cancel</button>
+    </form>
+    <div class="entries" id="entries"></div>
+  </div>
+</div>
+
+<!-- ============ MENU SHEET ============ -->
+<div class="sheet-wrap" id="menuWrap" hidden>
+  <div class="sheet-scrim" data-close></div>
+  <div class="sheet" role="dialog" aria-modal="true" aria-label="Menu">
+    <div class="grab" aria-hidden="true"></div>
+    <button class="menu-item" id="refreshBtn" type="button">↻&nbsp; Refresh numbers</button>
+    <button class="menu-item danger" id="forgetBtn" type="button">Lock this phone (forget passcode)</button>
+    <button class="btn-ghost" type="button" data-close>Close</button>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="app.js"></script>
+</body>
+</html>
