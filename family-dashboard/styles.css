@@ -240,3 +240,30 @@ section{margin-top:22px}
 .more-btn{display:block;width:100%;height:56px;margin:18px 0 6px;border-radius:16px;background:rgba(255,255,255,.07);border:1px solid var(--card-b);font-size:17px;font-weight:650}
 .tl .row{min-height:60px}
 @media (min-width:760px){.tl{max-width:760px}.tl-top{margin:0;padding-left:0;padding-right:0}}
+
+/* tappable rows + event breakdown sheet */
+button.row{width:100%;text-align:left;font:inherit;color:inherit;background:none;border:0;border-top:1px solid rgba(255,255,255,.06);cursor:pointer;transition:background .15s}
+.card > button.row:first-child,.day + button.row{border-top:0}
+button.row:active,button.row:hover{background:rgba(255,255,255,.04)}
+.row.tap .name{color:var(--txt)}
+.row.tap .emoji{background:rgba(77,163,255,.14)}
+.chev{flex:0 0 auto;color:#9fcbff;font-size:26px;line-height:1;margin-left:2px;font-weight:300}
+.ev-sheet{padding-top:10px}
+.ev-x{position:absolute;right:12px;top:10px;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.07);font-size:17px;color:var(--dim)}
+.ev-sheet h3{text-align:left;font-size:22px;margin:4px 52px 4px 0}
+.ev-date{margin:0 0 14px;color:var(--dim);font-size:15px;font-variant-numeric:tabular-nums}
+.ev-total,.ev-fund{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:12px 14px;border-radius:14px;background:rgba(255,255,255,.05);margin-bottom:8px}
+.ev-total span,.ev-fund span{color:var(--dim);font-size:14px;flex:0 0 auto}
+.ev-total b{font-size:26px;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.ev-fund b{font-size:15px;font-weight:600;text-align:right}
+.ev-h{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin:16px 4px 6px}
+.ev-items{list-style:none;margin:0;padding:0}
+.ev-items li{padding:12px 4px;border-top:1px solid rgba(255,255,255,.06)}
+.ev-items li:first-child{border-top:0}
+.bi-main{display:flex;justify-content:space-between;gap:12px}
+.bi-name{font-weight:600}
+.bi-amt{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.bi-sub{color:var(--dim);font-size:13px;margin-top:3px}
+.ev-diff{margin:10px 4px 0;padding:10px 12px;border-radius:12px;background:rgba(255,184,77,.1);border:1px solid rgba(255,184,77,.3);color:#ffd28a;font-size:13px}
+.ev-foot{color:var(--faint);font-size:12px;text-align:center;margin:14px 0 0}
+.ev-sheet{transition:transform .25s var(--ease)}

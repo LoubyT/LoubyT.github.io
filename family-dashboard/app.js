@@ -158,8 +158,10 @@ function render() {
     const amt = x.budget != null ? (x.estimated ? '~' : '') + usdSmart(x.budget) + ' · ' : '';
     const cls = x.days <= 1 ? 'now' : x.days <= 5 ? 'soon' : '';
     const lbl = x.days === 0 ? (x.end_date ? 'Now' : 'Today') : x.days === 1 ? 'Tomorrow' : `${x.days} days`;
-    return `<div class="row reveal"><div class="emoji">${esc(x.icon || '📅')}</div>
-      <div class="grow"><div class="name">${esc(x.name)}</div><div class="sub">${amt}${range}</div></div><span class="pill ${cls}">${lbl}</span></div>`;
+    const ti = x.kind === 'birthday' ? -1 : (d.timeline || []).findIndex((e) => hasBreakdown(e) && e.name === x.name && e.date === x.date);
+    const tag = ti >= 0 ? `button type="button" class="row reveal tap" data-ev="${ti}" aria-label="${esc(x.name)} — see breakdown"` : 'div class="row reveal"';
+    return `<${tag}><div class="emoji">${esc(x.icon || '📅')}</div>
+      <div class="grow"><div class="name">${esc(x.name)}</div><div class="sub">${amt}${range}${ti >= 0 ? ' · Tap for breakdown' : ''}</div></div><span class="pill ${cls}">${lbl}</span>${ti >= 0 ? '<span class="chev" aria-hidden="true">›</span></button>' : '</div>'}`;
   }).join('');
   cds.sort((a, b) => a.days - b.days);
   const PAL = [['#ff6fb5', '#b65cff'], ['#4da3ff', '#2ee6c5'], ['#ffb84d', '#ff6f91'], ['#3ddc84', '#4da3ff']];
@@ -300,22 +302,16 @@ function countUp(el, to, fmt) {
  *  - income/in → "in"; bill/spending/out → "out"; savings/out → "saved"
  */
 const TL_ICON = { income: '💵', bill: '🧾', spending: '🛒', savings: '🐷', transfer: '⇄', event: 'ⓘ' };
-function tlBucket(e) {
-  if (e.type === 'event' || e.type === 'transfer' || e.amount == null) return null;
-  if (e.direction === 'in') return 'in';
-  return e.type === 'savings' ? 'saved' : 'out';
-}
-function tlTotals(list) {
-  const t = { in: 0, out: 0, saved: 0 };
-  for (const e of list) { const b = tlBucket(e); if (b) t[b] += e.amount; }
-  return t;
-}
+const { tlBucket, tlTotals, exactMoney, breakdownCheck } = FDCalc;
 const upcoming = (d, t) => (d.timeline || []).filter((e) => parseD(e.end_date || e.date) >= t);
-function tlRow(e) {
+const hasBreakdown = (e) => e && e.type === 'event' && Array.isArray(e.breakdown) && e.breakdown.length > 0;
+function tlRow(e, opts = {}) {
   const b = tlBucket(e), cls = e.type === 'event' ? 'info' : e.type === 'transfer' ? 'move' : b === 'in' ? 'in' : 'out';
+  const idx = DATA && DATA.timeline ? DATA.timeline.indexOf(opts.src || e) : -1;
+  const tap = hasBreakdown(opts.src || e) && idx >= 0;
   const est = e.estimated ? '~' : '';
   const sign = cls === 'in' ? '+' : cls === 'out' ? '−' : '';
-  const amt = e.amount == null ? 'TBD' : est + sign + usdSmart(e.amount);
+  const amt = e.amount == null ? 'TBD' : est + sign + exactMoney(e.amount);
   const subs = [];
   if (e.due_date && e.due_date !== e.date) subs.push('due ' + fmtD(parseD(e.due_date)));
   if (e.end_date) subs.push('through ' + fmtD(parseD(e.end_date)));
@@ -323,11 +319,14 @@ function tlRow(e) {
   if (e.type === 'transfer') subs.push('moving money');
   if (e.account) subs.push(e.account);
   if (e.note) subs.push(e.note);
-  const bal = e.balance_after != null ? `<span class="bal">bal ${usdSmart(e.balance_after)}</span>` : '';
-  return `<div class="row ${cls}"><div class="emoji">${TL_ICON[e.type] || '•'}</div>
+  const bal = e.balance_after != null ? `<span class="bal">bal ${exactMoney(e.balance_after)}</span>` : '';
+  const open = tap ? `<button type="button" class="row ${cls} tap" data-ev="${idx}" aria-label="${esc(e.name)} — see breakdown">` : `<div class="row ${cls}">`;
+  const close = tap ? '<span class="chev" aria-hidden="true">›</span></button>' : '</div>';
+  if (tap) subs.unshift('Tap for breakdown');
+  return `${open}<div class="emoji">${TL_ICON[e.type] || '•'}</div>
     <div class="grow"><div class="name">${esc(e.name)}${e.protected ? `<span class="badge prot">${SHIELD}Protected</span>` : ''}${e.estimated ? '<span class="badge est">Estimate</span>' : ''}</div>
     <div class="sub">${esc(subs.join(' · '))}</div></div>
-    <div class="amt ${cls}">${esc(amt)}${bal}</div></div>`;
+    <div class="amt ${cls}">${esc(amt)}${bal}</div>${close}`;
 }
 function renderMoneyCard(d, t) {
   const up = upcoming(d, t);
@@ -340,8 +339,8 @@ function renderMoneyCard(d, t) {
   for (const e of next) if (e.balance_after != null && (low === null || e.balance_after < low.balance_after)) low = e;
   const preview = next.filter((e) => e.type !== 'transfer').slice(0, 3);
   $('#money').innerHTML = `<div class="mstats"><div class="in">Coming in<b>+${usd(tot.in)}</b></div><div>Going out<b>−${usd(tot.out)}</b></div><div>Saved<b>${usd(tot.saved)}</b></div></div>
-    ${low ? `<p class="mlow">Lowest balance: <b>${usdSmart(low.balance_after)}</b> on ${fmtD(parseD(low.date), { weekday: 'short', month: 'short', day: 'numeric' })}</p>` : ''}
-    ${preview.length ? `<div class="list">${preview.map((e) => tlRow({ ...e, note: undefined, account: undefined })).join('')}</div>` : ''}
+    ${low ? `<p class="mlow">Lowest balance: <b>${exactMoney(low.balance_after)}</b> on ${fmtD(parseD(low.date), { weekday: 'short', month: 'short', day: 'numeric' })}</p>` : ''}
+    ${preview.length ? `<div class="list">${preview.map((e) => tlRow({ ...e, note: undefined, account: undefined }, { src: e })).join('')}</div>` : ''}
     <button class="see-all" type="button" data-timeline>See full timeline →</button>`;
   $('#money').classList.add('reveal');
 }
@@ -368,7 +367,7 @@ function renderTimeline() {
     for (const [day, items] of days) {
       const dd = new Date(day), n = daysBetween(t, dd);
       const lbl = (n === 0 ? 'Today · ' : n === 1 ? 'Tomorrow · ' : '') + fmtD(dd, { weekday: 'long', month: 'short', day: 'numeric' });
-      html.push(`<div class="day ${n === 0 ? 'today' : ''}">${lbl}</div>` + items.map(tlRow).join(''));
+      html.push(`<div class="day ${n === 0 ? 'today' : ''}">${lbl}</div>` + items.map((e) => tlRow(e)).join(''));
     }
     html.push('</div></section>');
   }
@@ -388,6 +387,42 @@ $('#tlMore').addEventListener('click', () => { tlWeeks += 3; renderTimeline(); }
 if ('IntersectionObserver' in window) {
   new IntersectionObserver((ents) => { if (ents[0].isIntersecting && !$('#tlView').hidden && !$('#tlMore').hidden) { tlWeeks += 3; renderTimeline(); } }, { rootMargin: '200px' }).observe($('#tlMore'));
 }
+
+
+/* ---------------- event breakdown sheet ---------------- */
+const rawDate = (v) => { if (typeof v !== 'string') return ''; return /^\d{4}-\d{2}-\d{2}$/.test(v) ? `${v} (${parseD(v).toLocaleDateString('en-US', { weekday: 'short' })})` : v; };
+let evOpen = false;
+function openEvent(idx) {
+  const e = DATA && DATA.timeline && DATA.timeline[idx];
+  if (!hasBreakdown(e)) return;
+  const chk = breakdownCheck(e);
+  const items = e.breakdown.map((it) => `<li><div class="bi-main"><span class="bi-name">${esc(it.item)}</span><span class="bi-amt">${esc(exactMoney(it.amount))}</span></div>${it.when || it.note ? `<div class="bi-sub">${esc([it.when ? rawDate(it.when) : '', it.note || ''].filter(Boolean).join(' · '))}</div>` : ''}</li>`).join('');
+  const diff = chk && !chk.matches ? `<p class="ev-diff">Note: the items add up to ${esc(exactMoney(chk.sumCents / 100))}, and the event total is ${e.amount == null ? 'not set' : esc(exactMoney(e.amount))}. Both are shown exactly as planned.</p>` : '';
+  $('#evBody').innerHTML = `<h3 id="evTitle">${esc(e.name)}</h3>
+    <p class="ev-date">${esc(rawDate(e.date))}${e.end_date ? ' → ' + esc(rawDate(e.end_date)) : ''}</p>
+    <div class="ev-total"><span>Total</span><b>${e.amount == null ? 'TBD' : (e.estimated ? '~' : '') + esc(exactMoney(e.amount))}</b></div>
+    ${e.funding ? `<div class="ev-fund"><span>Paid with</span><b>${esc(e.funding)}</b></div>` : ''}
+    <h4 class="ev-h">Breakdown</h4><ul class="ev-items">${items}</ul>${diff}
+    <p class="ev-foot">Info only — not added to the totals.</p>`;
+  const wrap = $('#evWrap'); wrap.hidden = false; $('#evSheet').style.transform = ''; $('#evSheet').scrollTop = 0;
+  if (!evOpen) { evOpen = true; history.pushState({ fdSheet: 'ev' }, ''); }
+  setTimeout(() => $('#evClose').focus({ preventScroll: true }), 50);
+}
+function hideEvent() { $('#evWrap').hidden = true; evOpen = false; }
+function closeEvent() { if (!evOpen) return; if (history.state && history.state.fdSheet === 'ev') history.back(); else hideEvent(); }
+addEventListener('popstate', () => { if (evOpen) hideEvent(); });
+document.addEventListener('click', (e) => {
+  const ev = e.target.closest('[data-ev]'); if (ev) { openEvent(+ev.dataset.ev); return; }
+  if (e.target.closest('[data-evclose]')) closeEvent();
+});
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && evOpen) closeEvent(); });
+// swipe down to close
+(() => {
+  const sh = $('#evSheet'); let y0 = null, dy = 0;
+  sh.addEventListener('touchstart', (e) => { if (sh.scrollTop <= 0) { y0 = e.touches[0].clientY; dy = 0; sh.style.transition = 'none'; } }, { passive: true });
+  sh.addEventListener('touchmove', (e) => { if (y0 === null) return; dy = Math.max(0, e.touches[0].clientY - y0); sh.style.transform = `translateY(${dy}px)`; }, { passive: true });
+  sh.addEventListener('touchend', () => { if (y0 === null) return; y0 = null; sh.style.transition = ''; if (dy > 90) closeEvent(); else sh.style.transform = ''; });
+})();
 
 /* ---------------- add-spend sheet ---------------- */
 let sheetCat = null;
@@ -431,7 +466,7 @@ $('#spendForm').addEventListener('submit', (e) => {
 function refreshView() { const y = scrollY; render(); if (!$('#tlView').hidden) renderTimeline(); scrollTo(0, y); }
 
 /* ---------------- boot / lock ---------------- */
-function showLock(msg) { $('#app').hidden = true; $('#tlView').hidden = true; $('#lock').hidden = false; if (msg) $('#lockSub').innerHTML = msg; }
+function showLock(msg) { $('#app').hidden = true; $('#tlView').hidden = true; $('#evWrap').hidden = true; evOpen = false; $('#lock').hidden = false; if (msg) $('#lockSub').innerHTML = msg; }
 function showApp() { $('#lock').hidden = true; $('#app').hidden = false; render(); if (location.hash === '#timeline') showTimeline(true); }
 
 async function boot() {

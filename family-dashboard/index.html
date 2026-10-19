@@ -134,6 +134,17 @@
   </div>
 </div>
 
+<!-- ============ EVENT BREAKDOWN SHEET ============ -->
+<div class="sheet-wrap" id="evWrap" hidden>
+  <div class="sheet-scrim" data-evclose></div>
+  <div class="sheet ev-sheet" id="evSheet" role="dialog" aria-modal="true" aria-labelledby="evTitle">
+    <div class="grab" aria-hidden="true"></div>
+    <button class="ev-x" id="evClose" type="button" data-evclose aria-label="Close">✕</button>
+    <div id="evBody"></div>
+    <button class="btn-ghost" type="button" data-evclose>Close</button>
+  </div>
+</div>
+
 <!-- ============ MENU SHEET ============ -->
 <div class="sheet-wrap" id="menuWrap" hidden>
   <div class="sheet-scrim" data-close></div>
@@ -147,6 +158,7 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script src="recur.js"></script>
+<script src="calc.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
