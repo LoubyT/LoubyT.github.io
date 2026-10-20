@@ -626,7 +626,7 @@ $('#refreshTop').addEventListener('click', () => { checkForUpdate(); onRefreshTa
  * re-fetch the current numbers — never pretend it worked. Pull-to-refresh stays a plain re-fetch. */
 const LR_KEY = 'fd:refresh:tap';
 let lrTimer = null, lrNote = '';
-const lrCfg = () => (DATA && DATA.refresh && DATA.refresh.url && DATA.refresh.key ? DATA.refresh : null);
+const lrCfg = () => (DATA && DATA.refresh && DATA.refresh.url ? DATA.refresh : null);
 const hm = (ms) => new Date(ms).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 function lrState(now = Date.now()) {
   let tap = ''; try { tap = localStorage.getItem(LR_KEY) || ''; } catch {}
@@ -660,12 +660,13 @@ async function onRefreshTap() {
   if (lrState().kind !== 'idle') return lrRender();
   const btn = $('#refreshTop'); btn.disabled = true; btn.classList.add('spin'); lrNote = '';
   $('#refreshStatus').textContent = 'Asking for an update…'; $('#refreshStatus').hidden = false;
-  let status = 0;
+  let status = 0, next = 0;
   try {
+    // the relay adds the credentials server-side; the phone sends only a tiny body
     const r = await fetch(cfg.url, { method: 'POST', mode: 'cors', credentials: 'omit', cache: 'no-store', referrerPolicy: 'no-referrer',
-      headers: { Authorization: `${cfg.scheme || 'Bearer'} ${cfg.key}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ source: 'family-dashboard', requested_at: new Date().toISOString() }) });
+      headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ source: 'family-dashboard' }) });
     status = r.status;
+    if (status === 429) { try { const j = await r.json(); next = Date.parse(j && j.next_at) || 0; } catch {} }
   } catch { status = 0; }                                 // network error or blocked by the browser (CORS)
   try { sessionStorage.setItem('fd:refresh:last', JSON.stringify({ status, at: new Date().toISOString() })); } catch {}
   btn.classList.remove('spin');
@@ -674,7 +675,7 @@ async function onRefreshTap() {
     lrRender(); return;
   }
   lrNote = status === 0 ? 'Couldn’t start an update from this phone (the request was blocked). Showing the latest numbers instead.'
-    : status === 429 ? 'An update was asked for recently. Showing the latest numbers.'
+    : status === 429 ? `An update was asked for recently${next ? ` — next refresh available at ${hm(next)}` : ''}. Showing the latest numbers.`
     : `The updater didn’t accept the request (error ${status}). Showing the latest numbers instead.`;
   lrRender(); await refreshData(); lrRender();
 }
