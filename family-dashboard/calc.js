@@ -77,6 +77,21 @@
     }
     return { lines, spent: spentCents / 100, plan: planCents / 100, upcoming, nextStart };
   }
-  const api = { tlBucket, tlTotals, exactMoney, breakdownCheck, paycheckCheck, pickCurrentPaycheck, actualStatus, trackedTotals };
+  // Live-refresh button state. tap = this phone's last SUCCESSFUL request, shared = last_refresh_request published by
+  // the updater (any phone), published = data.enc's published_at. All ISO strings (or empty); now in ms.
+  //  updating: our request is < timeout old and newer than the data → spinner, poll
+  //  late:     timed out waiting but still inside the cooldown → "Still waiting — try again later"
+  //  cooldown: a request (ours or the other phone's) is < cooldown old → disabled, "Next refresh available at h:mm"
+  //  idle:     tap allowed;  off: no live refresh configured (plain re-fetch)
+  function refreshState({ cfg, tap, shared, published, now }) {
+    if (!cfg) return { kind: 'off' };
+    const cool = (cfg.cooldown_min || 30) * 60e3, tmo = (cfg.timeout_min || 15) * 60e3;
+    const t = Date.parse(tap) || 0, sh = Date.parse(shared) || 0, pub = Date.parse(published) || 0;
+    const next = Math.max(t, sh) + cool;
+    if (t && pub <= t && now - t < tmo) return { kind: 'updating', next };
+    if (now < next) return { kind: t && pub <= t ? 'late' : 'cooldown', next };
+    return { kind: 'idle' };
+  }
+  const api = { refreshState, tlBucket, tlTotals, exactMoney, breakdownCheck, paycheckCheck, pickCurrentPaycheck, actualStatus, trackedTotals };
   if (typeof module === 'object' && module.exports) module.exports = api; else root.FDCalc = api;
 })(typeof self !== 'undefined' ? self : this);

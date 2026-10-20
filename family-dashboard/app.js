@@ -264,6 +264,7 @@ function render() {
   }
 
   $('#updated').textContent = lastUpdatedText(d.updated_at || d.published_at);
+  if (typeof lrRender === 'function') lrRender();
   $('#foot').textContent = 'Private & encrypted';
   animateIn();
 }
@@ -614,7 +615,69 @@ async function refreshData({ silent = false } = {}) {
     if (!silent) toast(navigator.onLine === false ? 'You’re offline — showing the last numbers' : 'Couldn’t refresh — try again in a bit');
   } finally { refreshing = false; btn.classList.remove('spin'); $('#app').classList.remove('refreshing'); }
 }
-$('#refreshTop').addEventListener('click', () => { checkForUpdate(); refreshData(); });
+$('#refreshTop').addEventListener('click', () => { checkForUpdate(); onRefreshTap(); });
+
+/* ---------------- live refresh: ↻ asks the updater to rebuild the numbers ----------------
+ * The webhook URL + key live ONLY in the encrypted data (DATA.refresh), so only unlocked phones have them.
+ * One tap → one POST. A successful request disables ↻ for 30 min (cooldown, shared across phones through the
+ * published last_refresh_request when the updater records it; per-phone otherwise via localStorage). While the update
+ * runs we poll data.enc every 45 s until published_at is newer than the tap, then show the new time. After 15 min
+ * without new data: "Still waiting — try again later". If the request is blocked or refused we say so and only
+ * re-fetch the current numbers — never pretend it worked. Pull-to-refresh stays a plain re-fetch. */
+const LR_KEY = 'fd:refresh:tap';
+let lrTimer = null, lrNote = '';
+const lrCfg = () => (DATA && DATA.refresh && DATA.refresh.url && DATA.refresh.key ? DATA.refresh : null);
+const hm = (ms) => new Date(ms).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+function lrState(now = Date.now()) {
+  let tap = ''; try { tap = localStorage.getItem(LR_KEY) || ''; } catch {}
+  return FDCalc.refreshState({ cfg: lrCfg(), tap, shared: DATA && DATA.last_refresh_request, published: DATA && DATA.published_at, now });
+}
+function lrRender() {
+  const st = lrState(), btn = $('#refreshTop'), el = $('#refreshStatus');
+  const lock = st.kind === 'updating' || st.kind === 'cooldown' || st.kind === 'late';
+  btn.disabled = lock; btn.classList.toggle('lr-busy', st.kind === 'updating'); btn.setAttribute('aria-disabled', String(lock));
+  btn.setAttribute('aria-label', st.kind === 'off' ? 'Refresh numbers' : lock ? 'Refresh not available yet' : 'Update the numbers now');
+  let msg = lrNote;
+  if (st.kind === 'updating') msg = 'Updating… this takes a few minutes';
+  else if (st.kind === 'late') msg = `Still waiting — try again later. Next refresh available at ${hm(st.next)}`;
+  else if (st.kind === 'cooldown') msg = `Next refresh available at ${hm(st.next)}`;
+  el.textContent = msg; el.hidden = !msg; el.classList.toggle('warn', !!lrNote && !lock);
+  clearInterval(lrTimer); lrTimer = null;
+  if (st.kind === 'updating') lrTimer = setInterval(lrPoll, 45e3);
+  else if (lock) lrTimer = setInterval(lrRender, 30e3); // re-enable when the cooldown ends
+}
+async function lrPoll() {
+  if (document.hidden) return;
+  const before = Date.parse(DATA && DATA.published_at) || 0;
+  await refreshData({ silent: true });
+  const after = Date.parse(DATA && DATA.published_at) || 0;
+  if (after > before && lrState().kind !== 'updating') toast('New numbers are in');
+  lrRender();
+}
+async function onRefreshTap() {
+  const cfg = lrCfg();
+  if (!cfg) return refreshData();                       // no live refresh configured → plain re-fetch
+  if (lrState().kind !== 'idle') return lrRender();
+  const btn = $('#refreshTop'); btn.disabled = true; btn.classList.add('spin'); lrNote = '';
+  $('#refreshStatus').textContent = 'Asking for an update…'; $('#refreshStatus').hidden = false;
+  let status = 0;
+  try {
+    const r = await fetch(cfg.url, { method: 'POST', mode: 'cors', credentials: 'omit', cache: 'no-store', referrerPolicy: 'no-referrer',
+      headers: { Authorization: `${cfg.scheme || 'Bearer'} ${cfg.key}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ source: 'family-dashboard', requested_at: new Date().toISOString() }) });
+    status = r.status;
+  } catch { status = 0; }                                 // network error or blocked by the browser (CORS)
+  try { sessionStorage.setItem('fd:refresh:last', JSON.stringify({ status, at: new Date().toISOString() })); } catch {}
+  btn.classList.remove('spin');
+  if (status >= 200 && status < 300) {
+    try { localStorage.setItem(LR_KEY, new Date().toISOString()); } catch {}
+    lrRender(); return;
+  }
+  lrNote = status === 0 ? 'Couldn’t start an update from this phone (the request was blocked). Showing the latest numbers instead.'
+    : status === 429 ? 'An update was asked for recently. Showing the latest numbers.'
+    : `The updater didn’t accept the request (error ${status}). Showing the latest numbers instead.`;
+  lrRender(); await refreshData(); lrRender();
+}
 // back to the foreground -> check for new data (at most once a minute)
 document.addEventListener('visibilitychange', () => { if (!document.hidden && Date.now() - lastCheck > 60e3) refreshData({ silent: true }); });
 addEventListener('pageshow', (e) => { if (e.persisted) refreshData({ silent: true }); });

@@ -303,3 +303,10 @@ div.pc-card{cursor:default}
 .emoji.mini .logo-txt.long{width:24px;font-size:7.5px}
 .upd-bar{position:fixed;left:12px;right:12px;bottom:calc(14px + env(safe-area-inset-bottom));z-index:60;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px 12px 18px;border-radius:18px;background:#1d2130;border:1px solid var(--card-b);box-shadow:0 10px 30px rgba(0,0,0,.45);font-size:15px}
 .upd-bar button{height:44px;padding:0 18px;border-radius:13px;background:var(--violet);color:#fff;font-weight:700;font-size:16px}
+
+/* live refresh */
+.refresh-status{margin:4px 0 0;font-size:13px;color:var(--dim);max-width:30ch;line-height:1.35}
+.refresh-status.warn{color:#e8c48e}
+.icon-btn:disabled{opacity:.45}
+.icon-btn.lr-busy svg{animation:spin 1.6s linear infinite;opacity:1}
+.icon-btn.lr-busy{opacity:.8}
