@@ -59,6 +59,11 @@
 
   <div id="sampleBanner" class="banner" hidden>Sample numbers — real budget coming soon</div>
 
+  <section aria-labelledby="hPay" id="paySec" hidden>
+    <h2 id="hPay" class="sec-title">This paycheck</h2>
+    <div class="card pay-now" id="payNow"></div>
+  </section>
+
   <section aria-labelledby="hCount">
     <h2 id="hCount" class="sec-title">Coming up</h2>
     <div class="countdowns" id="countdowns"></div>
@@ -112,6 +117,19 @@
   <div id="tlList"></div>
   <button class="more-btn" id="tlMore" type="button">Show more</button>
   <p class="fine" id="tlEnd" hidden>That’s everything planned so far.</p>
+</main>
+
+<!-- ============ PAYCHECKS VIEW ============ -->
+<main id="pcView" class="app tl" hidden>
+  <header class="tl-top">
+    <button class="back" id="pcBack" type="button" aria-label="Back to dashboard">
+      <svg viewBox="0 0 24 24" width="22" height="22"><path d="M15 5l-7 7 7 7" fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Back</span>
+    </button>
+    <h1>Paychecks</h1>
+    <span class="tl-spacer"></span>
+  </header>
+  <p class="tl-legend">Tap a paycheck to see where it goes. Scroll up for past checks.</p>
+  <div id="pcList" class="pc-list"></div>
 </main>
 
 <!-- ============ ADD SPEND SHEET ============ -->

@@ -31,6 +31,27 @@
     const totalCents = ev.amount == null ? null : Math.round(ev.amount * 100);
     return { sumCents, totalCents, matches: totalCents !== null && sumCents === totalCents, diffCents: totalCents === null ? null : sumCents - totalCents };
   }
-  const api = { tlBucket, tlTotals, exactMoney, breakdownCheck };
+  // Paychecks: non-transfer items vs total_out (whole cents). Transfers are internal moves → excluded.
+  function paycheckCheck(pc) {
+    if (!pc || !Array.isArray(pc.items)) return null;
+    const sumCents = pc.items.filter((i) => i.type !== 'transfer').reduce((a, i) => a + Math.round((Number(i.amount) || 0) * 100), 0);
+    const totalCents = typeof pc.total_out === 'number' ? Math.round(pc.total_out * 100) : null;
+    return { sumCents, totalCents, matches: totalCents !== null && sumCents === totalCents, diffCents: totalCents === null ? null : sumCents - totalCents };
+  }
+  // Index of the check to feature: the current one (payday <= today <= period_end, or before the next payday
+  // when period_end is missing); else the next upcoming; else the last one. `list` must be sorted by date.
+  function pickCurrentPaycheck(list, todayIso) {
+    if (!Array.isArray(list) || !list.length) return -1;
+    for (let i = list.length - 1; i >= 0; i--) {
+      const p = list[i];
+      if (p.date > todayIso) continue;
+      const end = p.period_end || (list[i + 1] ? null : p.date);
+      if (end ? todayIso <= end : todayIso < list[i + 1].date) return i;
+      break;
+    }
+    const next = list.findIndex((p) => p.date >= todayIso);
+    return next >= 0 ? next : list.length - 1;
+  }
+  const api = { tlBucket, tlTotals, exactMoney, breakdownCheck, paycheckCheck, pickCurrentPaycheck };
   if (typeof module === 'object' && module.exports) module.exports = api; else root.FDCalc = api;
 })(typeof self !== 'undefined' ? self : this);

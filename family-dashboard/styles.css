@@ -267,3 +267,35 @@ button.row:active,button.row:hover{background:rgba(255,255,255,.04)}
 .ev-diff{margin:10px 4px 0;padding:10px 12px;border-radius:12px;background:rgba(255,184,77,.1);border:1px solid rgba(255,184,77,.3);color:#ffd28a;font-size:13px}
 .ev-foot{color:var(--faint);font-size:12px;text-align:center;margin:14px 0 0}
 .ev-sheet{transition:transform .25s var(--ease)}
+
+/* paychecks */
+.pay-now{padding:6px 6px 14px}
+.pc-hit{display:block;width:100%;text-align:left;font:inherit;color:inherit;background:none;border:0;padding:10px 12px 4px;border-radius:16px;cursor:pointer}
+button.pc-hit:active{background:rgba(255,255,255,.04)}
+.pay-now .see-all{width:calc(100% - 24px);margin:10px 12px 0}
+.pc-head{display:flex;align-items:center;gap:8px}
+.pc-date{flex:1;font-weight:700;font-size:17px;font-variant-numeric:tabular-nums}
+.pc-label{font-size:12px;font-weight:700;color:var(--dim);background:rgba(255,255,255,.07);padding:3px 8px;border-radius:999px;margin-left:4px;vertical-align:1px}
+.pc-period{color:var(--dim);font-size:13px;margin-top:3px}
+.pc-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px;margin-top:12px}
+.pc-stats div{background:rgba(255,255,255,.05);border-radius:13px;padding:9px 11px;font-size:12px;color:var(--dim)}
+.pc-stats b{display:block;font-size:17px;color:var(--txt);margin-top:2px;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.pc-stats .pos b{color:var(--green)}.pc-stats .neg b{color:var(--red)}
+.pc-low{color:var(--dim);font-size:13px;margin:10px 2px 4px}.pc-low b{color:var(--txt)}
+.pc-list{display:flex;flex-direction:column;gap:12px;margin-top:10px}
+.pc-card{display:block;width:100%;text-align:left;font:inherit;color:inherit;padding:16px;cursor:pointer}
+div.pc-card{cursor:default}
+.pc-card.current{border-color:rgba(139,123,255,.6);box-shadow:0 0 0 1px rgba(139,123,255,.35),0 10px 30px rgba(110,90,255,.18);background:linear-gradient(135deg,rgba(124,107,255,.13),rgba(255,111,181,.06))}
+.pc-card.past{opacity:.6}
+.badge.cur{background:rgba(139,123,255,.2);color:#cfc4ff;border:1px solid rgba(139,123,255,.45)}
+.badge.past{background:rgba(255,255,255,.06);color:var(--faint);border:1px solid rgba(255,255,255,.1)}
+.pc-type{font-weight:600;color:var(--dim)}
+.pc-type.mv{color:#9fcbff}
+.ev-items li.mv .bi-name,.ev-items li.mv .bi-amt{color:var(--faint)}
+.bi-amt.pos{color:var(--green)}
+.pc-sum{margin-top:14px;display:grid;gap:8px}
+.pc-sum div{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:12px 14px;border-radius:14px;background:rgba(255,255,255,.05)}
+.pc-sum span{color:var(--dim);font-size:14px}
+.pc-sum b{font-size:19px;font-variant-numeric:tabular-nums;text-align:right}
+.pc-sum b small{display:block;font-size:12px;color:var(--dim);font-weight:500;margin-top:2px}
+.pc-sum .pos b{color:var(--green)}.pc-sum .neg b{color:var(--red)}

@@ -150,6 +150,7 @@ function render() {
     if (pd) cds.push({ id: 'payday', name: d.paychecks.label || 'Next payday', when: pd, days: daysBetween(t, pd), icon: '💵', kind: 'pay', budget: amt, note: amt != null ? 'take-home' : '' });
   }
   renderMoneyCard(d, t);
+  renderPayNow(t);
   plans.sort((a, b) => a.when - b.when);
   const soon = plans.filter((x) => x.days <= 120);
   $('#plansSec').hidden = !soon.length;
@@ -404,6 +405,9 @@ function openEvent(idx) {
     ${e.funding ? `<div class="ev-fund"><span>Paid with</span><b>${esc(e.funding)}</b></div>` : ''}
     <h4 class="ev-h">Breakdown</h4><ul class="ev-items">${items}</ul>${diff}
     <p class="ev-foot">Info only — not added to the totals.</p>`;
+  showSheet();
+}
+function showSheet() {
   const wrap = $('#evWrap'); wrap.hidden = false; $('#evSheet').style.transform = ''; $('#evSheet').scrollTop = 0;
   if (!evOpen) { evOpen = true; history.pushState({ fdSheet: 'ev' }, ''); }
   setTimeout(() => $('#evClose').focus({ preventScroll: true }), 50);
@@ -413,6 +417,8 @@ function closeEvent() { if (!evOpen) return; if (history.state && history.state.
 addEventListener('popstate', () => { if (evOpen) hideEvent(); });
 document.addEventListener('click', (e) => {
   const ev = e.target.closest('[data-ev]'); if (ev) { openEvent(+ev.dataset.ev); return; }
+  const pc = e.target.closest('[data-pc]'); if (pc) { openPaycheck(+pc.dataset.pc); return; }
+  if (e.target.closest('[data-paychecks]')) { location.hash = '#paychecks'; return; }
   if (e.target.closest('[data-evclose]')) closeEvent();
 });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && evOpen) closeEvent(); });
@@ -423,6 +429,83 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && evOpen) 
   sh.addEventListener('touchmove', (e) => { if (y0 === null) return; dy = Math.max(0, e.touches[0].clientY - y0); sh.style.transform = `translateY(${dy}px)`; }, { passive: true });
   sh.addEventListener('touchend', () => { if (y0 === null) return; y0 = null; sh.style.transition = ''; if (dy > 90) closeEvent(); else sh.style.transform = ''; });
 })();
+
+
+/* ---------------- paychecks ---------------- */
+const { paycheckCheck, pickCurrentPaycheck } = FDCalc;
+const isoDay = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const payList = () => (DATA && DATA.paychecks && DATA.paychecks.frequency === 'list' ? DATA.paychecks.dates || [] : []);
+const pcHasDetail = (p) => p && (Array.isArray(p.items) || typeof p.total_out === 'number' || typeof p.left_over === 'number');
+const PC_TYPE = { bill: 'Bill', spending: 'Spending', savings: 'Savings', transfer: 'Moving money', event: 'Event', fee: 'Fee' };
+const signed = (n) => (typeof n === 'number' ? exactMoney(n) : '—');
+function pcStats(p) {
+  return `<div class="pc-stats">${p.amount != null ? `<div>Amount<b>${esc(exactMoney(p.amount))}</b></div>` : ''}
+    ${typeof p.total_out === 'number' ? `<div>Total out<b>${esc(exactMoney(p.total_out))}</b></div>` : ''}
+    ${typeof p.left_over === 'number' ? `<div class="${p.left_over < 0 ? 'neg' : 'pos'}">Left over<b>${esc(signed(p.left_over))}</b></div>` : ''}</div>`;
+}
+function renderPayNow(t) {
+  const list = payList(), i = pickCurrentPaycheck(list, isoDay(t));
+  $('#paySec').hidden = i < 0;
+  if (i < 0) return;
+  const p = list[i], upcoming = p.date > isoDay(t);
+  $('#hPay').textContent = upcoming ? 'Next paycheck' : 'This paycheck';
+  const detail = pcHasDetail(p);
+  $('#payNow').innerHTML = `${detail ? `<button type="button" class="pc-hit" data-pc="${i}" aria-label="Paycheck ${esc(p.date)} — see details">` : '<div class="pc-hit">'}
+      <div class="pc-head"><span class="pc-date">💵 ${esc(rawDate(p.date))}${p.label ? ` <span class="pc-label">Check ${esc(p.label)}</span>` : ''}</span>${detail ? '<span class="chev" aria-hidden="true">›</span>' : ''}</div>
+      ${p.period_end ? `<div class="pc-period">Covers through ${esc(rawDate(p.period_end))}</div>` : ''}
+      ${pcStats(p)}
+      ${p.low_point ? `<div class="pc-low">Low point: <b>${esc(exactMoney(p.low_point.balance))}</b> on ${esc(rawDate(p.low_point.date))}</div>` : ''}
+    ${detail ? '</button>' : '</div>'}
+    <button class="see-all" type="button" data-paychecks>All paychecks →</button>`;
+  $('#payNow').classList.add('reveal');
+}
+function renderPaychecks() {
+  const list = payList(), t = today0(), cur = pickCurrentPaycheck(list, isoDay(t));
+  $('#pcList').innerHTML = list.map((p, i) => {
+    const detail = pcHasDetail(p), past = i < cur, tag = detail ? `button type="button" data-pc="${i}"` : 'div';
+    return `<${tag} class="card pc-card${i === cur ? ' current' : ''}${past ? ' past' : ''}" id="pc-${i}">
+      <div class="pc-head"><span class="pc-date">${esc(rawDate(p.date))}${p.label ? ` <span class="pc-label">Check ${esc(p.label)}</span>` : ''}</span>
+      ${i === cur ? `<span class="badge cur">${p.date > isoDay(t) ? 'Next' : 'This paycheck'}</span>` : past ? '<span class="badge past">Past</span>' : ''}${detail ? '<span class="chev" aria-hidden="true">›</span>' : ''}</div>
+      ${pcStats(p)}</${detail ? 'button' : 'div'}>`;
+  }).join('') || '<div class="card empty">No paychecks yet.</div>';
+  return cur;
+}
+function openPaycheck(i) {
+  const p = payList()[i]; if (!pcHasDetail(p)) return;
+  const chk = paycheckCheck(p), items = p.items || [];
+  const rows = items.map((it) => {
+    const mv = it.type === 'transfer';
+    const sub = [rawDate(it.date), it.account, it.note].filter(Boolean).join(' · ');
+    return `<li class="${mv ? 'mv' : ''}"><div class="bi-main"><span class="bi-name">${esc(it.name)}${it.protected ? `<span class="badge prot">${SHIELD}Protected</span>` : ''}</span>
+      <span class="bi-amt">${it.amount == null ? 'TBD' : (it.estimated ? '~' : '') + esc(exactMoney(it.amount))}</span></div>
+      <div class="bi-sub"><span class="pc-type ${mv ? 'mv' : ''}">${mv ? '⇄ Moving money · not in total out' : PC_TYPE[it.type] || it.type}</span>${sub ? ' · ' + esc(sub) : ''}</div></li>`;
+  }).join('');
+  const oi = (p.other_income || []).map((o) => `<li><div class="bi-main"><span class="bi-name">${esc(o.name || 'Other income')}</span><span class="bi-amt pos">${o.amount == null ? 'TBD' : (o.estimated ? '~' : '') + '+' + esc(exactMoney(o.amount))}</span></div>${o.date || o.account || o.note ? `<div class="bi-sub">${esc([o.date ? rawDate(o.date) : '', o.account, o.note].filter(Boolean).join(' · '))}</div>` : ''}</li>`).join('');
+  const diff = chk && !chk.matches ? `<p class="ev-diff">Note: the items (not counting moving money) add up to ${esc(exactMoney(chk.sumCents / 100))}, and total out is ${chk.totalCents === null ? 'not set' : esc(exactMoney(p.total_out))}. Both are shown exactly as planned.</p>` : '';
+  $('#evBody').innerHTML = `<h3 id="evTitle">Paycheck${p.label ? ' ' + esc(p.label) : ''}</h3>
+    <p class="ev-date">${esc(rawDate(p.date))}${p.period_end ? ' → ' + esc(rawDate(p.period_end)) : ''}</p>
+    ${p.amount != null ? `<div class="ev-total"><span>Check amount</span><b>${esc(exactMoney(p.amount))}</b></div>` : ''}
+    ${p.note ? `<p class="bi-sub" style="margin:0 4px 8px">${esc(p.note)}</p>` : ''}
+    ${items.length ? `<h4 class="ev-h">Where it goes</h4><ul class="ev-items">${rows}</ul>` : ''}
+    <div class="pc-sum">
+      ${typeof p.total_out === 'number' ? `<div><span>Total out</span><b>${esc(exactMoney(p.total_out))}</b></div>` : ''}
+      ${typeof p.left_over === 'number' ? `<div class="${p.left_over < 0 ? 'neg' : 'pos'}"><span>Left over</span><b>${esc(signed(p.left_over))}</b></div>` : ''}
+      ${p.low_point ? `<div><span>Low point</span><b>${esc(exactMoney(p.low_point.balance))}<small>${esc(rawDate(p.low_point.date))}${p.low_point.account ? ' · ' + esc(p.low_point.account) : ''}</small></b></div>` : ''}
+    </div>
+    ${diff}
+    ${oi ? `<h4 class="ev-h">Other income</h4><ul class="ev-items">${oi}</ul>` : ''}`;
+  showSheet();
+}
+let pcScroll = 0;
+function showPaychecks(on) {
+  if (on && !DATA) return;
+  if (on) {
+    pcScroll = scrollY; const cur = renderPaychecks(); $('#app').hidden = true; $('#tlView').hidden = true; $('#pcView').hidden = false;
+    requestAnimationFrame(() => { const el = $('#pc-' + cur); if (el && cur > 0) { const y = el.getBoundingClientRect().top + scrollY - 80; scrollTo(0, Math.max(0, y)); } else scrollTo(0, 0); });
+  } else if (!$('#pcView').hidden) { $('#pcView').hidden = true; $('#app').hidden = false; scrollTo(0, pcScroll); }
+}
+$('#pcBack').addEventListener('click', () => { if (location.hash === '#paychecks') history.back(); else showPaychecks(false); });
+addEventListener('hashchange', () => showPaychecks(location.hash === '#paychecks'));
 
 /* ---------------- add-spend sheet ---------------- */
 let sheetCat = null;
@@ -463,11 +546,11 @@ $('#spendForm').addEventListener('submit', (e) => {
   Spend.add(sheetCat.id, Math.round(v * 100) / 100);
   closeSheets(); refreshView(); toast(`Added ${usdSmart(v)} to ${sheetCat.name}`);
 });
-function refreshView() { const y = scrollY; render(); if (!$('#tlView').hidden) renderTimeline(); scrollTo(0, y); }
+function refreshView() { const y = scrollY; render(); if (!$('#tlView').hidden) renderTimeline(); if (!$('#pcView').hidden) renderPaychecks(); scrollTo(0, y); }
 
 /* ---------------- boot / lock ---------------- */
-function showLock(msg) { $('#app').hidden = true; $('#tlView').hidden = true; $('#evWrap').hidden = true; evOpen = false; $('#lock').hidden = false; if (msg) $('#lockSub').innerHTML = msg; }
-function showApp() { $('#lock').hidden = true; $('#app').hidden = false; render(); if (location.hash === '#timeline') showTimeline(true); }
+function showLock(msg) { $('#app').hidden = true; $('#tlView').hidden = true; $('#pcView').hidden = true; $('#evWrap').hidden = true; evOpen = false; $('#lock').hidden = false; if (msg) $('#lockSub').innerHTML = msg; }
+function showApp() { $('#lock').hidden = true; $('#app').hidden = false; render(); if (location.hash === '#timeline') showTimeline(true); else if (location.hash === '#paychecks') showPaychecks(true); }
 
 async function boot() {
   let stored = null;
@@ -537,7 +620,7 @@ setInterval(() => { if (!document.hidden) refreshData({ silent: true }); }, 15 *
 (() => {
   const ptr = $('#ptr'); let y0 = null, dy = 0;
   const sheetOpen = () => !$('#sheetWrap').hidden || !$('#menuWrap').hidden;
-  addEventListener('touchstart', (e) => { if (scrollY <= 0 && !refreshing && DATA && !sheetOpen() && (!$('#app').hidden || !$('#tlView').hidden)) { y0 = e.touches[0].clientY; dy = 0; } }, { passive: true });
+  addEventListener('touchstart', (e) => { if (scrollY <= 0 && !refreshing && DATA && !sheetOpen() && (!$('#app').hidden || !$('#tlView').hidden || !$('#pcView').hidden)) { y0 = e.touches[0].clientY; dy = 0; } }, { passive: true });
   addEventListener('touchmove', (e) => {
     if (y0 === null) return; dy = e.touches[0].clientY - y0;
     if (dy <= 0 || scrollY > 0) { ptr.style.transform = ''; ptr.style.opacity = ''; return; }
