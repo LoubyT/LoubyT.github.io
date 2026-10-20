@@ -179,10 +179,8 @@ function render() {
   }).join('') || '<div class="card empty">Nothing coming up</div>';
 
   /* bills — one row per bill (FDRecur.billNext): the feed's next_payment wins until its planned date passes */
-  const bills = (d.bills || []).map((b) => {
-    const n = FDRecur.billNext(b, t); if (!n) return null;
-    return { ...b, n, days: daysBetween(t, n.key), near: daysBetween(t, n.near) };
-  }).filter((b) => b && b.days >= 0 && b.near <= 45).sort((a, b) => a.days - b.days || +a.n.due - +b.n.due);
+  const bills = (d.bills || []).flatMap((b) => FDRecur.billRows(b, t).map((n) => ({ ...b, n, days: daysBetween(t, n.key), near: daysBetween(t, n.near) })))
+    .filter((b) => b.days >= 0 && b.near <= 45).sort((a, b) => a.days - b.days || +a.n.due - +b.n.due);
   $('#billsSec').hidden = !(d.bills || []).length;
   const showAll = render.allBills, shown = showAll ? bills : bills.slice(0, 5);
   $('#bills').innerHTML = shown.map((b) => {
@@ -194,8 +192,9 @@ function render() {
     const lp = b.last_paid && b.last_paid.date ? parseD(b.last_paid.date) : null;
     const paid = lp && lp <= t && daysBetween(lp, t) <= 45 ? `<span class="paid">Last paid ${md(lp)}</span>` : '';
     const when = `due ${md(n.due)}${n.planned && (plannedAhead || dueAhead) && +n.planned !== +n.due ? ` · planned ${md(n.planned)}` : ''}`;
-    return `<div class="row reveal${calm ? ' after-due' : ''}"><div class="emoji">${esc(b.icon || '🧾')}</div>
-      <div class="grow"><div class="name">${esc(b.name)}${badges(b)}</div><div class="sub">${esc(amt)} · ${when}${b.autopay ? ' · autopay' : ''}${calm ? ' <span class="late-plan">· after due date</span>' : ''}</div>${paid ? `<div class="sub">${paid}</div>` : ''}</div>
+    const part = n.part ? ` · split ${n.part.n} of ${n.part.of}` : '';
+    return `<div class="row reveal${calm ? ' after-due' : ''}"><div class="emoji">${FDLogos.logoHtml(b.name, b.icon)}</div>
+      <div class="grow"><div class="name">${esc(b.name)}${badges(b)}</div><div class="sub">${esc(amt)} · ${when}${part}${b.autopay ? ' · autopay' : ''}${calm ? ' <span class="late-plan">· after due date</span>' : ''}</div>${paid ? `<div class="sub">${paid}</div>` : ''}</div>
       <span class="pill ${cls}">${lbl}</span></div>`;
   }).join('') + (bills.length > 5 ? `<button class="more" data-more>${showAll ? 'Show fewer' : `Show all ${bills.length} bills`}</button>` : '') || '<div class="empty">No bills due in the next 45 days 🎉</div>';
 
@@ -324,7 +323,7 @@ function tlRow(e, opts = {}) {
   const open = tap ? `<button type="button" class="row ${cls} tap" data-ev="${idx}" aria-label="${esc(e.name)} — see breakdown">` : `<div class="row ${cls}">`;
   const close = tap ? '<span class="chev" aria-hidden="true">›</span></button>' : '</div>';
   if (tap) subs.unshift('Tap for breakdown');
-  return `${open}<div class="emoji">${TL_ICON[e.type] || '•'}</div>
+  return `${open}<div class="emoji">${e.type === 'bill' ? FDLogos.logoHtml(e.name) : TL_ICON[e.type] || '•'}</div>
     <div class="grow"><div class="name">${esc(e.name)}${e.protected ? `<span class="badge prot">${SHIELD}Protected</span>` : ''}${e.estimated ? '<span class="badge est">Estimate</span>' : ''}</div>
     <div class="sub">${esc(subs.join(' · '))}</div></div>
     <div class="amt ${cls}">${esc(amt)}${bal}</div>${close}`;
@@ -482,7 +481,7 @@ function openPaycheck(i) {
     const mv = it.type === 'transfer';
     const due = it.due_date && it.due_date !== it.date ? `due ${mdIso(it.due_date)}${it.date > it.due_date ? ' (after due date)' : ''}` : '';
     const sub = [rawDate(it.date), due, it.account, it.note].filter(Boolean).join(' · ');
-    return `<li class="${mv ? 'mv' : ''}"><div class="bi-main"><span class="bi-name">${esc(it.name)}${it.protected ? `<span class="badge prot">${SHIELD}Protected</span>` : ''}</span>
+    return `<li class="${mv ? 'mv' : ''}"><div class="bi-main"><span class="bi-name">${it.type === 'bill' ? `<span class="emoji mini">${FDLogos.logoHtml(it.name)}</span>` : ''}${esc(it.name)}${it.protected ? `<span class="badge prot">${SHIELD}Protected</span>` : ''}</span>
       <span class="bi-amt">${it.amount == null ? 'TBD' : (it.estimated ? '~' : '') + esc(exactMoney(it.amount))}</span></div>
       <div class="bi-sub"><span class="pc-type ${mv ? 'mv' : ''}">${mv ? '⇄ Moving money · not in total out' : PC_TYPE[it.type] || it.type}</span>${sub ? ' · ' + esc(sub) : ''}</div></li>`;
   }).join('');
@@ -618,8 +617,8 @@ async function refreshData({ silent = false } = {}) {
     if (!silent) toast(navigator.onLine === false ? 'You’re offline — showing the last numbers' : 'Couldn’t refresh — try again in a bit');
   } finally { refreshing = false; btn.classList.remove('spin'); $('#app').classList.remove('refreshing'); }
 }
-$('#refreshTop').addEventListener('click', () => refreshData());
-$('#refreshBtn').addEventListener('click', () => { closeSheets(); refreshData(); });
+$('#refreshTop').addEventListener('click', () => { checkForUpdate(); refreshData(); });
+$('#refreshBtn').addEventListener('click', () => { closeSheets(); checkForUpdate(); refreshData(); });
 // back to the foreground -> check for new data (at most once a minute)
 document.addEventListener('visibilitychange', () => { if (!document.hidden && Date.now() - lastCheck > 60e3) refreshData({ silent: true }); });
 addEventListener('pageshow', (e) => { if (e.persisted) refreshData({ silent: true }); });
@@ -642,7 +641,7 @@ setInterval(() => { if (!document.hidden) refreshData({ silent: true }); }, 15 *
     if (y0 === null) return; y0 = null; ptr.classList.remove('pulling');
     if (dy * 0.5 > 70) {
       ptr.style.transform = 'translateY(10px)'; ptr.style.opacity = 1; ptr.classList.add('spin');
-      await refreshData(); ptr.classList.remove('spin');
+      checkForUpdate(); await refreshData(); ptr.classList.remove('spin');
     }
     ptr.style.transform = ''; ptr.style.opacity = '';
   });
@@ -650,6 +649,30 @@ setInterval(() => { if (!document.hidden) refreshData({ silent: true }); }, 15 *
 $('#forgetBtn').addEventListener('click', async () => { if (!confirm('Lock this phone? You’ll need the family passcode to open it again.')) return; closeSheets(); await IDB.del('dk'); DATA = null; showLock(); });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSheets(); });
 
-if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js', { scope: './' }).catch(() => {});
+/* ---------------- app updates ----------------
+ * The shell is cache-first, so a launch shows the cached version while the browser fetches the new sw.js; a phone that
+ * only resumes the app from the background never navigates, so it never checks at all. Fix:
+ *  - register with updateViaCache:'none' (sw.js never comes from the HTTP cache) and check for a new sw.js on start,
+ *    whenever the app comes to the foreground, on refresh / pull-to-refresh, and every 30 minutes;
+ *  - the new sw skipWaiting()s + clients.claim()s; when it takes over (controllerchange) the page reloads itself so the
+ *    new code runs right away — unless a sheet is open or a passcode is being typed, then a small "Update ready" bar
+ *    is shown and the reload happens on tap (or the next time the app is backgrounded). */
+let swReg = null, reloading = false, updatePending = false;
+const busy = () => !$('#evWrap').hidden || !$('#menuWrap').hidden || (!$('#lock').hidden && $('#pass').value);
+function applyUpdate() { if (reloading) return; reloading = true; location.reload(); }
+function checkForUpdate() { if (swReg) swReg.update().catch(() => {}); }
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  let hadController = !!navigator.serviceWorker.controller; // the very first install's claim needs no reload
+  navigator.serviceWorker.register('sw.js', { scope: './', updateViaCache: 'none' }).then((r) => { swReg = r; checkForUpdate(); }).catch(() => {});
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!hadController) { hadController = true; return; }
+    if (reloading) return;
+    if (!busy()) return applyUpdate();
+    updatePending = true; $('#updBar').hidden = false;
+  });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) { if (updatePending) applyUpdate(); } else checkForUpdate(); });
+  setInterval(checkForUpdate, 30 * 60e3);
+  $('#updBtn').addEventListener('click', applyUpdate);
+}
 boot();
 })();

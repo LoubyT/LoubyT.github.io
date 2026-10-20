@@ -294,3 +294,14 @@ div.pc-card{cursor:default}
 .pc-sum b{font-size:19px;font-variant-numeric:tabular-nums;text-align:right}
 .pc-sum b small{display:block;font-size:12px;color:var(--dim);font-weight:500;margin-top:2px}
 .pc-sum .pos b{color:var(--green)}.pc-sum .neg b{color:var(--red)}
+
+/* bill logos (self-hosted marks / brand lettering / emoji in the round dark tile) */
+.emoji .logo{width:26px;height:26px;display:block}
+.emoji .logo-txt{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font:800 15px/1 system-ui,sans-serif;letter-spacing:-.02em}
+.emoji .logo-txt.long{width:34px;font-size:11.5px;letter-spacing:0}
+.emoji.mini{width:26px;height:26px;border-radius:8px;font-size:14px;display:inline-grid;vertical-align:middle;margin-right:8px}
+.emoji.mini .logo{width:17px;height:17px}
+.emoji.mini .logo-txt{width:20px;height:20px;border-radius:6px;font-size:10px}
+.emoji.mini .logo-txt.long{width:24px;font-size:7.5px}
+.upd-bar{position:fixed;left:12px;right:12px;bottom:calc(14px + env(safe-area-inset-bottom));z-index:60;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px 12px 18px;border-radius:18px;background:#1d2130;border:1px solid var(--card-b);box-shadow:0 10px 30px rgba(0,0,0,.45);font-size:15px}
+.upd-bar button{height:44px;padding:0 18px;border-radius:13px;background:var(--violet);color:#fff;font-weight:700;font-size:16px}

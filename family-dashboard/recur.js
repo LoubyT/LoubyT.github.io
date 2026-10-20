@@ -91,6 +91,27 @@
     }
     return { due: d, planned: null, key: d, near: d, afterDue: false, amount: b.amount, fromFeed: false };
   }
-  const api = { nextOccurrence, occurrences, parseD, billNext };
+  /** Every row to show for a bill: one per distinct planned payment (e.g. rent split into two parts with the same due date),
+   *  each kept until its own planned date passes. With no active planned payment → the single billNext() occurrence.
+   *  Planned payments come from next_payment plus split_payments [{date, amount, due_date, name?}]. Exact amounts. */
+  function billRows(b, today) {
+    const plans = [b.next_payment].concat(Array.isArray(b.split_payments) ? b.split_payments : []).filter((p) => p && okDate(p.date) && okDate(p.due_date));
+    if (plans.length < 2) { const one = billNext(b, today); return one ? [one] : []; }
+    const seen = new Set(), uniq = plans.filter((p) => { const k = p.date + '|' + p.amount + '|' + p.due_date; if (seen.has(k)) return false; seen.add(k); return true; })
+      .sort((x, y) => x.date.localeCompare(y.date) || x.due_date.localeCompare(y.due_date));
+    const groups = {}; for (const p of uniq) (groups[p.due_date] = groups[p.due_date] || []).push(p);
+    const rows = [];
+    uniq.forEach((p) => {
+      const planned = parseD(p.date), due = parseD(p.due_date); if (planned < today) return;
+      const g = groups[p.due_date];
+      rows.push({ due, planned, key: planned, near: due >= today && due < planned ? due : planned, afterDue: planned > due,
+        amount: typeof p.amount === 'number' ? p.amount : b.amount, fromFeed: true, part: g.length > 1 ? { n: g.indexOf(p) + 1, of: g.length } : null, label: p.name || null });
+    });
+    if (rows.length) return rows;
+    const last = uniq.reduce((m, p) => (p.date > m ? p.date : p.due_date > m ? p.due_date : m), '0000-00-00');
+    const one = billNext({ ...b, next_payment: { date: last, due_date: last } }, today);
+    return one ? [one] : [];
+  }
+  const api = { nextOccurrence, occurrences, parseD, billNext, billRows };
   if (typeof module === 'object' && module.exports) module.exports = api; else root.FDRecur = api;
 })(typeof self !== 'undefined' ? self : this);
