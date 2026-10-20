@@ -3,7 +3,7 @@
  *  - app shell: CACHE-FIRST. Bump CACHE below whenever index.html/app.js/styles.css/icons change,
  *    so phones pick up the new version (the browser re-checks sw.js itself on every launch).
  */
-const CACHE = 'fd-shell-v7';
+const CACHE = 'fd-shell-v8';
 const DATA_CACHE = 'fd-data';
 const SHELL = ['./', 'index.html', 'styles.css', 'app.js', 'recur.js', 'calc.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png', 'icons/favicon-32.png'];
 const DATA_FILES = ['data.enc', 'wrapped-key.json'];

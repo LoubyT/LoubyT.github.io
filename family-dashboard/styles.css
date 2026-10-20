@@ -85,6 +85,9 @@ section{margin-top:22px}
 .row .sub{color:var(--dim);font-size:14px;margin-top:2px}
 .pill{flex:0 0 auto;font-size:14px;font-weight:700;padding:7px 12px;border-radius:999px;background:rgba(77,163,255,.14);color:#9fcbff;white-space:nowrap}
 .pill.soon{background:rgba(255,184,77,.16);color:#ffcc80}
+.pill.plan{background:rgba(255,255,255,.07);color:var(--dim)}
+.row .late-plan{color:#d9b98a;opacity:.85}
+.row .paid{color:#7fdcae;font-size:13px}
 .pill.now{background:rgba(255,93,108,.18);color:#ff9aa4;animation:pulse 2s ease-in-out infinite}
 .empty{padding:18px;color:var(--dim);text-align:center}
 

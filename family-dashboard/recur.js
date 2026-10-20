@@ -46,6 +46,51 @@
     }
     return out;
   }
-  const api = { nextOccurrence, occurrences, parseD };
+  const DAYMS = 864e5;
+  const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const okDate = (v) => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v);
+  // The occurrence before `d` for a recurring bill (used to tell whether last_paid already covered `d`).
+  function prevOccurrence(b, d) {
+    const repeat = b.due_day && !b.due_date ? 'monthly' : b.repeat || 'once';
+    const day = b.due_day || (b.due_date ? parseD(b.due_date).getDate() : d.getDate());
+    if (repeat === 'monthly') return onDay(d.getFullYear(), d.getMonth() - 1, day);
+    if (repeat === 'yearly') return onDay(d.getFullYear() - 1, d.getMonth(), day);
+    return new Date(d.getTime() - 60 * DAYMS);
+  }
+  /** The ONE occurrence of a bill to show on/after `today` (never a duplicate, never an already-paid earlier one).
+   *  1. next_payment {date, amount, due_date} from the feed wins until its planned date (date) has passed — the bill
+   *     stays listed after its due date until the planned payment date, then that occurrence drops off.
+   *  2. Otherwise the recurrence (due_date = start for monthly/yearly), starting after any passed next_payment, and
+   *     skipping an occurrence that last_paid already covered (paid after the previous occurrence).
+   *  Returns { due, planned|null, key (date to sort/count by: the planned date while it's ahead, else the due date),
+   *            afterDue (planned later than due), amount (exact; next_payment.amount when it applies), fromFeed } or null. */
+  function billNext(b, today) {
+    const np = b.next_payment;
+    let from = today;
+    if (np && okDate(np.due_date)) {
+      const due = parseD(np.due_date), planned = okDate(np.date) ? parseD(np.date) : null;
+      if (planned ? planned >= today : due >= today) {   // active until its planned payment date (then it drops off)
+        const key = planned && planned >= today ? planned : due; // the planned payment date when one is ahead
+        const near = [due, planned].filter((x) => x && x >= today).sort((x, y) => x - y)[0]; // for the "next 45 days" window
+        return { due, planned, key, near, afterDue: !!(planned && planned > due), amount: typeof np.amount === 'number' ? np.amount : b.amount, fromFeed: true };
+      }
+      const last = planned && planned > due ? planned : due;   // this payment is behind us → it drops off
+      from = new Date(Math.max(+today, +last + DAYMS));
+      from = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+    }
+    let d = nextOccurrence(b, from);
+    if (!d || d < from) return null;
+    const lp = b.last_paid && okDate(b.last_paid.date) ? b.last_paid.date : null;
+    if (lp && lp <= iso(today)) {
+      const repeat = b.due_day && !b.due_date ? 'monthly' : b.repeat || 'once';
+      if (lp > iso(prevOccurrence(b, d))) {                    // already paid this cycle
+        if (repeat === 'once') return null;
+        d = nextOccurrence(b, new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1));
+        if (!d) return null;
+      }
+    }
+    return { due: d, planned: null, key: d, near: d, afterDue: false, amount: b.amount, fromFeed: false };
+  }
+  const api = { nextOccurrence, occurrences, parseD, billNext };
   if (typeof module === 'object' && module.exports) module.exports = api; else root.FDRecur = api;
 })(typeof self !== 'undefined' ? self : this);

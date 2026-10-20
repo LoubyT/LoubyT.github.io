@@ -64,6 +64,8 @@ const today0 = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; }
 const parseD = (s) => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
 const daysBetween = (a, b) => Math.round((b - a) / DAY);
 const dim = (y, m) => new Date(y, m + 1, 0).getDate();
+const md = (x) => `${x.getMonth() + 1}/${x.getDate()}`;
+const mdIso = (v) => md(parseD(v));
 const fmtD = (d, o = { month: 'short', day: 'numeric' }) => d.toLocaleDateString('en-US', o);
 function nextYearly(src, from) {
   const s = parseD(src); let d = new Date(from.getFullYear(), s.getMonth(), Math.min(s.getDate(), dim(from.getFullYear(), s.getMonth())));
@@ -176,19 +178,24 @@ function render() {
       ${tags.map((x) => `<span class="tag">${esc(x)}</span>`).join(' ')}</div></article>`;
   }).join('') || '<div class="card empty">Nothing coming up</div>';
 
-  /* bills */
+  /* bills — one row per bill (FDRecur.billNext): the feed's next_payment wins until its planned date passes */
   const bills = (d.bills || []).map((b) => {
-    const when = FDRecur.nextOccurrence(b, t); // due_date is a START date for monthly/yearly — nothing before it
-    return { ...b, when, days: daysBetween(t, when) };
-  }).filter((b) => b.when && b.days >= 0 && b.days <= 45).sort((a, b) => a.days - b.days);
+    const n = FDRecur.billNext(b, t); if (!n) return null;
+    return { ...b, n, days: daysBetween(t, n.key), near: daysBetween(t, n.near) };
+  }).filter((b) => b && b.days >= 0 && b.near <= 45).sort((a, b) => a.days - b.days || +a.n.due - +b.n.due);
   $('#billsSec').hidden = !(d.bills || []).length;
   const showAll = render.allBills, shown = showAll ? bills : bills.slice(0, 5);
   $('#bills').innerHTML = shown.map((b) => {
-    const cls = b.days <= 1 ? 'now' : b.days <= 5 ? 'soon' : '';
+    const n = b.n, plannedAhead = n.planned && n.planned >= t, dueAhead = n.due >= t;
+    const calm = n.afterDue; // planned after the due date: shown subtly, never as an alarm
+    const cls = calm ? 'plan' : b.days <= 1 ? 'now' : b.days <= 5 ? 'soon' : '';
     const lbl = b.days === 0 ? 'Today' : b.days === 1 ? 'Tomorrow' : `${b.days} days`;
-    const amt = b.amount == null ? 'Amount TBD' : usdSmart(b.amount);
-    return `<div class="row reveal"><div class="emoji">${esc(b.icon || '🧾')}</div>
-      <div class="grow"><div class="name">${esc(b.name)}${badges(b)}</div><div class="sub">${amt} · due ${fmtD(b.when)}${b.autopay ? ' · autopay' : ''}</div></div>
+    const amt = n.amount == null ? 'Amount TBD' : exactMoney(n.amount);
+    const lp = b.last_paid && b.last_paid.date ? parseD(b.last_paid.date) : null;
+    const paid = lp && lp <= t && daysBetween(lp, t) <= 45 ? `<span class="paid">Last paid ${md(lp)}</span>` : '';
+    const when = `due ${md(n.due)}${n.planned && (plannedAhead || dueAhead) && +n.planned !== +n.due ? ` · planned ${md(n.planned)}` : ''}`;
+    return `<div class="row reveal${calm ? ' after-due' : ''}"><div class="emoji">${esc(b.icon || '🧾')}</div>
+      <div class="grow"><div class="name">${esc(b.name)}${badges(b)}</div><div class="sub">${esc(amt)} · ${when}${b.autopay ? ' · autopay' : ''}${calm ? ' <span class="late-plan">· after due date</span>' : ''}</div>${paid ? `<div class="sub">${paid}</div>` : ''}</div>
       <span class="pill ${cls}">${lbl}</span></div>`;
   }).join('') + (bills.length > 5 ? `<button class="more" data-more>${showAll ? 'Show fewer' : `Show all ${bills.length} bills`}</button>` : '') || '<div class="empty">No bills due in the next 45 days 🎉</div>';
 
@@ -307,7 +314,7 @@ function tlRow(e, opts = {}) {
   const sign = cls === 'in' ? '+' : cls === 'out' ? '−' : '';
   const amt = e.amount == null ? 'TBD' : est + sign + exactMoney(e.amount);
   const subs = [];
-  if (e.due_date && e.due_date !== e.date) subs.push('due ' + fmtD(parseD(e.due_date)));
+  if (e.due_date && e.due_date !== e.date) subs.push('due ' + fmtD(parseD(e.due_date)) + (e.date > e.due_date ? ' (paid after due date)' : ''));
   if (e.end_date) subs.push('through ' + fmtD(parseD(e.end_date)));
   if (e.type === 'event') subs.push('info only');
   if (e.type === 'transfer') subs.push('moving money');
@@ -473,7 +480,8 @@ function openPaycheck(i) {
   const chk = paycheckCheck(p), items = p.items || [];
   const rows = items.map((it) => {
     const mv = it.type === 'transfer';
-    const sub = [rawDate(it.date), it.account, it.note].filter(Boolean).join(' · ');
+    const due = it.due_date && it.due_date !== it.date ? `due ${mdIso(it.due_date)}${it.date > it.due_date ? ' (after due date)' : ''}` : '';
+    const sub = [rawDate(it.date), due, it.account, it.note].filter(Boolean).join(' · ');
     return `<li class="${mv ? 'mv' : ''}"><div class="bi-main"><span class="bi-name">${esc(it.name)}${it.protected ? `<span class="badge prot">${SHIELD}Protected</span>` : ''}</span>
       <span class="bi-amt">${it.amount == null ? 'TBD' : (it.estimated ? '~' : '') + esc(exactMoney(it.amount))}</span></div>
       <div class="bi-sub"><span class="pc-type ${mv ? 'mv' : ''}">${mv ? '⇄ Moving money · not in total out' : PC_TYPE[it.type] || it.type}</span>${sub ? ' · ' + esc(sub) : ''}</div></li>`;
