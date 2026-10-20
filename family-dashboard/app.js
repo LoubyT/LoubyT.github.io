@@ -99,16 +99,10 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
 const SHIELD = '<svg viewBox="0 0 16 16"><path d="M8 0l6.5 2.6v4.6c0 4.1-2.8 7.5-6.5 8.8C4.3 14.7 1.5 11.3 1.5 7.2V2.6z"/></svg>';
 const badges = (o) => (o.protected ? `<span class="badge prot">${SHIELD}Protected</span>` : '') + (o.placeholder ? '<span class="badge ph">Placeholder</span>' : '');
 
-/* ---------------- local spending (this device only) ---------------- */
-const SPEND_KEY = 'fd:spend:v1';
-const Spend = {
-  all() { try { return JSON.parse(localStorage.getItem(SPEND_KEY)) || []; } catch { return []; } },
-  save(list) { localStorage.setItem(SPEND_KEY, JSON.stringify(list)); },
-  add(cat, amt) { const l = this.all(); l.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), cat, amt, ts: Date.now() }); this.save(l); },
-  remove(id) { this.save(this.all().filter((e) => e.id !== id)); },
-  between(cat, a, b) { return this.all().filter((e) => e.cat === cat && e.ts >= +a && e.ts < +b); },
-  sum(cat, a, b) { return this.between(cat, a, b).reduce((s, e) => s + e.amt, 0); },
-};
+/* ---------------- old on-phone spending: retired ----------------
+ * Spending now comes from the budget tracker (categories[].actual). Entries a phone saved earlier are
+ * deleted here and never read, so they can't show stale numbers. */
+try { localStorage.removeItem('fd:spend:v1'); } catch {}
 
 /* ---------------- svg ring ---------------- */
 let gid = 0;
@@ -200,10 +194,10 @@ function render() {
 
   /* budget (current calendar month) */
   const mStart = new Date(t.getFullYear(), t.getMonth(), 1), mEnd = new Date(t.getFullYear(), t.getMonth() + 1, 1);
-  const wStart = new Date(t.getFullYear(), t.getMonth(), t.getDate() - t.getDay()), wEnd = new Date(wStart.getFullYear(), wStart.getMonth(), wStart.getDate() + 7);
   $('#monthName').textContent = fmtD(t, { month: 'long', year: 'numeric' });
-  let totB = 0, totS = 0, hasPh = false;
-  const catHtml = (d.categories || []).map((c) => {
+  let totB = 0, hasPh = false;
+  const todayIso = isoDay(t);
+  const catHtml = (d.categories || []).map((c, ci) => {
     const s = c.starts_on ? parseD(c.starts_on) : null, e = c.ends_on ? parseD(c.ends_on) : null;
     const actStart = s && s > mStart ? s : mStart, actEnd = e && e < mEnd ? new Date(e.getTime() + DAY) : mEnd;
     const activeDays = Math.max(0, daysBetween(actStart, actEnd));
@@ -215,35 +209,34 @@ function render() {
       else budget = c.amount * (d.paychecks ? paydaysIn(d.paychecks, actStart, new Date(actEnd - DAY)).length : 26 / 12);
       budget = c.period === 'month' ? Math.round(budget * 100) / 100 : Math.round(budget);
     }
-    const spent = Spend.sum(c.id, mStart, mEnd);
-    if (budget != null) { totB += budget; } else hasPh = true;
-    totS += spent;
-    const left = budget != null ? budget - spent : null;
-    const frac = budget ? spent / budget : 0;
-    const col = frac > 1 ? ['#ff5d6c', '#ff8a5d'] : frac > .8 ? ['#ffb84d', '#ff8a5d'] : ['#2ee6c5', '#4da3ff'];
+    if (budget != null) totB += budget; else hasPh = true;
     const per = c.period === 'week' ? '/week' : c.period === 'month' ? '/month' : '/paycheck';
     const meta = (c.amount != null ? usdSmart(c.amount) + per : 'Amount TBD') + (notYet ? ` · starts ${fmtD(s)}` : '');
-    const pctTxt = budget == null ? '—' : budget === 0 ? '—' : Math.round(frac * 100) + '%';
-    let week = '';
-    if (c.period === 'week' && c.amount != null && !(s && s >= wEnd)) {
-      const ws = Spend.sum(c.id, wStart, wEnd), wf = ws / c.amount;
-      const wc = wf > 1 ? '#ff5d6c' : wf > .8 ? '#ffb84d' : '#2ee6c5';
-      week = `<div class="week"><div class="wlbl"><span>This week</span><span><b>${usdSmart(ws)}</b> of ${usdSmart(c.amount)}</span></div>
-        <div class="wbar"><i data-w="${Math.min(100, wf * 100)}" style="background:${wc}"></i></div></div>`;
+    const st = actualStatus(c, todayIso);
+    const head = `<div class="info"><h3>${esc(c.icon ? c.icon + ' ' : '')}${esc(c.name)}${badges(c)}</h3><div class="meta">${meta}</div>${c.note ? `<div class="note">${esc(c.note)}</div>` : ''}`;
+    if (st) {
+      const f = st.frac, col = f > 1 ? ['#ff5d6c', '#ff8a5d'] : f > .8 ? ['#ffb84d', '#ff8a5d'] : ['#2ee6c5', '#4da3ff'];
+      const pctTxt = st.plan ? Math.round(f * 100) + '%' : '—';
+      return `<article class="card cat tap reveal${st.stale ? ' stale' : ''}" data-cat="${ci}" role="button" tabindex="0" aria-label="${esc(c.name)} — see purchases">
+        ${ring(84, 9, f, col, `<div class="pct">${pctTxt}<small>used</small></div>`)}
+        ${head}<div class="nums"><span>Spent <b>${esc(exactMoney(st.spent))}</b></span>${st.left != null ? `<span>Left <b class="${st.left < 0 ? 'over' : ''}">${esc(exactMoney(st.left))}</b></span>${st.plan != null ? `<span>of ${esc(exactMoney(st.plan))}</span>` : ''}` : ''}</div>
+        ${st.note ? `<div class="act-note">${esc(st.note)}</div>` : ''}
+        <div class="asof">as of ${esc(asOfTxt(c.actual.as_of))}</div>
+        ${st.stale ? `<div class="stale-note">${staleTxt(st, c.actual, c.period)}</div>` : ''}</div>
+        <span class="chev cat-chev" aria-hidden="true">›</span></article>`;
     }
-    const nums = budget == null ? `<span>Spent <b>${usdSmart(spent)}</b></span>`
-      : `<span>Spent <b>${usdSmart(spent)}</b></span><span>${left < 0 ? `<b class="over">${usdSmart(-left)} over</b>` : `Left <b>${usdSmart(left)}</b>`}</span><span>of ${usd(budget)}</span>`;
-    return `<article class="card cat reveal ${notYet && activeDays === 0 ? 'inactive' : ''}">
-      ${ring(84, 9, frac, col, `<div class="pct">${pctTxt}<small>used</small></div>`)}
-      <div class="info"><h3>${esc(c.icon ? c.icon + ' ' : '')}${esc(c.name)}${badges(c)}</h3><div class="meta">${meta}</div>${c.note ? `<div class="note">${esc(c.note)}</div>` : ''}<div class="nums">${notYet && activeDays === 0 ? `<span>Starts ${fmtD(s, { month: 'long', day: 'numeric' })}</span>` : nums}</div></div>
-      ${week}
-      <button class="add" data-add="${esc(c.id)}">+ Add spending</button></article>`;
+    return `<article class="card cat plan-only reveal ${notYet && activeDays === 0 ? 'inactive' : ''}">
+      ${ring(84, 9, 0, ['#2ee6c5', '#4da3ff'], `<div class="pct">${budget == null ? '—' : esc(usd(budget))}<small>plan</small></div>`)}
+      ${head}<div class="nums">${notYet && activeDays === 0 ? `<span>Starts ${fmtD(s, { month: 'long', day: 'numeric' })}</span>` : budget == null ? '<span>Plan amount TBD</span>' : `<span>Planned this month <b>${usd(budget)}</b></span>`}</div></div></article>`;
   }).join('');
   $('#cats').innerHTML = catHtml;
-  const totLeft = totB - totS, tf = totB ? totS / totB : 0;
-  $('#summary').innerHTML = `${ring(104, 11, tf, tf > 1 ? ['#ff5d6c', '#ff8a5d'] : ['#8b7bff', '#ff6fb5'], `<div class="pct">${totB ? Math.round(tf * 100) + '%' : '—'}<small>used</small></div>`)}
-    <div><div class="lbl">Left this month</div><div class="big" data-money="${totLeft}">${usd(0)}</div>
-    <div class="bar3"><div>Budget<b>${usd(totB)}</b></div><div>Spent<b>${usdSmart(totS)}</b></div></div>
+  const tr = trackedTotals(d.categories, todayIso), tf = tr.plan ? tr.spent / tr.plan : 0;
+  $('#summary').innerHTML = `${ring(104, 11, tf, tf > 1 ? ['#ff5d6c', '#ff8a5d'] : ['#8b7bff', '#ff6fb5'], `<div class="pct">${tr.lines && tr.plan ? Math.round(tf * 100) + '%' : '—'}<small>used</small></div>`)}
+    <div><div class="lbl">Planned this month</div><div class="big" data-money="${totB}">${usd(0)}</div>
+    ${!tr.lines && tr.upcoming ? `<div class="lbl" style="margin-top:8px">Tracking starts ${esc(rawDate(tr.nextStart))} · from the budget tracker</div>` : ''}
+    ${tr.lines ? `<div class="bar3"><div>Spent so far<b>${esc(exactMoney(tr.spent))}</b></div><div>Of plan<b>${esc(exactMoney(tr.plan))}</b></div></div>
+      <div class="lbl" style="margin-top:8px">From the budget tracker · ${tr.lines} ${tr.lines === 1 ? 'line' : 'lines'} tracked</div>`
+      : tr.upcoming ? '' : '<div class="lbl" style="margin-top:8px">Spending will show here once the budget tracker sends it.</div>'}
     ${hasPh ? '<div class="lbl" style="margin-top:8px">Some amounts are still placeholders.</div>' : ''}</div>`;
   $('#summary').classList.add('reveal');
 
@@ -418,10 +411,15 @@ addEventListener('popstate', () => { if (evOpen) hideEvent(); });
 document.addEventListener('click', (e) => {
   const ev = e.target.closest('[data-ev]'); if (ev) { openEvent(+ev.dataset.ev); return; }
   const pc = e.target.closest('[data-pc]'); if (pc) { openPaycheck(+pc.dataset.pc); return; }
+  const cat = e.target.closest('[data-cat]'); if (cat) { openCategory(+cat.dataset.cat); return; }
   if (e.target.closest('[data-paychecks]')) { location.hash = '#paychecks'; return; }
   if (e.target.closest('[data-evclose]')) closeEvent();
 });
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && evOpen) closeEvent(); });
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && evOpen) closeEvent();
+  const cat = (e.key === 'Enter' || e.key === ' ') && e.target.closest && e.target.closest('[data-cat]');
+  if (cat) { e.preventDefault(); openCategory(+cat.dataset.cat); }
+});
 // swipe down to close
 (() => {
   const sh = $('#evSheet'); let y0 = null, dy = 0;
@@ -496,6 +494,40 @@ function openPaycheck(i) {
     ${oi ? `<h4 class="ev-h">Other income</h4><ul class="ev-items">${oi}</ul>` : ''}`;
   showSheet();
 }
+/* ---------------- category actuals (from the budget file) ---------------- */
+const { actualStatus, trackedTotals } = FDCalc;
+function asOfTxt(v) {
+  if (typeof v !== 'string') return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return rawDate(v);
+  const d = new Date(v); if (isNaN(d)) return v;
+  return `${rawDate(isoDay(d))} ${d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
+}
+const PER_WORD = { week: 'week', month: 'month', paycheck: 'paycheck' };
+function staleTxt(st, a, period) {
+  return st.stale === 'ended' ? `These numbers are from the previous ${PER_WORD[period] || 'period'} (ended ${esc(rawDate(a.period_end))}).`
+    : `These numbers are from the previous period. Last update was before ${esc(rawDate(a.period_start))}.`;
+}
+function openCategory(i) {
+  const c = DATA && DATA.categories && DATA.categories[i];
+  const st = actualStatus(c, isoDay(today0())); if (!st) return;
+  const a = c.actual;
+  const rows = st.transactions.map((x) => `<li><div class="bi-main"><span class="bi-name">${esc(x.merchant)}</span><span class="bi-amt">${x.amount == null ? 'TBD' : esc(exactMoney(x.amount))}</span></div>
+    <div class="bi-sub">${esc([rawDate(x.date), x.account].filter(Boolean).join(' · '))}</div></li>`).join('');
+  $('#evBody').innerHTML = `<h3 id="evTitle">${esc(c.icon ? c.icon + ' ' : '')}${esc(c.name)}</h3>
+    <p class="ev-date">${esc(rawDate(a.period_start))} → ${esc(rawDate(a.period_end))}</p>
+    <div class="ev-total"><span>Spent</span><b>${esc(exactMoney(st.spent))}</b></div>
+    <div class="pc-sum">
+      ${st.plan != null ? `<div><span>Plan</span><b>${esc(exactMoney(st.plan))}</b></div>` : ''}
+      ${st.left != null ? `<div class="${st.left < 0 ? 'neg' : 'pos'}"><span>Left</span><b>${esc(exactMoney(st.left))}</b></div>` : ''}
+    </div>
+    ${st.note ? `<p class="act-note sheet">${esc(st.note)}</p>` : ''}
+    <p class="cat-asof">as of ${esc(asOfTxt(a.as_of))}</p>
+    ${st.stale ? `<p class="stale-note">${staleTxt(st, a, c.period)}</p>` : ''}
+    <h4 class="ev-h">Purchases</h4>
+    ${rows ? `<ul class="ev-items">${rows}</ul>` : `<p class="bi-sub" style="margin:0 4px 8px">${st.upcoming ? 'This period hasn’t started yet.' : 'No purchases yet this period.'}</p>`}
+    <p class="ev-foot">From the budget tracker.</p>`;
+  showSheet();
+}
 let pcScroll = 0;
 function showPaychecks(on) {
   if (on && !DATA) return;
@@ -507,44 +539,15 @@ function showPaychecks(on) {
 $('#pcBack').addEventListener('click', () => { if (location.hash === '#paychecks') history.back(); else showPaychecks(false); });
 addEventListener('hashchange', () => showPaychecks(location.hash === '#paychecks'));
 
-/* ---------------- add-spend sheet ---------------- */
-let sheetCat = null;
-function openSheet(id) {
-  const c = DATA.categories.find((x) => x.id === id); if (!c) return;
-  sheetCat = c;
-  $('#sheetTitle').textContent = (c.icon ? c.icon + ' ' : '') + c.name;
-  $('#sheetSub').textContent = 'How much did you spend?';
-  $('#amt').value = '';
-  $('#chips').innerHTML = [5, 10, 20, 25, 50, 100].map((v) => `<button type="button" data-chip="${v}">$${v}</button>`).join('');
-  renderEntries();
-  $('#sheetWrap').hidden = false;
-  setTimeout(() => $('#amt').focus(), 250);
-}
-function renderEntries() {
-  const t = today0(), ms = new Date(t.getFullYear(), t.getMonth(), 1), me = new Date(t.getFullYear(), t.getMonth() + 1, 1);
-  const list = Spend.between(sheetCat.id, ms, me).sort((a, b) => b.ts - a.ts);
-  $('#entries').innerHTML = list.length ? `<h4>This month on this phone</h4>` + list.map((e) =>
-    `<div class="entry"><span><b>${usdSmart(e.amt)}</b> <span class="d">· ${fmtD(new Date(e.ts), { weekday: 'short', month: 'short', day: 'numeric' })}</span></span><button type="button" aria-label="Remove ${usdSmart(e.amt)}" data-del="${e.id}">✕</button></div>`).join('') : '';
-}
-function closeSheets() { $('#sheetWrap').hidden = true; $('#menuWrap').hidden = true; }
+function closeSheets() { $('#menuWrap').hidden = true; }
 let toastT;
 function toast(msg) { const el = $('#toast'); el.textContent = msg; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 2200); }
 
 document.addEventListener('click', (e) => {
-  const t = e.target.closest('[data-add],[data-close],[data-chip],[data-del],[data-more],[data-timeline]'); if (!t) return;
+  const t = e.target.closest('[data-close],[data-more],[data-timeline]'); if (!t) return;
   if ('timeline' in t.dataset) { location.hash = '#timeline'; }
   else if ('more' in t.dataset) { render.allBills = !render.allBills; refreshView(); }
-  else if (t.dataset.add) openSheet(t.dataset.add);
   else if ('close' in t.dataset) closeSheets();
-  else if (t.dataset.chip) { const cur = parseFloat($('#amt').value) || 0; $('#amt').value = String(Math.round((cur + +t.dataset.chip) * 100) / 100); }
-  else if (t.dataset.del) { Spend.remove(t.dataset.del); renderEntries(); refreshView(); toast('Removed'); }
-});
-$('#spendForm').addEventListener('submit', (e) => {
-  e.preventDefault();
-  const v = parseFloat(String($('#amt').value).replace(/[$,\s]/g, ''));
-  if (!isFinite(v) || v <= 0 || v > 100000) { $('#amt').focus(); toast('Type an amount first'); return; }
-  Spend.add(sheetCat.id, Math.round(v * 100) / 100);
-  closeSheets(); refreshView(); toast(`Added ${usdSmart(v)} to ${sheetCat.name}`);
 });
 function refreshView() { const y = scrollY; render(); if (!$('#tlView').hidden) renderTimeline(); if (!$('#pcView').hidden) renderPaychecks(); scrollTo(0, y); }
 
@@ -619,7 +622,7 @@ setInterval(() => { if (!document.hidden) refreshData({ silent: true }); }, 15 *
 // pull-to-refresh (touch devices)
 (() => {
   const ptr = $('#ptr'); let y0 = null, dy = 0;
-  const sheetOpen = () => !$('#sheetWrap').hidden || !$('#menuWrap').hidden;
+  const sheetOpen = () => !$('#menuWrap').hidden || !$('#evWrap').hidden;
   addEventListener('touchstart', (e) => { if (scrollY <= 0 && !refreshing && DATA && !sheetOpen() && (!$('#app').hidden || !$('#tlView').hidden || !$('#pcView').hidden)) { y0 = e.touches[0].clientY; dy = 0; } }, { passive: true });
   addEventListener('touchmove', (e) => {
     if (y0 === null) return; dy = e.touches[0].clientY - y0;

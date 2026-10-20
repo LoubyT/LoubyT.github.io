@@ -52,6 +52,31 @@
     const next = list.findIndex((p) => p.date >= todayIso);
     return next >= 0 ? next : list.length - 1;
   }
-  const api = { tlBucket, tlTotals, exactMoney, breakdownCheck, paycheckCheck, pickCurrentPaycheck };
+  // Category actuals (tracked spending from the budget file). Values are used exactly as given; nothing is recomputed.
+  // stale: 'ended' when today is after period_end; 'old' when as_of is before period_start of a period that has begun.
+  // upcoming: the period hasn't started yet (e.g. plan starts at the next payday) — not stale.
+  // left may be null (e.g. a line that hasn't started); it is never computed.
+  function actualStatus(c, todayIso) {
+    const a = c && c.actual;
+    if (!a || typeof a !== 'object') return null;
+    const asOf = typeof a.as_of === 'string' ? a.as_of.slice(0, 10) : '';
+    const upcoming = !!(a.period_start && todayIso < a.period_start);
+    const stale = a.period_end && todayIso > a.period_end ? 'ended' : !upcoming && asOf && a.period_start && asOf < a.period_start ? 'old' : null;
+    const plan = typeof c.amount === 'number' ? c.amount : null;
+    const frac = plan ? a.spent / plan : 0;
+    return { spent: a.spent, left: typeof a.left === 'number' ? a.left : null, plan, frac, stale, upcoming, note: typeof a.note === 'string' && a.note ? a.note : null, transactions: Array.isArray(a.transactions) ? a.transactions : [] };
+  }
+  // Summary of tracked lines only (current: not stale, not upcoming). Uses only the data file — never on-device entries.
+  function trackedTotals(cats, todayIso) {
+    let lines = 0, spentCents = 0, planCents = 0, upcoming = 0, nextStart = null;
+    for (const c of cats || []) {
+      const s = actualStatus(c, todayIso); if (!s) continue;
+      if (s.upcoming) { upcoming++; if (!nextStart || c.actual.period_start < nextStart) nextStart = c.actual.period_start; continue; }
+      if (s.stale || typeof s.spent !== 'number') continue;
+      lines++; spentCents += Math.round(s.spent * 100); if (s.plan != null) planCents += Math.round(s.plan * 100);
+    }
+    return { lines, spent: spentCents / 100, plan: planCents / 100, upcoming, nextStart };
+  }
+  const api = { tlBucket, tlTotals, exactMoney, breakdownCheck, paycheckCheck, pickCurrentPaycheck, actualStatus, trackedTotals };
   if (typeof module === 'object' && module.exports) module.exports = api; else root.FDCalc = api;
 })(typeof self !== 'undefined' ? self : this);
