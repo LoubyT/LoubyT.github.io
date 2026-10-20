@@ -546,15 +546,13 @@ function showPaychecks(on) {
 $('#pcBack').addEventListener('click', () => { if (location.hash === '#paychecks') history.back(); else showPaychecks(false); });
 addEventListener('hashchange', () => showPaychecks(location.hash === '#paychecks'));
 
-function closeSheets() { $('#menuWrap').hidden = true; }
 let toastT;
 function toast(msg) { const el = $('#toast'); el.textContent = msg; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 2200); }
 
 document.addEventListener('click', (e) => {
-  const t = e.target.closest('[data-close],[data-more],[data-timeline]'); if (!t) return;
+  const t = e.target.closest('[data-more],[data-timeline]'); if (!t) return;
   if ('timeline' in t.dataset) { location.hash = '#timeline'; }
   else if ('more' in t.dataset) { render.allBills = !render.allBills; refreshView(); }
-  else if ('close' in t.dataset) closeSheets();
 });
 function refreshView() { const y = scrollY; render(); if (!$('#tlView').hidden) renderTimeline(); if (!$('#pcView').hidden) renderPaychecks(); scrollTo(0, y); }
 
@@ -591,7 +589,6 @@ $('#lockForm').addEventListener('submit', async (e) => {
   } finally { btn.disabled = false; btn.classList.remove('busy'); btn.querySelector('span').textContent = 'Open'; }
 });
 $('#showPass').addEventListener('click', () => { const p = $('#pass'); const show = p.type === 'password'; p.type = show ? 'text' : 'password'; $('#showPass').textContent = show ? 'Hide passcode' : 'Show passcode'; });
-$('#menuBtn').addEventListener('click', () => { $('#menuWrap').hidden = false; });
 /* ---------------- refresh: button, pull-to-refresh, foreground, timer ---------------- */
 let refreshing = false, lastCheck = 0;
 const sig = (d) => d ? (d.published_at || '') + '|' + (d.updated_at || '') : '';
@@ -618,7 +615,6 @@ async function refreshData({ silent = false } = {}) {
   } finally { refreshing = false; btn.classList.remove('spin'); $('#app').classList.remove('refreshing'); }
 }
 $('#refreshTop').addEventListener('click', () => { checkForUpdate(); refreshData(); });
-$('#refreshBtn').addEventListener('click', () => { closeSheets(); checkForUpdate(); refreshData(); });
 // back to the foreground -> check for new data (at most once a minute)
 document.addEventListener('visibilitychange', () => { if (!document.hidden && Date.now() - lastCheck > 60e3) refreshData({ silent: true }); });
 addEventListener('pageshow', (e) => { if (e.persisted) refreshData({ silent: true }); });
@@ -629,7 +625,7 @@ setInterval(() => { if (!document.hidden) refreshData({ silent: true }); }, 15 *
 // pull-to-refresh (touch devices)
 (() => {
   const ptr = $('#ptr'); let y0 = null, dy = 0;
-  const sheetOpen = () => !$('#menuWrap').hidden || !$('#evWrap').hidden;
+  const sheetOpen = () => !$('#evWrap').hidden;
   addEventListener('touchstart', (e) => { if (scrollY <= 0 && !refreshing && DATA && !sheetOpen() && (!$('#app').hidden || !$('#tlView').hidden || !$('#pcView').hidden)) { y0 = e.touches[0].clientY; dy = 0; } }, { passive: true });
   addEventListener('touchmove', (e) => {
     if (y0 === null) return; dy = e.touches[0].clientY - y0;
@@ -646,8 +642,6 @@ setInterval(() => { if (!document.hidden) refreshData({ silent: true }); }, 15 *
     ptr.style.transform = ''; ptr.style.opacity = '';
   });
 })();
-$('#forgetBtn').addEventListener('click', async () => { if (!confirm('Lock this phone? You’ll need the family passcode to open it again.')) return; closeSheets(); await IDB.del('dk'); DATA = null; showLock(); });
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSheets(); });
 
 /* ---------------- app updates ----------------
  * The shell is cache-first, so a launch shows the cached version while the browser fetches the new sw.js; a phone that
@@ -658,7 +652,7 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSheet
  *    new code runs right away — unless a sheet is open or a passcode is being typed, then a small "Update ready" bar
  *    is shown and the reload happens on tap (or the next time the app is backgrounded). */
 let swReg = null, reloading = false, updatePending = false;
-const busy = () => !$('#evWrap').hidden || !$('#menuWrap').hidden || (!$('#lock').hidden && $('#pass').value);
+const busy = () => !$('#evWrap').hidden || (!$('#lock').hidden && $('#pass').value);
 function applyUpdate() { if (reloading) return; reloading = true; location.reload(); }
 function checkForUpdate() { if (swReg) swReg.update().catch(() => {}); }
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
