@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-1TWMbJYFh53DxPjhE3avmfIrE9fyvMYfHT1Q3tDUHM8='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://fd-refresh-relay.vercel.app; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-gbCpFkY/rD2L2DFZre7DmBCx76VwCWoccvPlCXfpSdA='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://fd-refresh-relay.vercel.app; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
 <meta name="robots" content="noindex, nofollow, noarchive">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -50,6 +50,8 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;ma
 .kpi[hidden]{display:none}
 .kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 12px;min-width:0;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
 .kpi .k{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi .k .sub{letter-spacing:.06em;text-transform:none;font-weight:500;color:var(--dim);font-size:10.5px}
+@media(max-width:380px){.kpi .k .sub{display:block}}
 .kpi .v{font-size:19px;font-weight:700;margin-top:4px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:var(--tap);background:rgba(255,255,255,.04);border:1px solid var(--line);color:var(--txt);border-radius:12px;padding:0 14px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;white-space:nowrap}
 .btn:hover{border-color:rgba(255,255,255,.4)}
@@ -110,6 +112,8 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;ma
 
 /* plan stats */
 .stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.stat.wide{grid-column:1/-1}
+.taxrate{margin:2px 0 14px;padding-bottom:14px;border-bottom:1px solid var(--line)}
 .stat{background:var(--card2);border-radius:12px;padding:12px;min-width:0}
 .stat .k{font-size:12px;color:var(--mute)}
 .stat .v{font-size:22px;font-weight:650;margin-top:4px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
@@ -172,6 +176,9 @@ label.f b{color:var(--txt);font-variant-numeric:tabular-nums}
 .note p:last-child{margin-bottom:0}
 .note b{color:var(--txt)}
 .note summary{cursor:pointer;min-height:var(--tap);display:flex;align-items:center;font-size:12px;letter-spacing:.18em;text-transform:uppercase;font-weight:650;color:var(--mute)}
+.note summary::-webkit-details-marker{display:none}
+.note summary::after{content:"▾";margin-left:6px;transition:transform .2s}
+.note details[open] summary::after{transform:rotate(180deg)}
 .disc{border-color:rgba(255,143,163,.3)}
 footer{color:var(--dim);font-size:12px;text-align:center;margin-top:18px;line-height:1.6}
 /* lock screen */
@@ -186,7 +193,7 @@ footer{color:var(--dim);font-size:12px;text-align:center;margin-top:18px;line-he
 .lock .err{color:var(--warn);font-size:14px;min-height:20px;margin-top:10px}
 .lock.shake .card{animation:shake .35s}
 @keyframes shake{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
-@media(prefers-reduced-motion:reduce){.bar i,.vi summary::after{transition:none}}
+@media(prefers-reduced-motion:reduce){.bar i,.vi summary::after,.note summary::after{transition:none}}
 </style>
 </head>
 <body>
@@ -216,9 +223,9 @@ footer{color:var(--dim);font-size:12px;text-align:center;margin-top:18px;line-he
   </header>
   <section class="kpis" id="kpis" aria-label="Totals">
     <div class="kpi"><div class="k">RSUs granted</div><div class="v" id="kGranted">—</div></div>
-    <div class="kpi"><div class="k">Total value</div><div class="v" id="kGrantedV">—</div></div>
+    <div class="kpi"><div class="k">Total value <span class="sub">after tax</span></div><div class="v" id="kGrantedV">—</div></div>
     <div class="kpi" id="kVestedC"><div class="k">RSUs vested</div><div class="v" id="kVested">—</div></div>
-    <div class="kpi" id="kVestedVC"><div class="k">Vested value</div><div class="v" id="kVestedV">—</div></div>
+    <div class="kpi" id="kVestedVC"><div class="k">Vested value <span class="sub">after tax</span></div><div class="v" id="kVestedV">—</div></div>
   </section>
 
   <main class="grid">
@@ -265,27 +272,8 @@ footer{color:var(--dim);font-size:12px;text-align:center;margin-top:18px;line-he
         <div class="stats">
           <div class="stat sell"><div class="k">Cash from sells</div><div class="v" id="sCash">—</div><div class="s" id="sCashS">after withholding</div></div>
           <div class="stat hold"><div class="k">Shares held</div><div class="v" id="sHeld">—</div><div class="s">net, after withholding</div></div>
-          <div class="stat hold"><div class="k">Held value today</div><div class="v" id="sHeldNow">—</div><div class="s" id="sHeldNowS"></div></div>
-          <div class="stat"><div class="k">Held value projected</div><div class="v" id="sHeldProj">—</div><div class="s" id="sHeldProjS">each vest at its date</div></div>
+          <div class="stat hold wide"><div class="k">Held value today</div><div class="v" id="sHeldNow">—</div><div class="s" id="sHeldNowS"></div></div>
         </div>
-      </section>
-
-      <!-- ASSUMPTIONS -->
-      <section class="card" aria-labelledby="hAssume">
-        <h2 id="hAssume">Assumptions</h2>
-        <label class="f" for="growth" style="margin-top:0"><span>Growth scenario (per year)</span></label>
-        <div class="inrow">
-          <div class="suf small-in"><input type="number" id="growth" step="1" inputmode="decimal" enterkeyhint="done"><span>%</span></div>
-          <input type="range" id="growthR" min="-50" max="100" step="1" style="flex:1" aria-label="Growth scenario slider">
-        </div>
-        <div class="hint">Projects each vest's price at its own date from the price above. 0% = flat.</div>
-
-        <label class="f" for="rate"><span>Withholding rate (sell-to-cover)</span></label>
-        <div class="inrow">
-          <div class="suf small-in"><input type="number" id="rate" step="0.05" inputmode="decimal" enterkeyhint="done"><span>%</span></div>
-          <button class="btn" id="rateReset">Reset to 29.65%</button>
-        </div>
-        <div class="hint" id="rateHint"></div>
       </section>
     </div>
 
@@ -299,13 +287,21 @@ footer{color:var(--dim);font-size:12px;text-align:center;margin-top:18px;line-he
 
       <section class="card note">
         <details>
-          <summary>Tax notes</summary>
+          <summary>Tax details</summary>
+          <div class="taxrate">
+            <label class="f" for="rate" style="margin-top:0"><span>Withholding rate (sell-to-cover)</span></label>
+            <div class="inrow">
+              <div class="suf small-in"><input type="number" id="rate" step="0.05" inputmode="decimal" enterkeyhint="done"><span>%</span></div>
+              <button class="btn" id="rateReset">Reset to 29.65%</button>
+            </div>
+            <div class="hint" id="rateHint"></div>
+          </div>
           <div id="taxNotes"></div>
         </details>
       </section>
 
       <section class="card note disc">
-        <p><b>Estimate only, not tax or financial advice.</b> Figures assume the sell-to-cover rate above, shares withheld rounded up to whole shares, and the price you set. Actual withholding, sale price, fees and the final tax you owe can differ. Projections are hypothetical. Check your actual grant documents and statements.</p>
+        <p><b>Estimate only, not tax or financial advice.</b> Figures assume the sell-to-cover rate in Tax details, shares withheld rounded up to whole shares, and the current price (live, last close or your own) for every vest. Actual withholding, sale price, fees and the final tax you owe can differ. Check your actual grant documents and statements.</p>
       </section>
     </div>
   </main>
@@ -351,7 +347,6 @@ function initData(data){
   DEF = {
     mode: 'auto',            // 'auto' (live/last-known) | 'manual'
     manualPrice: null,
-    growth: 0,
     rate: DEFAULT_RATE,
     plan: SCHEDULE.map((_,i)=> i===0 ? 'sell' : 'hold'),
     lastQuote: null          // {price, time, src, asOf?, state?}
@@ -359,7 +354,9 @@ function initData(data){
   try { S = Object.assign({}, DEF, JSON.parse(localStorage.getItem(LS)||'{}')); }
   catch(e){ S = JSON.parse(JSON.stringify(DEF)); }
   if (!Array.isArray(S.plan) || S.plan.length !== SCHEDULE.length) S.plan = DEF.plan.slice();
-  window.__vest = { SCHEDULE, calcVest, projPrice };
+  // growth scenarios were removed: drop any saved growth value so it can never affect anything
+  if ('growth' in S){ delete S.growth; save(); }
+  window.__vest = { SCHEDULE, calcVest };
 }
 
 let livePrice = null, liveTime = null, liveSrc = null, liveAsOf = null, liveState = null, fetching = false;
@@ -373,7 +370,6 @@ const fmtDate = d => d.toLocaleDateString('en-US',{month:'short',day:'numeric',y
 const fmtTime = t => new Date(t).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
 const fmtHM = t => new Date(t).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
 const fmtMD = t => new Date(t).toLocaleDateString('en-US',{month:'short',day:'numeric'});
-const YEAR_MS = 365.25*24*3600*1000;
 
 function currentPrice(){
   if (S.mode === 'manual' && S.manualPrice > 0) return { p:S.manualPrice, kind:'manual' };
@@ -390,15 +386,11 @@ function calcVest(shares, price, ratePct){
   const net = shares - withheld;
   return { gross, withheld, net, netUsd: net * price, taxUsd: gross * ratePct/100 };
 }
-function projPrice(price, growthPct, date, now){
-  const yrs = Math.max(0, (date - now) / YEAR_MS);
-  return price * Math.pow(1 + growthPct/100, yrs);
-}
 /* ---------- render ---------- */
 function render(){
   const now = new Date();
   const { p, kind } = currentPrice();
-  const rate = S.rate, g = S.growth;
+  const rate = S.rate;
 
   // price status chip + source line (honest about where the number comes from)
   const pill = $('srcPill');
@@ -430,8 +422,6 @@ function render(){
   if (document.activeElement !== $('price')) $('price').value = p.toFixed(2);
   const sl = $('slider'); if (p > +sl.max) sl.max = Math.ceil(p*1.5);
   sl.value = p; $('sliderVal').textContent = usd2(p);
-  if (document.activeElement !== $('growth')) $('growth').value = g;
-  $('growthR').value = g;
   if (document.activeElement !== $('rate')) $('rate').value = rate;
 
   // countdown + progress
@@ -454,9 +444,7 @@ function render(){
   $('vestedBarWrap').setAttribute('aria-valuenow', vested);
   // header totals: all grants (GRANTS[] -> TOTAL / SCHEDULE), valued at the current price (live, cached or manual)
   $('kGranted').textContent = num(TOTAL);
-  $('kGrantedV').textContent = usd(TOTAL * p);
   $('kVested').textContent = num(vested);
-  $('kVestedV').textContent = usd(vested * p);
   // nothing vested yet (today vs the vest dates): show only the two granted chips, 2 across
   const none = vested === 0;
   $('kVestedC').hidden = $('kVestedVC').hidden = none;
@@ -464,12 +452,12 @@ function render(){
 
   // vests (timeline + per-vest tax estimate)
   const open = new Set([...document.querySelectorAll('#vests details[open]')].map(d => d.dataset.i));
-  let cash = 0, heldSh = 0, heldNow = 0, heldProj = 0, sellCount = 0, heroC = null, heroPP = null;
+  let cash = 0, heldSh = 0, heldNow = 0, sellCount = 0, heroC = null, heroPP = null;
   const rows = SCHEDULE.map(v => {
-    const pp = projPrice(p, g, v.date, now);
+    const pp = p; // every vest is valued at the current price
     const c = calcVest(v.shares, pp, rate);
     const sell = S.plan[v.i]==='sell';
-    if (sell){ cash += c.netUsd; sellCount++; } else { heldSh += c.net; heldNow += c.net*p; heldProj += c.net*pp; }
+    if (sell){ cash += c.netUsd; sellCount++; } else { heldSh += c.net; heldNow += c.net*p; }
     const st = v.date <= now ? 'done' : (next && v.i===next.i ? 'next' : '');
     if (st==='next'){ heroC = c; heroPP = pp; }
     const tag = st==='done' ? '<span class="tag vested">Vested</span>' : st==='next' ? '<span class="tag">Next</span>' : '';
@@ -482,7 +470,7 @@ function render(){
       <div class="v-out"><span>${sell?'Est. cash to you':'Est. shares kept'}</span><b data-k="out">${sell?usd(c.netUsd):c.net+' sh'}</b></div>
       <details data-i="${v.i}"${open.has(String(v.i))?' open':''}><summary>Tax details</summary>
       <div class="kv">
-        <div><span>Price${g?' (projected)':''}</span><b data-k="pp">${usd2(pp)}</b></div>
+        <div><span>Price</span><b data-k="pp">${usd2(pp)}</b></div>
         <div><span>Gross value</span><b data-k="gross">${usd(c.gross)}</b></div>
         <div><span>Shares withheld</span><b data-k="withheld">${c.withheld}</b></div>
         <div><span>Net shares</span><b data-k="net">${c.net}</b></div>
@@ -490,13 +478,16 @@ function render(){
       </div></details></li>`;
   });
   $('vests').innerHTML = rows.join('');
+  // value chips: net shares kept after sell-to-cover (same per-vest calcVest rounding as each row), at the current price
+  let netAll = 0, netVested = 0;
+  for (const v of SCHEDULE){ const n = calcVest(v.shares, p, rate).net; netAll += n; if (v.date <= now) netVested += n; }
+  $('kGrantedV').textContent = usd(netAll * p);
+  $('kVestedV').textContent = usd(netVested * p);
   $('sCash').textContent = usd(cash);
   $('sCashS').textContent = sellCount ? (sellCount===1 && S.plan[0]==='sell' ? 'vest 1, after withholding' : sellCount+' vests, after withholding') : 'nothing marked Sell';
   $('sHeld').textContent = num(heldSh);
   $('sHeldNow').textContent = usd(heldNow);
   $('sHeldNowS').textContent = '@ ' + usd2(p);
-  $('sHeldProj').textContent = usd(heldProj);
-  $('sHeldProjS').textContent = g ? (g>0?'+':'') + g + '%/yr, each vest at its date' : 'flat price (0%/yr)';
 
   // hero value: the next vest's estimated after-withholding value (same numbers as its row)
   const hv = $('hval'), hp = $('heroPlan');
@@ -506,7 +497,7 @@ function render(){
     hp.hidden = false; hp.className = 'chip plain ' + (sell?'psell':'phold'); hp.textContent = 'Plan: ' + (sell?'Sell':'Hold');
     $('hvalK').textContent = sell ? 'Est. after-tax cash from this vest' : 'Est. after-tax value of shares kept';
     $('hvalV').textContent = usd(heroC.netUsd);
-    const pl = g ? (g>0?'+':'') + g + '%/yr projected' : kind==='manual' ? 'your price' : kind==='live' ? (liveState==='regular' ? 'live price' : 'last close') : kind==='cached' ? 'last fetched price' : 'last close';
+    const pl = kind==='manual' ? 'your price' : kind==='live' ? (liveState==='regular' ? 'live price' : 'last close') : kind==='cached' ? 'last fetched price' : 'last close';
     $('hvalS').innerHTML = heroC.net + ' of ' + next.shares + ' shares after ' + heroC.withheld + ' withheld (' + rate + '%)<br>at <span class="num">' + usd2(heroPP) + '</span>/share · ' + pl;
   } else { hv.hidden = true; hp.hidden = true; }
 }
@@ -517,9 +508,6 @@ $('price').addEventListener('focus', e => e.target.select());
 $('price').addEventListener('change', () => render());
 $('slider').addEventListener('input', e => { S.mode='manual'; S.manualPrice=+e.target.value; save(); render(); });
 $('refresh').addEventListener('click', () => { S.mode='auto'; save(); render(); fetchQuote(); });
-const setG = v => { const n = parseFloat(v); S.growth = isFinite(n) ? Math.max(-90, Math.min(500, n)) : 0; save(); render(); };
-$('growth').addEventListener('input', e => setG(e.target.value));
-$('growthR').addEventListener('input', e => setG(e.target.value));
 $('rate').addEventListener('input', e => { const n = parseFloat(e.target.value); if (isFinite(n) && n>=0 && n<100){ S.rate=n; save(); render(); } });
 $('rate').addEventListener('change', () => render());
 $('rateReset').addEventListener('click', () => { S.rate = DEFAULT_RATE; save(); render(); });

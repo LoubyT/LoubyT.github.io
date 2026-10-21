@@ -4,7 +4,7 @@
 // - data.enc and page loads are network-first (falls back to the last good copy offline).
 // - Other files are cache-first.
 const PREFIX = 'vest-';
-const CACHE = PREFIX + 'v10';
+const CACHE = PREFIX + 'v11';
 const ASSETS = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './icon.svg'];
 const SCOPE = new URL('./', self.location).href;
 self.addEventListener('install', e => {
