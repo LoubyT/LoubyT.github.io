@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-J280pQzkrrLe9RgnFcFnqB6vmgdxqgt2XDrzjtSiDCU='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://fd-refresh-relay.vercel.app; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="referrer" content="no-referrer">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<meta name="color-scheme" content="dark">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Vest Tracker</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{
+  --bg:#000; --card:rgba(16,18,24,.78); --card2:rgba(255,255,255,.06);
+  --line:rgba(255,255,255,.13); --txt:#f4f5f7; --mute:#aab1bd; --dim:#8e96a4;
+  --sell:#ffb547; --hold:#7cc4ff; --good:#5be3a1; --warn:#ff9c8f;
+  --r:18px; --tap:44px;
+  --font: "Inter","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--font);-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+body{min-height:100vh;overflow-x:hidden;line-height:1.4}
+#stars{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.75}
+.wrap{position:relative;z-index:1;max-width:1080px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 14px calc(36px + env(safe-area-inset-bottom))}
+.num{font-variant-numeric:tabular-nums}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* header */
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:2px 2px 14px}
+.brand{font-weight:800;letter-spacing:.28em;font-size:14px;text-transform:uppercase}
+.brand small{display:block;font-weight:500;letter-spacing:.14em;color:var(--mute);font-size:11px;margin-top:4px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:var(--tap);background:rgba(255,255,255,.04);border:1px solid var(--line);color:var(--txt);border-radius:12px;padding:0 14px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;white-space:nowrap}
+.btn:hover{border-color:rgba(255,255,255,.4)}
+.btn:disabled{opacity:.55;cursor:default}
+.btn.primary{background:#fff;color:#000;border-color:#fff;font-weight:650}
+:focus-visible{outline:2px solid #fff;outline-offset:2px}
+#install{display:none}
+
+/* layout */
+.grid{display:grid;gap:12px}
+@media(min-width:900px){
+  .grid{grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);align-items:start}
+  .hero{grid-column:1/-1}
+  .colL,.colR{display:grid;gap:12px;min-width:0}
+}
+.colL,.colR{display:grid;gap:12px;min-width:0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);min-width:0}
+.card h2{margin:0 0 12px;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--mute);font-weight:650}
+.est{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);border:1px solid var(--line);border-radius:6px;padding:1px 5px;margin-left:6px;vertical-align:1px;font-weight:600}
+
+/* chips */
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-weight:650;padding:4px 9px;border-radius:999px;border:1px solid var(--line);color:var(--mute);white-space:nowrap}
+.chip::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.chip.live{color:var(--good);border-color:rgba(91,227,161,.45)}
+.chip.manual{color:var(--sell);border-color:rgba(255,181,71,.5)}
+.chip.last,.chip.cached{color:var(--hold);border-color:rgba(124,196,255,.45)}
+.chip.plain::before{display:none}
+.chip.psell{color:var(--sell);border-color:rgba(255,181,71,.5)}
+.chip.phold{color:var(--hold);border-color:rgba(124,196,255,.45)}
+
+/* hero */
+.hero{padding:18px 18px 16px}
+.hero-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.hero .lbl{font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--mute);font-weight:600}
+.count{display:flex;align-items:baseline;gap:14px;margin:10px 0 2px}
+.count div{display:flex;align-items:baseline;gap:4px}
+.count b{font-size:56px;font-weight:300;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums}
+.count div+div b{font-size:30px;font-weight:300}
+.count span{font-size:12px;letter-spacing:.08em;color:var(--mute);text-transform:lowercase}
+.hero .next{font-size:16px;margin-top:6px}
+.hero .next em{font-style:normal;color:var(--mute)}
+.hval{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.hval .k{font-size:13px;color:var(--mute)}
+.hval .big{font-size:40px;font-weight:650;letter-spacing:-.02em;line-height:1.1;margin:4px 0 4px;font-variant-numeric:tabular-nums}
+.hval.sell .big{color:var(--sell)} .hval.hold .big{color:var(--hold)}
+.hval .s{font-size:13px;color:var(--mute)}
+.prog{margin-top:16px}
+.bar{height:8px;background:rgba(255,255,255,.1);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,#fff,#9fb4d6);width:0;border-radius:99px;transition:width .6s}
+.prog .row{display:flex;justify-content:space-between;font-size:13px;color:var(--mute);margin-bottom:8px}
+.prog .row b{color:var(--txt);font-weight:600}
+@media(min-width:900px){
+  .hero{display:grid;grid-template-columns:1fr 1fr;column-gap:28px;align-items:end}
+  .hero-top,.prog{grid-column:1/-1}
+  .hval{margin-top:0;border-top:0;padding:0 0 4px 28px;border-left:1px solid var(--line)}
+  .count b{font-size:64px}
+}
+
+/* plan stats */
+.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.stat{background:var(--card2);border-radius:12px;padding:12px;min-width:0}
+.stat .k{font-size:12px;color:var(--mute)}
+.stat .v{font-size:22px;font-weight:650;margin-top:4px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.stat .s{font-size:12px;color:var(--dim);margin-top:2px}
+.stat.sell .v{color:var(--sell)} .stat.hold .v{color:var(--hold)}
+
+/* price */
+.pstat{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.pstat .t{font-size:13px;color:var(--mute);flex:1 1 180px}
+.pstat .t b{color:var(--txt)}
+.inrow{display:flex;gap:8px;align-items:center}
+input[type=number]{width:100%;min-height:52px;background:#0b0d12;border:1px solid var(--line);color:var(--txt);border-radius:12px;padding:10px 12px;font-size:20px;font-weight:600;font-family:inherit;font-variant-numeric:tabular-nums;min-width:0}
+input[type=number]:focus{outline:none;border-color:rgba(255,255,255,.6)}
+.pre,.suf{position:relative;flex:1;min-width:0}
+.pre span{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--mute);pointer-events:none;font-size:20px}
+.pre input{padding-left:30px}
+.suf span{position:absolute;right:13px;top:50%;transform:translateY(-50%);color:var(--mute);pointer-events:none;font-size:16px}
+.suf input{padding-right:30px;font-size:18px}
+.small-in{flex:0 0 112px}
+.inrow .btn{min-height:52px}
+input[type=range]{width:100%;accent-color:#fff;height:var(--tap);margin:0}
+label.f{display:flex;justify-content:space-between;font-size:13px;color:var(--mute);margin:16px 0 4px}
+label.f b{color:var(--txt);font-variant-numeric:tabular-nums}
+.ends{display:flex;justify-content:space-between;font-size:11px;color:var(--dim);margin-top:-4px}
+.hint{font-size:12.5px;color:var(--dim);margin-top:6px;line-height:1.45}
+
+/* vests list */
+.vl{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.vi{background:var(--card2);border-radius:14px;padding:12px 12px 4px;border-left:3px solid var(--hold)}
+.vi.sell{border-left-color:var(--sell)}
+.vi.done{opacity:.72}
+.vi.next{box-shadow:0 0 0 1px rgba(255,255,255,.35) inset}
+.v-main{display:flex;align-items:center;gap:10px;justify-content:space-between}
+.v-when{min-width:0}
+.vi .d{font-weight:650;font-size:16px;display:flex;align-items:center;flex-wrap:wrap;gap:6px}
+.vi .m{font-size:12.5px;color:var(--mute);margin-top:2px;font-variant-numeric:tabular-nums}
+.tag{font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:2px 6px;border-radius:6px;font-weight:700;background:rgba(255,255,255,.14);color:#fff}
+.tag.vested{background:rgba(91,227,161,.15);color:var(--good)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:12px;overflow:hidden;flex-shrink:0}
+.seg button{min-height:var(--tap);min-width:58px;background:transparent;border:0;color:var(--mute);padding:0 12px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;letter-spacing:.04em}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button.on.s{background:var(--sell);color:#000}
+.seg button.on.h{background:var(--hold);color:#000}
+.v-out{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-top:10px;font-size:13px;color:var(--mute)}
+.v-out b{font-size:18px;font-weight:650;color:var(--txt);font-variant-numeric:tabular-nums}
+.vi.sell .v-out b{color:var(--sell)} .vi:not(.sell) .v-out b{color:var(--hold)}
+.vi details{margin-top:4px}
+.vi summary{list-style:none;cursor:pointer;min-height:var(--tap);display:flex;align-items:center;font-size:13px;color:var(--mute)}
+.vi summary::-webkit-details-marker{display:none}
+.vi summary::after{content:"▾";margin-left:6px;transition:transform .2s}
+.vi details[open] summary::after{transform:rotate(180deg)}
+.kv{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 14px;padding:0 0 10px;font-size:14px}
+.kv div{min-width:0}
+.kv span{display:block;font-size:11.5px;color:var(--dim)}
+.kv b{font-weight:600;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+
+/* notes */
+.note{font-size:13px;color:var(--mute);line-height:1.55}
+.note p{margin:0 0 8px}
+.note p:last-child{margin-bottom:0}
+.note b{color:var(--txt)}
+.note summary{cursor:pointer;min-height:var(--tap);display:flex;align-items:center;font-size:12px;letter-spacing:.18em;text-transform:uppercase;font-weight:650;color:var(--mute)}
+.disc{border-color:rgba(255,156,143,.3)}
+footer{color:var(--dim);font-size:12px;text-align:center;margin-top:18px;line-height:1.6}
+/* lock screen */
+.lock{min-height:calc(100vh - 60px);display:flex;align-items:center;justify-content:center}
+.lock .card{width:100%;max-width:380px;padding:24px 20px;text-align:center}
+.lock .brand{margin-bottom:6px}
+.lock p{color:var(--mute);font-size:14px;margin:6px 0 18px}
+.lock input{width:100%;min-height:52px;background:#0b0d12;border:1px solid var(--line);color:var(--txt);border-radius:12px;padding:10px 14px;font-size:18px;font-family:inherit;text-align:center;letter-spacing:.04em}
+.lock input:focus{outline:none;border-color:rgba(255,255,255,.6)}
+.lock .btn{width:100%;min-height:52px;margin-top:12px;font-size:16px}
+.lock .link{background:none;border:0;color:var(--mute);font:inherit;font-size:13px;min-height:var(--tap);cursor:pointer;text-decoration:underline}
+.lock .err{color:var(--warn);font-size:14px;min-height:20px;margin-top:10px}
+.lock.shake .card{animation:shake .35s}
+@keyframes shake{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+@media(prefers-reduced-motion:reduce){.bar i,.vi summary::after{transition:none}}
+</style>
+</head>
+<body>
+<canvas id="stars" aria-hidden="true"></canvas>
+<div class="wrap">
+  <section class="lock" id="lock" hidden>
+    <form class="card" id="lockForm" autocomplete="off">
+      <div class="brand">Vest Tracker</div>
+      <p id="lockSub">Type the family passcode to open.</p>
+      <label class="sr" for="pass">Family passcode</label>
+      <input type="password" id="pass" autocomplete="current-password" autocapitalize="none" spellcheck="false" enterkeyhint="go" placeholder="Passcode">
+      <button class="btn primary" id="unlockBtn" type="submit"><span>Open</span></button>
+      <button class="link" id="showPass" type="button">Show passcode</button>
+      <div class="err" id="lockErr" role="alert"></div>
+    </form>
+  </section>
+  <div id="app" hidden>
+  <header>
+    <div class="brand">Vest Tracker<small id="brandSub"></small></div>
+    <button class="btn" id="install">Install app</button>
+  </header>
+
+  <main class="grid">
+    <!-- HERO: next vest -->
+    <section class="card hero" aria-labelledby="heroLbl">
+      <div class="hero-top"><span class="lbl" id="heroLbl">Next vest in</span><span class="chip plain" id="heroPlan"></span></div>
+      <div>
+        <div class="count" role="timer" aria-live="off">
+          <div><b id="cdD">—</b><span>days</span></div>
+          <div><b id="cdH">—</b><span>hr</span></div>
+          <div><b id="cdM">—</b><span>min</span></div>
+        </div>
+        <div class="next" id="nextTxt">—</div>
+      </div>
+      <div class="hval" id="hval">
+        <div class="k" id="hvalK">Est. after-tax value</div>
+        <div class="big" id="hvalV">—</div>
+        <div class="s" id="hvalS"></div>
+      </div>
+      <div class="prog">
+        <div class="row"><span>Vested so far</span><span class="num"><b id="vestedN">0</b> of <span id="totalN">—</span> shares · <span id="vestedPct">0%</span></span></div>
+        <div class="bar" role="progressbar" aria-label="Shares vested" aria-valuemin="0" id="vestedBarWrap"><i id="vestedBar"></i></div>
+      </div>
+    </section>
+
+    <div class="colL">
+      <!-- PRICE -->
+      <section class="card" aria-labelledby="hPrice">
+        <h2 id="hPrice">Share price</h2>
+        <div class="pstat"><span class="chip" id="srcPill">Loading…</span><span class="t" id="srcLine" aria-live="polite">—</span></div>
+        <label class="sr" for="price">Share price used for estimates</label>
+        <div class="inrow">
+          <div class="pre"><span>$</span><input type="number" id="price" inputmode="decimal" step="0.01" min="0" enterkeyhint="done"></div>
+          <button class="btn" id="refresh">↻ Live</button>
+        </div>
+        <label class="f" for="slider"><span>What-if price</span><b id="sliderVal"></b></label>
+        <input type="range" id="slider" min="10" max="600" step="1">
+        <div class="hint" id="priceHint">Type a price or drag the slider to try your own number. Tap the button to go back to the market price.</div>
+      </section>
+
+      <!-- PLAN SUMMARY -->
+      <section class="card" aria-labelledby="hPlan">
+        <h2 id="hPlan">Your plan<span class="est">Estimate</span></h2>
+        <div class="stats">
+          <div class="stat sell"><div class="k">Cash from sells</div><div class="v" id="sCash">—</div><div class="s" id="sCashS">after withholding</div></div>
+          <div class="stat hold"><div class="k">Shares held</div><div class="v" id="sHeld">—</div><div class="s">net, after withholding</div></div>
+          <div class="stat hold"><div class="k">Held value today</div><div class="v" id="sHeldNow">—</div><div class="s" id="sHeldNowS"></div></div>
+          <div class="stat"><div class="k">Held value projected</div><div class="v" id="sHeldProj">—</div><div class="s" id="sHeldProjS">each vest at its date</div></div>
+        </div>
+      </section>
+
+      <!-- ASSUMPTIONS -->
+      <section class="card" aria-labelledby="hAssume">
+        <h2 id="hAssume">Assumptions</h2>
+        <label class="f" for="growth" style="margin-top:0"><span>Growth scenario (per year)</span></label>
+        <div class="inrow">
+          <div class="suf small-in"><input type="number" id="growth" step="1" inputmode="decimal" enterkeyhint="done"><span>%</span></div>
+          <input type="range" id="growthR" min="-50" max="100" step="1" style="flex:1" aria-label="Growth scenario slider">
+        </div>
+        <div class="hint">Projects each vest's price at its own date from the price above. 0% = flat.</div>
+
+        <label class="f" for="rate"><span>Withholding rate (sell-to-cover)</span></label>
+        <div class="inrow">
+          <div class="suf small-in"><input type="number" id="rate" step="0.05" inputmode="decimal" enterkeyhint="done"><span>%</span></div>
+          <button class="btn" id="rateReset">Reset to 29.65%</button>
+        </div>
+        <div class="hint" id="rateHint"></div>
+      </section>
+    </div>
+
+    <div class="colR">
+      <!-- VESTS -->
+      <section class="card" aria-labelledby="hVests">
+        <h2 id="hVests">Vest timeline<span class="est">Estimate</span></h2>
+        <div class="hint" style="margin:-4px 0 12px">Sell or Hold per vest. Tap “Tax details” for the breakdown.</div>
+        <ol class="vl" id="vests"></ol>
+      </section>
+
+      <section class="card note">
+        <details>
+          <summary>Tax notes</summary>
+          <div id="taxNotes"></div>
+        </details>
+      </section>
+
+      <section class="card note disc">
+        <p><b>Estimate only, not tax or financial advice.</b> Figures assume the sell-to-cover rate above, shares withheld rounded up to whole shares, and the price you set. Actual withholding, sale price, fees and the final tax you owe can differ. Projections are hypothetical. Check your actual grant documents and statements.</p>
+      </section>
+    </div>
+  </main>
+  <footer>Personal tool · not affiliated with or endorsed by the issuer · works offline · data stays on this device</footer>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+/* ---------- constants ---------- */
+const TICKER = 'SPCX';
+const LAST_KNOWN = { price: 147.79, date: '2026-10-20', label: 'Oct 20, 2026 close', short: 'Oct 20' };
+const DEFAULT_RATE = 29.65;
+/* Personal data (grants, notes) is NOT in this file: it lives in data.enc, AES-GCM encrypted with the
+   family data key, and is decrypted on this device after unlock. data.grants has the shape
+   [{name, total, schedule:[{date:'YYYY-MM-DD', shares}]}]; to add a grant, append one there. */
+const LS = 'spcxVest.v1';
+let GRANTS, TOTAL, SCHEDULE, DEF, S;
+const save = () => { try { localStorage.setItem(LS, JSON.stringify(S)); } catch(e){} };
+function initData(data){
+  GRANTS = data.grants;
+  TOTAL = GRANTS.reduce((a,g)=>a+g.total,0);
+  // Vests from all grants are merged into one date-ordered SCHEDULE.
+  SCHEDULE = (function(){
+    const all = [];
+    GRANTS.forEach(g => {
+      const sum = g.schedule.reduce((a,v)=>a+v.shares,0);
+      if (sum !== g.total) console.error('Grant ' + g.name + ' schedule sums to ' + sum + ', not ' + g.total);
+      g.schedule.forEach((v,k) => {
+        const [y,m,d] = v.date.split('-').map(Number);
+        const pct = Math.round(v.shares / g.total * 1000) / 10;
+        all.push({ grant:g.name, y, m:m-1, d, shares:v.shares, date:new Date(y,m-1,d,0,0,0), label: pct + '%' + (k===0 ? ' cliff' : '') });
+      });
+    });
+    all.sort((a,b)=>a.date-b.date);
+    let cum = 0;
+    return all.map((v,i)=>{ cum += v.shares; return Object.assign(v,{ i, cum }); });
+  })();
+  if (SCHEDULE[SCHEDULE.length-1].cum !== TOTAL) console.error('Schedule does not sum to ' + TOTAL + '!');
+
+  /* ---------- state ---------- */
+  DEF = {
+    mode: 'auto',            // 'auto' (live/last-known) | 'manual'
+    manualPrice: null,
+    growth: 0,
+    rate: DEFAULT_RATE,
+    plan: SCHEDULE.map((_,i)=> i===0 ? 'sell' : 'hold'),
+    lastQuote: null          // {price, time, src, asOf?, state?}
+  };
+  try { S = Object.assign({}, DEF, JSON.parse(localStorage.getItem(LS)||'{}')); }
+  catch(e){ S = JSON.parse(JSON.stringify(DEF)); }
+  if (!Array.isArray(S.plan) || S.plan.length !== SCHEDULE.length) S.plan = DEF.plan.slice();
+  window.__vest = { SCHEDULE, calcVest, projPrice };
+}
+
+let livePrice = null, liveTime = null, liveSrc = null, liveAsOf = null, liveState = null, fetching = false;
+
+/* ---------- helpers ---------- */
+const $ = id => document.getElementById(id);
+const usd = (n, dp) => (n<0?'-':'') + '$' + Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:dp??0, maximumFractionDigits:dp??0});
+const usd2 = n => usd(n,2);
+const num = n => n.toLocaleString('en-US');
+const fmtDate = d => d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+const fmtTime = t => new Date(t).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+const fmtHM = t => new Date(t).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+const fmtMD = t => new Date(t).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+const YEAR_MS = 365.25*24*3600*1000;
+
+function currentPrice(){
+  if (S.mode === 'manual' && S.manualPrice > 0) return { p:S.manualPrice, kind:'manual' };
+  if (livePrice) return { p:livePrice, kind:'live' };
+  if (S.lastQuote && S.lastQuote.price > 0 && S.lastQuote.time > Date.parse(LAST_KNOWN.date+'T21:00:00Z'))
+    return { p:S.lastQuote.price, kind:'cached' };
+  return { p:LAST_KNOWN.price, kind:'last' };
+}
+
+/* Core math (pure) — exported for testing */
+function calcVest(shares, price, ratePct){
+  const gross = shares * price;
+  const withheld = Math.ceil(shares * ratePct / 100);
+  const net = shares - withheld;
+  return { gross, withheld, net, netUsd: net * price, taxUsd: gross * ratePct/100 };
+}
+function projPrice(price, growthPct, date, now){
+  const yrs = Math.max(0, (date - now) / YEAR_MS);
+  return price * Math.pow(1 + growthPct/100, yrs);
+}
+/* ---------- render ---------- */
+function render(){
+  const now = new Date();
+  const { p, kind } = currentPrice();
+  const rate = S.rate, g = S.growth;
+
+  // price status chip + source line (honest about where the number comes from)
+  const pill = $('srcPill');
+  pill.className = 'chip ' + kind;
+  pill.dataset.kind = kind;
+  // A relay quote is only called "Live" while the market is in regular hours; otherwise it is that day's close.
+  const q = kind==='live' ? { st:liveState, asOf:liveAsOf || liveTime, src:liveSrc }
+          : kind==='cached' ? { st:S.lastQuote.state, asOf:S.lastQuote.asOf || S.lastQuote.time, src:S.lastQuote.src } : null;
+  const isOpen = q && q.st === 'regular';
+  const closeLbl = q ? 'Last close · ' + fmtMD(q.asOf) : 'Last close · ' + LAST_KNOWN.short;
+  pill.textContent = kind==='manual' ? 'Manual'
+    : kind==='live' ? (isOpen ? 'Live · ' + fmtHM(q.asOf) : closeLbl)
+    : kind==='cached' ? (isOpen ? 'Fetched · ' + fmtTime(q.asOf) : closeLbl) : closeLbl;
+  if (kind==='live' && !isOpen) pill.className = 'chip last';
+  const src = $('srcLine');
+  if (kind==='manual'){
+    const ref = livePrice || (S.lastQuote&&S.lastQuote.price) || LAST_KNOWN.price;
+    const refLbl = livePrice ? (liveState==='regular' ? 'live' : 'last close') : (S.lastQuote&&S.lastQuote.price) ? 'last fetched' : LAST_KNOWN.short + ' close';
+    src.innerHTML = 'Your price. Market: <b class="num" data-k="ref">' + usd2(ref) + '</b> (' + refLbl + ')';
+  }
+  else if (kind==='live') src.innerHTML = '<b>' + TICKER + ' ' + usd2(p) + '</b> · ' + (isOpen ? 'market open' : liveState==='pre' ? 'pre-market' : liveState==='post' ? 'after hours' : 'market closed') + ' · via ' + (liveSrc||'') + ', checked ' + fmtHM(liveTime);
+  else if (kind==='cached') src.innerHTML = '<b>' + TICKER + ' ' + usd2(p) + '</b> · offline · fetched ' + fmtTime(S.lastQuote.time);
+  else src.innerHTML = '<b>' + TICKER + ' ' + usd2(p) + '</b> · built-in close · live quote unavailable';
+  const rb = $('refresh');
+  rb.disabled = fetching;
+  rb.textContent = fetching ? 'Checking…' : kind==='manual' ? 'Use market' : kind==='live' ? '↻ Update' : '↻ Try live';
+  rb.setAttribute('aria-label', kind==='manual' ? 'Go back to the market price' : 'Try to get a live quote');
+
+  if (document.activeElement !== $('price')) $('price').value = p.toFixed(2);
+  const sl = $('slider'); if (p > +sl.max) sl.max = Math.ceil(p*1.5);
+  sl.value = p; $('sliderVal').textContent = usd2(p);
+  if (document.activeElement !== $('growth')) $('growth').value = g;
+  $('growthR').value = g;
+  if (document.activeElement !== $('rate')) $('rate').value = rate;
+
+  // countdown + progress
+  const next = SCHEDULE.find(v => v.date > now);
+  const vested = SCHEDULE.filter(v => v.date <= now).reduce((a,v)=>a+v.shares,0);
+  if (next){
+    const ms = next.date - now;
+    $('heroLbl').textContent = 'Next vest in';
+    $('cdD').textContent = Math.floor(ms/864e5);
+    $('cdH').textContent = String(Math.floor(ms%864e5/36e5)).padStart(2,'0');
+    $('cdM').textContent = String(Math.floor(ms%36e5/6e4)).padStart(2,'0');
+    $('nextTxt').innerHTML = '<b>' + fmtDate(next.date) + '</b> · ' + next.shares + ' shares <em>(' + next.label + ')</em>';
+  } else {
+    $('heroLbl').textContent = 'Fully vested'; $('cdD').textContent = $('cdH').textContent = $('cdM').textContent = '0';
+    $('nextTxt').textContent = 'All ' + num(TOTAL) + ' shares have vested';
+  }
+  $('vestedN').textContent = num(vested);
+  $('vestedPct').textContent = Math.round(vested/TOTAL*100) + '%';
+  $('vestedBar').style.width = (vested/TOTAL*100) + '%';
+  $('vestedBarWrap').setAttribute('aria-valuenow', vested);
+
+  // vests (timeline + per-vest tax estimate)
+  const open = new Set([...document.querySelectorAll('#vests details[open]')].map(d => d.dataset.i));
+  let cash = 0, heldSh = 0, heldNow = 0, heldProj = 0, sellCount = 0, heroC = null, heroPP = null;
+  const rows = SCHEDULE.map(v => {
+    const pp = projPrice(p, g, v.date, now);
+    const c = calcVest(v.shares, pp, rate);
+    const sell = S.plan[v.i]==='sell';
+    if (sell){ cash += c.netUsd; sellCount++; } else { heldSh += c.net; heldNow += c.net*p; heldProj += c.net*pp; }
+    const st = v.date <= now ? 'done' : (next && v.i===next.i ? 'next' : '');
+    if (st==='next'){ heroC = c; heroPP = pp; }
+    const tag = st==='done' ? '<span class="tag vested">Vested</span>' : st==='next' ? '<span class="tag">Next</span>' : '';
+    return `<li class="vi ${sell?'sell':'hold'} ${st}" data-i="${v.i}">
+      <div class="v-main">
+        <div class="v-when"><div class="d"><span data-k="date">${fmtDate(v.date)}</span>${tag}</div>
+          <div class="m">${GRANTS.length>1 ? v.grant + ' · ' : ''}Vest ${v.i+1} of ${SCHEDULE.length} · ${v.label} · <span data-k="sh">+${v.shares}</span> sh · <span data-k="cum">${num(v.cum)}</span> total</div></div>
+        <div class="seg" role="group" aria-label="Plan for vest ${v.i+1}" data-i="${v.i}"><button class="s ${sell?'on':''}" data-v="sell" aria-pressed="${sell}">Sell</button><button class="h ${sell?'':'on'}" data-v="hold" aria-pressed="${!sell}">Hold</button></div>
+      </div>
+      <div class="v-out"><span>${sell?'Est. cash to you':'Est. shares kept'}</span><b data-k="out">${sell?usd(c.netUsd):c.net+' sh'}</b></div>
+      <details data-i="${v.i}"${open.has(String(v.i))?' open':''}><summary>Tax details</summary>
+      <div class="kv">
+        <div><span>Price${g?' (projected)':''}</span><b data-k="pp">${usd2(pp)}</b></div>
+        <div><span>Gross value</span><b data-k="gross">${usd(c.gross)}</b></div>
+        <div><span>Shares withheld</span><b data-k="withheld">${c.withheld}</b></div>
+        <div><span>Net shares</span><b data-k="net">${c.net}</b></div>
+        <div><span>Net value</span><b data-k="netUsd">${usd(c.netUsd)}</b></div>
+      </div></details></li>`;
+  });
+  $('vests').innerHTML = rows.join('');
+  $('sCash').textContent = usd(cash);
+  $('sCashS').textContent = sellCount ? (sellCount===1 && S.plan[0]==='sell' ? 'vest 1, after withholding' : sellCount+' vests, after withholding') : 'nothing marked Sell';
+  $('sHeld').textContent = num(heldSh);
+  $('sHeldNow').textContent = usd(heldNow);
+  $('sHeldNowS').textContent = '@ ' + usd2(p);
+  $('sHeldProj').textContent = usd(heldProj);
+  $('sHeldProjS').textContent = g ? (g>0?'+':'') + g + '%/yr, each vest at its date' : 'flat price (0%/yr)';
+
+  // hero value: the next vest's estimated after-withholding value (same numbers as its row)
+  const hv = $('hval'), hp = $('heroPlan');
+  if (next && heroC){
+    const sell = S.plan[next.i]==='sell';
+    hv.hidden = false; hv.className = 'hval ' + (sell?'sell':'hold');
+    hp.hidden = false; hp.className = 'chip plain ' + (sell?'psell':'phold'); hp.textContent = 'Plan: ' + (sell?'Sell':'Hold');
+    $('hvalK').textContent = sell ? 'Est. after-tax cash from this vest' : 'Est. after-tax value of shares kept';
+    $('hvalV').textContent = usd(heroC.netUsd);
+    const pl = g ? (g>0?'+':'') + g + '%/yr projected' : kind==='manual' ? 'your price' : kind==='live' ? (liveState==='regular' ? 'live price' : 'last close') : kind==='cached' ? 'last fetched price' : 'last close';
+    $('hvalS').innerHTML = heroC.net + ' of ' + next.shares + ' shares after ' + heroC.withheld + ' withheld (' + rate + '%)<br>at <span class="num">' + usd2(heroPP) + '</span>/share · ' + pl;
+  } else { hv.hidden = true; hp.hidden = true; }
+}
+
+/* ---------- events ---------- */
+$('price').addEventListener('input', e => { const v = parseFloat(e.target.value); if (v > 0){ S.mode='manual'; S.manualPrice=v; save(); render(); } });
+$('price').addEventListener('focus', e => e.target.select());
+$('price').addEventListener('change', () => render());
+$('slider').addEventListener('input', e => { S.mode='manual'; S.manualPrice=+e.target.value; save(); render(); });
+$('refresh').addEventListener('click', () => { S.mode='auto'; save(); render(); fetchQuote(); });
+const setG = v => { const n = parseFloat(v); S.growth = isFinite(n) ? Math.max(-90, Math.min(500, n)) : 0; save(); render(); };
+$('growth').addEventListener('input', e => setG(e.target.value));
+$('growthR').addEventListener('input', e => setG(e.target.value));
+$('rate').addEventListener('input', e => { const n = parseFloat(e.target.value); if (isFinite(n) && n>=0 && n<100){ S.rate=n; save(); render(); } });
+$('rate').addEventListener('change', () => render());
+$('rateReset').addEventListener('click', () => { S.rate = DEFAULT_RATE; save(); render(); });
+$('vests').addEventListener('click', e => {
+  const b = e.target.closest('.seg button'); if (!b) return;
+  S.plan[+b.parentNode.dataset.i] = b.dataset.v; save(); render();
+});
+document.addEventListener('keydown', e => { if (e.key==='Enter' && e.target.matches('input[type=number]')) e.target.blur(); });
+/* ---------- live quote ---------- */
+// Browsers can't call Yahoo/Nasdaq directly (no CORS), so the quote comes from the family relay, which
+// fetches it server-side (Yahoo chart API, Nasdaq fallback), only for SPCX and only for this site, cached ~60s.
+// On any failure the app keeps the last fetched price or the built-in last close.
+const QUOTE_URL = 'https://fd-refresh-relay.vercel.app/api/quote?symbol=' + TICKER;
+async function fetchQuote(){
+  if (!navigator.onLine) { render(); return; }
+  if (fetching) return;
+  fetching = true; render();
+  try {
+    const ctl = new AbortController(); const to = setTimeout(()=>ctl.abort(), 8000);
+    const r = await fetch(QUOTE_URL, { signal: ctl.signal, credentials:'omit' });
+    clearTimeout(to);
+    if (r.ok){
+      const j = await r.json();
+      const pz = Number(j.price);
+      if (pz > 0 && (!j.currency || j.currency === 'USD')){
+        livePrice = pz; liveTime = Date.now(); liveSrc = String(j.source||'relay'); liveState = String(j.marketState||'');
+        liveAsOf = Date.parse(j.asOf) || liveTime;
+        S.lastQuote = { price:pz, time:liveTime, src:liveSrc, asOf:liveAsOf, state:liveState }; save();
+      }
+    }
+  } catch(e){ /* offline / blocked — keep fallback */ }
+  finally { fetching = false; render(); }
+}
+// While the app is open, re-check every 5 minutes (the relay caches for 60s).
+setInterval(() => { if (S && document.visibilityState === 'visible' && S.mode !== 'manual') fetchQuote(); }, 5*60*1000);
+document.addEventListener('visibilitychange', () => { if (S && document.visibilityState === 'visible' && liveTime && Date.now() - liveTime > 5*60*1000) fetchQuote(); });
+
+/* ---------- starfield ---------- */
+(function stars(){
+  const c = $('stars'), x = c.getContext('2d'); let W,H,pts=[];
+  function size(){ const d = Math.min(2, window.devicePixelRatio||1); W = c.width = innerWidth*d; H = c.height = innerHeight*d; c.style.width=innerWidth+'px'; c.style.height=innerHeight+'px';
+    const n = Math.round(innerWidth*innerHeight/2600); pts = Array.from({length:n},()=>({x:Math.random()*W,y:Math.random()*H,r:(Math.random()*1.1+.2)*d,a:Math.random()*.7+.15,t:Math.random()*6.28}));
+  }
+  let last=0; const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function draw(ts){ if (ts-last > 80 || !last){ last=ts; x.clearRect(0,0,W,H);
+    const gr = x.createRadialGradient(W*.5,-H*.1,0,W*.5,-H*.1,H*.9); gr.addColorStop(0,'rgba(60,80,120,.22)'); gr.addColorStop(1,'rgba(0,0,0,0)'); x.fillStyle=gr; x.fillRect(0,0,W,H);
+    for (const p of pts){ const a = p.a*(.75+.25*Math.sin(p.t+ts/900)); x.fillStyle='rgba(255,255,255,'+a+')'; x.beginPath(); x.arc(p.x,p.y,p.r,0,6.283); x.fill(); } }
+    if (!still) requestAnimationFrame(draw); }
+  size(); addEventListener('resize', () => { size(); if (still) requestAnimationFrame(draw); }); requestAnimationFrame(draw);
+})();
+
+/* ---------- PWA ---------- */
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js', { scope:'./', updateViaCache:'none' }).catch(()=>{});
+let deferred; addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferred = e; $('install').style.display='inline-flex'; });
+$('install').addEventListener('click', async () => { if (!deferred) return; deferred.prompt(); await deferred.userChoice; deferred = null; $('install').style.display='none'; });
+
+/* ---------- lock: family passcode (same key setup as the Family Dashboard) ---------- */
+const enc = new TextEncoder();
+const DATA_AAD = enc.encode('stonks:data:v1');
+const WRAP_AAD = enc.encode('family-dashboard:wrap:v1');          // must match the dashboard's wrapped-key.json
+const WRAPPED_URL = '../family-dashboard/wrapped-key.json';
+const b64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+const normPass = p => p.normalize('NFKC').trim().replace(/\s+/g, ' ').toLowerCase();  // same as the dashboard
+// IndexedDB holding a NON-extractable CryptoKey. 'family-dashboard' is the dashboard's own store (read only here,
+// never created); 'stonks' is ours, used when the dashboard hasn't been unlocked on this phone.
+function idb(name, mode, fn, create){
+  return new Promise((res, rej) => {
+    const r = indexedDB.open(name, 1);
+    r.onupgradeneeded = () => { if (!create) { r.transaction.abort(); return; } r.result.createObjectStore('keys'); };
+    r.onerror = () => rej(r.error);
+    r.onsuccess = () => { const db = r.result; let q;
+      try { const tx = db.transaction('keys', mode); q = fn(tx.objectStore('keys'));
+        tx.oncomplete = () => { db.close(); res(q && q.result); }; tx.onerror = () => { db.close(); rej(tx.error); };
+      } catch(e){ db.close(); rej(e); } };
+  });
+}
+const fdGet  = () => idb('family-dashboard', 'readonly', s => s.get('dk'), false);
+const ownGet = () => idb('stonks', 'readonly', s => s.get('dk'), true);
+const ownSet = v => idb('stonks', 'readwrite', s => s.put(v, 'dk'), true);
+const ownDel = () => idb('stonks', 'readwrite', s => s.delete('dk'), true);
+async function fetchJSON(url){
+  const r = await fetch(url + '?t=' + Date.now(), { cache:'no-store' });
+  if (!r.ok) throw new Error(url + ' ' + r.status);
+  return r.json();
+}
+async function decryptEnv(env, key){
+  const pt = await crypto.subtle.decrypt({ name:'AES-GCM', iv:b64(env.iv), additionalData:DATA_AAD }, key, b64(env.ct));
+  return JSON.parse(new TextDecoder().decode(pt));
+}
+async function unlockWithPasscode(pass){
+  const w = await fetchJSON(WRAPPED_URL);
+  const base = await crypto.subtle.importKey('raw', enc.encode(normPass(pass)), 'PBKDF2', false, ['deriveKey']);
+  const kek = await crypto.subtle.deriveKey({ name:'PBKDF2', hash:'SHA-256', salt:b64(w.salt), iterations:w.iterations },
+    base, { name:'AES-GCM', length:256 }, false, ['unwrapKey']);
+  // Throws OperationError if the passcode is wrong. Result is NON-extractable.
+  const key = await crypto.subtle.unwrapKey('raw', b64(w.wrapped), kek, { name:'AES-GCM', iv:b64(w.iv), additionalData:WRAP_AAD },
+    { name:'AES-GCM' }, false, ['decrypt']);
+  return { key, kid:w.kid };
+}
+function showLock(msg){ $('app').hidden = true; $('lock').hidden = false; $('lockSub').innerHTML = msg || 'Type the family passcode to open.'; }
+let started = false;
+function start(data){
+  initData(data);
+  $('brandSub').textContent = TICKER + ' · ' + num(TOTAL) + ' RSUs · ' + GRANTS.map(g=>g.name).join(' + ');
+  $('totalN').textContent = num(TOTAL);
+  $('vestedBarWrap').setAttribute('aria-valuemax', TOTAL);
+  $('rateHint').innerHTML = data.rateHint || '';
+  $('taxNotes').innerHTML = (data.taxNotes || []).map(p => '<p>' + p + '</p>').join('');
+  $('lock').hidden = true; $('app').hidden = false;
+  render();
+  if (started) return; started = true;
+  setInterval(render, 30000);
+  fetchQuote();
+  addEventListener('online', fetchQuote);
+}
+const CHANGED = 'The passcode was changed.<br>Please type the new family passcode.';
+async function boot(){
+  const cands = [];
+  try { const d = await fdGet(); if (d && d.key) cands.push(Object.assign({ own:false }, d)); } catch(e){}
+  try { const d = await ownGet(); if (d && d.key) cands.push(Object.assign({ own:true }, d)); } catch(e){}
+  if (!cands.length) return showLock();
+  let env;
+  try { env = await fetchJSON('data.enc'); } catch(e){ return showLock('Can’t reach it right now.<br>Check your internet and try again.'); }
+  let changed = false;
+  for (const c of cands){
+    if (c.kid !== env.kid){ changed = true; if (c.own) await ownDel().catch(()=>{}); continue; }
+    try { return start(await decryptEnv(env, c.key)); }
+    catch(e){ if (c.own) await ownDel().catch(()=>{}); }
+  }
+  showLock(changed ? CHANGED : undefined);
+}
+$('lockForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const pass = $('pass').value; if (!pass.trim()) return;
+  const btn = $('unlockBtn'); btn.disabled = true; btn.querySelector('span').textContent = 'Opening…'; $('lockErr').textContent = '';
+  try {
+    const k = await unlockWithPasscode(pass);
+    const env = await fetchJSON('data.enc');
+    if (env.kid !== k.kid){ const er = new Error('kid'); er.code = 'KID'; throw er; }
+    const data = await decryptEnv(env, k.key);
+    await ownSet({ key:k.key, kid:k.kid }).catch(()=>{});
+    $('pass').value = '';
+    start(data);
+  } catch(err){
+    $('lockErr').textContent = err && err.name === 'OperationError' ? 'That passcode didn’t work. Try again.'
+      : err && err.code === 'KID' ? 'This page hasn’t been updated for the new passcode yet.' : 'Couldn’t open it. Check your internet and try again.';
+    const l = $('lock'); l.classList.remove('shake'); void l.offsetWidth; l.classList.add('shake');
+  } finally { btn.disabled = false; btn.querySelector('span').textContent = 'Open'; }
+});
+$('showPass').addEventListener('click', () => { const p = $('pass'); const show = p.type === 'password'; p.type = show ? 'text' : 'password'; $('showPass').textContent = show ? 'Hide passcode' : 'Show passcode'; });
+boot();
+})();
+</script>
+</body>
+</html>

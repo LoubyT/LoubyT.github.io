@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<defs><radialGradient id="g" cx="50%" cy="38%" r="70%"><stop offset="0" stop-color="#1b2233"/><stop offset="1" stop-color="#000"/></radialGradient></defs>
+<rect width="512" height="512" fill="url(#g)"/>
+<g fill="#fff" opacity=".8"><circle cx="90" cy="110" r="3"/><circle cx="410" cy="80" r="2.5"/><circle cx="440" cy="300" r="2"/><circle cx="70" cy="360" r="2"/><circle cx="300" cy="60" r="1.8"/><circle cx="180" cy="430" r="2"/></g>
+<path d="M96 330 Q256 150 430 140" stroke="#fff" stroke-width="10" fill="none" stroke-linecap="round" opacity=".9"/>
+<path d="M256 120 L286 250 L256 232 L226 250 Z" fill="#fff"/>
+<text x="256" y="400" font-family="Helvetica,Arial,sans-serif" font-size="78" font-weight="700" fill="#fff" text-anchor="middle" letter-spacing="10">VEST</text>
+</svg>
