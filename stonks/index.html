@@ -19,7 +19,7 @@
 :root{
   --bg:#000; --card:rgba(16,18,24,.78); --card2:rgba(255,255,255,.06);
   --line:rgba(255,255,255,.13); --txt:#f4f5f7; --mute:#aab1bd; --dim:#8e96a4;
-  --sell:#ffb547; --hold:#7cc4ff; --good:#5be3a1; --warn:#ff9c8f;
+  --sell:#b794f6; --hold:#7cc4ff; --good:#5be3a1; --warn:#ff8fa3;
   --r:18px; --tap:44px;
   --font: "Inter","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
 }
@@ -59,10 +59,10 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;ma
 .chip{display:inline-flex;align-items:center;gap:6px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-weight:650;padding:4px 9px;border-radius:999px;border:1px solid var(--line);color:var(--mute);white-space:nowrap}
 .chip::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
 .chip.live{color:var(--good);border-color:rgba(91,227,161,.45)}
-.chip.manual{color:var(--sell);border-color:rgba(255,181,71,.5)}
+.chip.manual{color:var(--sell);border-color:rgba(183,148,246,.5)}
 .chip.last,.chip.cached{color:var(--hold);border-color:rgba(124,196,255,.45)}
 .chip.plain::before{display:none}
-.chip.psell{color:var(--sell);border-color:rgba(255,181,71,.5)}
+.chip.psell{color:var(--sell);border-color:rgba(183,148,246,.5)}
 .chip.phold{color:var(--hold);border-color:rgba(124,196,255,.45)}
 
 /* hero */
@@ -157,7 +157,7 @@ label.f b{color:var(--txt);font-variant-numeric:tabular-nums}
 .note p:last-child{margin-bottom:0}
 .note b{color:var(--txt)}
 .note summary{cursor:pointer;min-height:var(--tap);display:flex;align-items:center;font-size:12px;letter-spacing:.18em;text-transform:uppercase;font-weight:650;color:var(--mute)}
-.disc{border-color:rgba(255,156,143,.3)}
+.disc{border-color:rgba(255,143,163,.3)}
 footer{color:var(--dim);font-size:12px;text-align:center;margin-top:18px;line-height:1.6}
 /* lock screen */
 .lock{min-height:calc(100vh - 60px);display:flex;align-items:center;justify-content:center}
