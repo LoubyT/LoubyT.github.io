@@ -1,7 +1,7 @@
 {
-  "name": "Vest Tracker",
-  "short_name": "Vest",
-  "description": "Private vesting tracker",
+  "name": "Stonks",
+  "short_name": "Stonks",
+  "description": "Private RSU tracker",
   "start_url": "/stonks/",
   "scope": "/stonks/",
   "display": "standalone",

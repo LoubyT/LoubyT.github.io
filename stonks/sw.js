@@ -1,10 +1,10 @@
-// Vest tracker service worker (scope: this folder only).
+// Stonks service worker (scope: this folder only).
 // - Only same-origin requests inside this folder are handled; the quote relay and
 //   ../family-dashboard/wrapped-key.json always go straight to the network.
 // - data.enc and page loads are network-first (falls back to the last good copy offline).
 // - Other files are cache-first.
 const PREFIX = 'vest-';
-const CACHE = PREFIX + 'v8';
+const CACHE = PREFIX + 'v9';
 const ASSETS = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './icon.svg'];
 const SCOPE = new URL('./', self.location).href;
 self.addEventListener('install', e => {
