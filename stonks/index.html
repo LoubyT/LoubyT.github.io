@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-J280pQzkrrLe9RgnFcFnqB6vmgdxqgt2XDrzjtSiDCU='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://fd-refresh-relay.vercel.app; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-gAOUctzyCiIDfwHMvO1v3FdHLAaI2Bu/z75SFtwNzHQ='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://fd-refresh-relay.vercel.app; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
 <meta name="robots" content="noindex, nofollow, noarchive">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -307,7 +307,7 @@ function initData(data){
     const all = [];
     GRANTS.forEach(g => {
       const sum = g.schedule.reduce((a,v)=>a+v.shares,0);
-      if (sum !== g.total) console.error('Grant ' + g.name + ' schedule sums to ' + sum + ', not ' + g.total);
+      if (sum !== g.total) console.error('A grant schedule sums to ' + sum + ', not ' + g.total);
       g.schedule.forEach((v,k) => {
         const [y,m,d] = v.date.split('-').map(Number);
         const pct = Math.round(v.shares / g.total * 1000) / 10;
@@ -440,7 +440,7 @@ function render(){
     return `<li class="vi ${sell?'sell':'hold'} ${st}" data-i="${v.i}">
       <div class="v-main">
         <div class="v-when"><div class="d"><span data-k="date">${fmtDate(v.date)}</span>${tag}</div>
-          <div class="m">${GRANTS.length>1 ? v.grant + ' · ' : ''}Vest ${v.i+1} of ${SCHEDULE.length} · ${v.label} · <span data-k="sh">+${v.shares}</span> sh · <span data-k="cum">${num(v.cum)}</span> total</div></div>
+          <div class="m">Vest ${v.i+1} of ${SCHEDULE.length} · ${v.label} · <span data-k="sh">+${v.shares}</span> sh · <span data-k="cum">${num(v.cum)}</span> total</div></div>
         <div class="seg" role="group" aria-label="Plan for vest ${v.i+1}" data-i="${v.i}"><button class="s ${sell?'on':''}" data-v="sell" aria-pressed="${sell}">Sell</button><button class="h ${sell?'':'on'}" data-v="hold" aria-pressed="${!sell}">Hold</button></div>
       </div>
       <div class="v-out"><span>${sell?'Est. cash to you':'Est. shares kept'}</span><b data-k="out">${sell?usd(c.netUsd):c.net+' sh'}</b></div>
@@ -587,7 +587,7 @@ function showLock(msg){ $('app').hidden = true; $('lock').hidden = false; $('loc
 let started = false;
 function start(data){
   initData(data);
-  $('brandSub').textContent = TICKER + ' · ' + num(TOTAL) + ' RSUs · ' + GRANTS.map(g=>g.name).join(' + ');
+  $('brandSub').textContent = TICKER + ' · ' + num(TOTAL) + ' RSUs';
   $('totalN').textContent = num(TOTAL);
   $('vestedBarWrap').setAttribute('aria-valuemax', TOTAL);
   $('rateHint').innerHTML = data.rateHint || '';
