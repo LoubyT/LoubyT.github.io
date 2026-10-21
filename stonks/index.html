@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-gAOUctzyCiIDfwHMvO1v3FdHLAaI2Bu/z75SFtwNzHQ='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://fd-refresh-relay.vercel.app; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-1TWMbJYFh53DxPjhE3avmfIrE9fyvMYfHT1Q3tDUHM8='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://fd-refresh-relay.vercel.app; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
 <meta name="robots" content="noindex, nofollow, noarchive">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -11,7 +11,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Vest Tracker</title>
+<title>Stonks</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -36,6 +36,19 @@ body{min-height:100vh;overflow-x:hidden;line-height:1.4}
 header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:2px 2px 14px}
 .brand{font-weight:800;letter-spacing:.28em;font-size:14px;text-transform:uppercase}
 .brand small{display:block;font-weight:500;letter-spacing:.14em;color:var(--mute);font-size:11px;margin-top:4px}
+.wm{display:flex;flex-direction:column;min-width:0}
+.wm .mark{position:relative;display:inline-block;color:#fff;font-weight:800;font-size:19px;letter-spacing:.42em;margin-right:-.42em;line-height:1;text-transform:uppercase;white-space:nowrap}
+.wm .mark svg{position:absolute;left:-4%;top:-9px;width:112%;height:18px;overflow:visible;pointer-events:none}
+.wm small{font-weight:500;letter-spacing:.2em;color:var(--mute);font-size:11px;margin-top:7px;text-transform:uppercase}
+.hright{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.stonks{font-weight:700;font-size:15px;letter-spacing:.06em;color:#fff}
+.kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:0 0 12px}
+@media(min-width:720px){.kpis{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.kpis.nov{grid-template-columns:repeat(2,minmax(0,1fr))}
+.kpi[hidden]{display:none}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 12px;min-width:0;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.kpi .k{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi .v{font-size:19px;font-weight:700;margin-top:4px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:var(--tap);background:rgba(255,255,255,.04);border:1px solid var(--line);color:var(--txt);border-radius:12px;padding:0 14px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;white-space:nowrap}
 .btn:hover{border-color:rgba(255,255,255,.4)}
 .btn:disabled{opacity:.55;cursor:default}
@@ -179,7 +192,7 @@ footer{color:var(--dim);font-size:12px;text-align:center;margin-top:18px;line-he
 <div class="wrap">
   <section class="lock" id="lock" hidden>
     <form class="card" id="lockForm" autocomplete="off">
-      <div class="brand">Vest Tracker</div>
+      <div class="brand">Stonks</div>
       <p id="lockSub">Type the family passcode to open.</p>
       <label class="sr" for="pass">Family passcode</label>
       <input type="password" id="pass" autocomplete="current-password" autocapitalize="none" spellcheck="false" enterkeyhint="go" placeholder="Passcode">
@@ -190,9 +203,21 @@ footer{color:var(--dim);font-size:12px;text-align:center;margin-top:18px;line-he
   </section>
   <div id="app" hidden>
   <header>
-    <div class="brand">Vest Tracker<small id="brandSub"></small></div>
-    <button class="btn" id="install">Install app</button>
+    <div class="wm">
+      <span class="mark" role="img" aria-label="SpaceX">SpaceX<svg viewBox="0 0 100 18" preserveAspectRatio="none" aria-hidden="true"><path d="M58 17 C 72 5, 88 2, 104 3" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg></span>
+      <small id="brandSub"></small>
+    </div>
+    <div class="hright">
+      <button class="btn" id="install">Install app</button>
+      <span class="stonks">Stonks</span>
+    </div>
   </header>
+  <section class="kpis" id="kpis" aria-label="Totals">
+    <div class="kpi"><div class="k">RSUs granted</div><div class="v" id="kGranted">—</div></div>
+    <div class="kpi"><div class="k">Total value</div><div class="v" id="kGrantedV">—</div></div>
+    <div class="kpi" id="kVestedC"><div class="k">RSUs vested</div><div class="v" id="kVested">—</div></div>
+    <div class="kpi" id="kVestedVC"><div class="k">Vested value</div><div class="v" id="kVestedV">—</div></div>
+  </section>
 
   <main class="grid">
     <!-- HERO: next vest -->
@@ -425,6 +450,15 @@ function render(){
   $('vestedPct').textContent = Math.round(vested/TOTAL*100) + '%';
   $('vestedBar').style.width = (vested/TOTAL*100) + '%';
   $('vestedBarWrap').setAttribute('aria-valuenow', vested);
+  // header totals: all grants (GRANTS[] -> TOTAL / SCHEDULE), valued at the current price (live, cached or manual)
+  $('kGranted').textContent = num(TOTAL);
+  $('kGrantedV').textContent = usd(TOTAL * p);
+  $('kVested').textContent = num(vested);
+  $('kVestedV').textContent = usd(vested * p);
+  // nothing vested yet (today vs the vest dates): show only the two granted chips, 2 across
+  const none = vested === 0;
+  $('kVestedC').hidden = $('kVestedVC').hidden = none;
+  $('kpis').classList.toggle('nov', none);
 
   // vests (timeline + per-vest tax estimate)
   const open = new Set([...document.querySelectorAll('#vests details[open]')].map(d => d.dataset.i));
@@ -587,7 +621,7 @@ function showLock(msg){ $('app').hidden = true; $('lock').hidden = false; $('loc
 let started = false;
 function start(data){
   initData(data);
-  $('brandSub').textContent = TICKER + ' · ' + num(TOTAL) + ' RSUs';
+  $('brandSub').textContent = TICKER + ' · RSU vesting';
   $('totalN').textContent = num(TOTAL);
   $('vestedBarWrap').setAttribute('aria-valuemax', TOTAL);
   $('rateHint').innerHTML = data.rateHint || '';
