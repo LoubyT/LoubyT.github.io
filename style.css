@@ -541,6 +541,8 @@ img[data-lightbox] { cursor: zoom-in; }
   position: absolute;
   inset: 0;
   z-index: 4;
+  overflow: hidden;
+  border-radius: 18px;
   pointer-events: none;
 }
 .gate-chip {
@@ -574,9 +576,17 @@ img[data-lightbox] { cursor: zoom-in; }
   background: hsl(var(--chip));
   box-shadow: 0 0 8px hsl(var(--chip) / 0.9);
 }
-.gate-chip--helpful { --chip: 212 70% 64%; top: -13px; left: 7%; }
-.gate-chip--gray { --chip: 262 14% 72%; top: 40%; right: -12px; }
-.gate-chip--risky { --chip: 354 78% 66%; bottom: -13px; left: 18%; }
+.gate-chip--helpful { --chip: 212 70% 64%; top: 12px; left: 12px; }
+.gate-chip--gray { --chip: 262 14% 72%; top: 44%; right: 12px; }
+.gate-chip--risky { --chip: 354 78% 66%; bottom: 12px; left: 22%; }
+/* Live mode: script.js bounces the chips around inside the image with transforms. */
+.gate-chips.is-live .gate-chip {
+  top: 0;
+  left: 0;
+  right: auto;
+  bottom: auto;
+  will-change: transform;
+}
 
 .fp-meta-line {
   display: flex;
@@ -1104,9 +1114,6 @@ html.intro.boot-lock .boot-scan { animation: boot-scan 1.05s ease-out 0.05s forw
     animation-delay: calc(var(--sec) * -1s);
   }
   .gate-glint::before { animation: glint 8s linear 1.2s infinite; }
-  .gate-chip { animation: chip-float 5.5s ease-in-out infinite alternate; }
-  .gate-chip--gray { animation-duration: 6.4s; animation-delay: -2.1s; }
-  .gate-chip--risky { animation-duration: 6s; animation-delay: -3.7s; }
   .main-nav-link::after,
   .quote-rule,
   .scroll-up,
@@ -1208,10 +1215,6 @@ html.intro.boot-lock .boot-scan { animation: boot-scan 1.05s ease-out 0.05s forw
   6% { opacity: 1; }
   32% { opacity: 1; }
   38%, 100% { transform: translateX(300%) skewX(-14deg); opacity: 0; }
-}
-@keyframes chip-float {
-  from { transform: translate3d(0, 0, 0); }
-  to { transform: translate3d(0, -7px, 0); }
 }
 @keyframes star-drift {
   from { transform: translate3d(0, 0, 0); }
@@ -1477,7 +1480,6 @@ html.carrier-open body { overflow: hidden; }
   .ledger { grid-template-columns: 1fr; }
   .ledger div { grid-template-columns: 1fr; gap: 0.15rem; }
   .gate-chip { font-size: 0.64rem; letter-spacing: 0.1em; padding: 0.38rem 0.68rem 0.38rem 0.56rem; }
-  .gate-chip--gray { right: -8px; }
 }
 @media (max-width: 480px) {
   .hero-actions,

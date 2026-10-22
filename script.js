@@ -444,6 +444,125 @@
     }
   });
 
+  /* ---------- category chips: bounce around inside the featured image ---------- */
+  (function initChips() {
+    var box = qs(".gate-chips");
+    if (!box || reduce) return;
+    var els = Array.prototype.slice.call(box.querySelectorAll(".gate-chip"));
+    if (!els.length) return;
+    var PAD = 8;
+    var W = 0, H = 0;
+    var bRect = box.getBoundingClientRect();
+    /* Start each chip where the CSS placed it, then take over with transforms. */
+    var seeds = [
+      { speed: 46, angle: 0.62 },
+      { speed: 37, angle: 2.35 },
+      { speed: 54, angle: 4.05 }
+    ];
+    var chips = els.map(function (el, i) {
+      var r = el.getBoundingClientRect();
+      var sd = seeds[i % seeds.length];
+      return {
+        el: el,
+        x: r.left - bRect.left,
+        y: r.top - bRect.top,
+        w: r.width,
+        h: r.height,
+        speed: sd.speed,
+        vx: Math.cos(sd.angle),
+        vy: Math.sin(sd.angle)
+      };
+    });
+    box.classList.add("is-live");
+
+    function bounds() {
+      W = box.clientWidth;
+      H = box.clientHeight;
+      chips.forEach(function (c) {
+        c.w = c.el.offsetWidth;
+        c.h = c.el.offsetHeight;
+        c.x = Math.max(PAD, Math.min(Math.max(PAD, W - c.w - PAD), c.x));
+        c.y = Math.max(PAD, Math.min(Math.max(PAD, H - c.h - PAD), c.y));
+      });
+    }
+
+    function place(c) {
+      c.el.style.transform = "translate3d(" + c.x.toFixed(1) + "px," + c.y.toFixed(1) + "px,0)";
+    }
+
+    function collide(a, b) {
+      var ox = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
+      var oy = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
+      if (ox <= 0 || oy <= 0) return;
+      /* Gentle: push apart along the shallower axis and trade that velocity component. */
+      if (ox < oy) {
+        var sx = a.x < b.x ? -1 : 1;
+        a.x += sx * ox / 2; b.x -= sx * ox / 2;
+        if ((a.vx - b.vx) * sx < 0) { var tx = a.vx; a.vx = b.vx; b.vx = tx; }
+      } else {
+        var sy = a.y < b.y ? -1 : 1;
+        a.y += sy * oy / 2; b.y -= sy * oy / 2;
+        if ((a.vy - b.vy) * sy < 0) { var ty = a.vy; a.vy = b.vy; b.vy = ty; }
+      }
+    }
+
+    function step(dt) {
+      var scale = Math.max(0.7, Math.min(1.25, W / 560));
+      chips.forEach(function (c) {
+        var len = Math.hypot(c.vx, c.vy) || 1;
+        var v = c.speed * scale;
+        c.x += (c.vx / len) * v * dt;
+        c.y += (c.vy / len) * v * dt;
+        var maxX = Math.max(PAD, W - c.w - PAD);
+        var maxY = Math.max(PAD, H - c.h - PAD);
+        if (c.x <= PAD) { c.x = PAD; c.vx = Math.abs(c.vx); }
+        else if (c.x >= maxX) { c.x = maxX; c.vx = -Math.abs(c.vx); }
+        if (c.y <= PAD) { c.y = PAD; c.vy = Math.abs(c.vy); }
+        else if (c.y >= maxY) { c.y = maxY; c.vy = -Math.abs(c.vy); }
+      });
+      for (var i = 0; i < chips.length; i++) {
+        for (var j = i + 1; j < chips.length; j++) collide(chips[i], chips[j]);
+      }
+      chips.forEach(function (c) {
+        c.x = Math.max(PAD, Math.min(Math.max(PAD, W - c.w - PAD), c.x));
+        c.y = Math.max(PAD, Math.min(Math.max(PAD, H - c.h - PAD), c.y));
+        place(c);
+      });
+    }
+
+    var id = 0, last = 0, onScreen = true;
+    function tick(now) {
+      id = requestAnimationFrame(tick);
+      var dt = last ? Math.min(0.05, (now - last) / 1000) : 0;
+      last = now;
+      step(dt);
+    }
+    function run() {
+      if (id || document.hidden || !onScreen) return;
+      last = 0;
+      id = requestAnimationFrame(tick);
+    }
+    function stop() {
+      if (id) cancelAnimationFrame(id);
+      id = 0;
+    }
+
+    bounds();
+    chips.forEach(place);
+    window.addEventListener("resize", bounds);
+    if ("ResizeObserver" in window) new ResizeObserver(bounds).observe(box);
+    if ("IntersectionObserver" in window) {
+      new IntersectionObserver(function (entries) {
+        onScreen = entries[0].isIntersecting;
+        if (onScreen) run(); else stop();
+      }).observe(box);
+    }
+    document.addEventListener("visibilitychange", function () {
+      if (document.hidden) stop(); else run();
+    });
+    run();
+  })();
+
   /* A name, a chord, or a restless clock. Nothing on the page points here. */
   (function initCarrier() {
     var carrierOn = false;
