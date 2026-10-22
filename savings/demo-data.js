@@ -37,5 +37,7 @@
     ];
     return D.map(function (d, i) { return Object.assign({ id: 'demo' + i, note: '', link: '', done: false, createdAt: t - i * 6e4, doneAt: d.done ? t : null }, d); });
   }
-  root.DealsDemo = { usuals: usuals, deals: deals };
+  // made-up matcher config: the sample's multi-word brands, no size defaults
+  function match() { return { brands: ['morning stars'], defaults: [] }; }
+  root.DealsDemo = { usuals: usuals, deals: deals, match: match };
 })(typeof window !== 'undefined' ? window : this);

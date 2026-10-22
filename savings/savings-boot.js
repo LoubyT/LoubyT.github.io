@@ -21,7 +21,7 @@
     title: 'Deals', icon: 'icons/icon-192.png', theme: 'light', lockCorner: true,
     onKey: async function (key, kid) {
       if (DEMO) {
-        window.__dealDemo = true; window.__dealUsuals = window.DealsDemo.usuals();
+        window.__dealDemo = true; window.__dealUsuals = window.DealsDemo.usuals(); window.__dealMatch = window.DealsDemo.match();
         await loadScript('match.js'); await loadScript('app.js'); return;
       }
       var r = await fetch('data/usuals.enc?t=' + Date.now(), { cache: 'no-store' });
@@ -30,7 +30,7 @@
       if (env.kid !== kid) { var e = new Error('kid'); e.code = 'KID'; throw e; }
       var pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64(env.iv), additionalData: AAD }, key, b64(env.ct));
       var j = JSON.parse(new TextDecoder().decode(pt));
-      window.__dealUsuals = j.items || j.usuals || [];
+      window.__dealUsuals = j.items || j.usuals || []; window.__dealMatch = j.match || null;
       await loadScript('match.js');
       await loadScript('app.js');
     },

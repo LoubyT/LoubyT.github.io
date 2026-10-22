@@ -24,17 +24,14 @@
   const tokens = (s) => norm(s).split(' ').filter((w) => w && !STOP.has(w) && !/^\d+(\.\d+)?%?$/.test(w) || /^\d%$/.test(w)).map(stem);
 
   /* ---------- brands ---------- */
-  // Multi-word brands seen in the order history (and common Ibotta ones). Others default to the first word.
-  const MULTI = ['oak farms', 'great value', 'simply', 'marketside', 'nature raised farms', 'plum organics', 'pure life',
-    'black and white', 'top job', 'new york bakery', 'oscar mayer', 'annie chuns', 'freshness guaranteed', 'mt olive',
-    'bar keepers friend', 'king arthur', 'spring tree', 'spectrum naturals', 'blue ribbon classics', 'taste of nature',
-    'natures own', 'natures bakery', 'late july', 'sky organics', 'siete', 'head and shoulders', 'old spice',
-    'traditional medicinals', 'florida crystals', 'spice world', 'concord foods', 'authentic asia', 'mountain dew',
-    'the honest company', 'del monte', 'fruity pebbles', 'cinnamon toast crunch', 'lucky charms', 'frito lay', 'jacks',
-    'bear', 'oui by yoplait', 'nestle toll house', 'nature sweet', 'naturesweet', 'brightfarms', 'filtrete', 'ortho',
-    'blue bell', 'hill country fare', 'h e b', 'heb', 'coca cola', 'dr pepper', 'blue diamond', 'kerrygold', 'tillamook',
-    'land o lakes', 'horizon organic', 'fairlife', 'borden', 'prairie farms', 'ben and jerrys', 'haagen dazs', 'nature valley',
-    'quaker', 'kind', 'dole', 'chiquita', 'sun maid', 'cal organic', 'grimmway farms', 'tostitos', 'doritos', 'lays'];
+  // Multi-word brand names and per-brand size defaults are private (they come from the family's order history), so
+  // they travel inside the encrypted usuals (usuals.enc → { match: { brands, defaults } }) and are set with
+  // setConfig() after the PIN. Without them a brand is simply the first word of the name.
+  let MULTI = [], DEFAULTS = [];
+  function setConfig(c) {
+    MULTI = ((c && c.brands) || []).map(norm).filter(Boolean);
+    DEFAULTS = ((c && c.defaults) || []).map((d) => ({ brand: norm(d.brand), variant: norm(d.variant || ''), size: norm(d.size || '') }));
+  }
   const GENERIC_FIRST = new Set(('any fresh organic green red white yellow sweet whole california seedless pork beef chicken ' +
     'minced toilet popcorn hot produce ground large small mini select frozen sliced bagged bananas banana grapes ' +
     'milk eggs butter bread cheese').split(' '));
@@ -188,13 +185,13 @@
       _size: sizesOf(u.name),
     });
   }
-  function setUsuals(list) { usuals = (list || []).map(prep); return usuals; }
+  function setUsuals(list, cfg) { if (cfg !== undefined) setConfig(cfg); usuals = (list || []).map(prep); return usuals; }
   function load(url) {
     // louby.net/savings: the usuals arrive decrypted in memory after the PIN (savings-boot.js), never as a public file
-    if (!ready && !url && root.__dealUsuals) { const list = root.__dealUsuals; root.__dealUsuals = null; ready = Promise.resolve(setUsuals(list)); }
+    if (!ready && !url && root.__dealUsuals) { const list = root.__dealUsuals, cfg = root.__dealMatch || null; root.__dealUsuals = null; root.__dealMatch = null; ready = Promise.resolve(setUsuals(list, cfg)); }
     if (!ready) {
       ready = fetch(url || 'data/usuals.json').then((r) => r.ok ? r.json() : { items: [] })
-        .then((j) => setUsuals(j.items || j.usuals || [])).catch(() => setUsuals([]));
+        .then((j) => setUsuals(j.items || j.usuals || [], j.match || null)).catch(() => setUsuals([], null));
     }
     return ready;
   }
@@ -279,9 +276,10 @@
     let ranked = rankAll();
     // Never offer the wrong variant (2% when the offer is Whole) if a right one exists.
     if (ranked.some((c) => !c.why.some((w) => w.startsWith('not ')))) ranked = ranked.filter((c) => !c.why.some((w) => w.startsWith('not ') || w === 'excluded'));
-    // Oak Farms Whole Milk, any size: the gallon is the default. Pint stays in the list so Change can switch to it.
+    // A private per-brand size default (e.g. "this brand's whole milk, any size → the gallon"). Other sizes stay in
+    // the list so Change can switch.
     const gallonOf = (c) => { const s = `${c.product.size || ''} ${c.product.short || ''}`; return /\bgallon\b/i.test(s) && !/half gallon/i.test(s); };
-    const defaultGallon = anySize && brand === 'oak farms' && variant === 'whole' && ranked.some(gallonOf);
+    const defaultGallon = anySize && DEFAULTS.some((d) => d.size === 'gallon' && d.brand === brand && d.variant === (variant || '')) && ranked.some(gallonOf);
     if (defaultGallon) {
       const gi = ranked.findIndex(gallonOf);
       if (gi > 0) ranked.unshift(ranked.splice(gi, 1)[0]);
@@ -293,7 +291,7 @@
     }
     const [a, b] = ranked;
     let conf = a.score;
-    // Two close options: ask once, unless one is a clear habit. Whole-milk gallon is the exception above.
+    // Two close options: ask once, unless one is a clear habit. A private size default is the exception above.
     if (defaultGallon) res.reason = 'default gallon';
     else if (b && b.score >= a.score - 0.08) {
       const ta = a.product.trips || 0, tb = b.product.trips || 0;
@@ -328,7 +326,7 @@
   }
 
   const api = {
-    AUTO, load, setUsuals, match, matchSmart, remember, forget, getPicks, couponKey,
+    AUTO, load, setUsuals, setConfig, match, matchSmart, remember, forget, getPicks, couponKey,
     get usuals() { return usuals.map(pub); },
     // Pluggable AI hook: async ({ coupon, local, usuals }) => ({ id, confidence, reason } | null).
     // Left null so the app is fully offline/local by default.
