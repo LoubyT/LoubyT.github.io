@@ -1,13 +1,13 @@
 /* Service worker
- *  - data.enc / wrapped-key.json: NETWORK-FIRST (bypasses HTTP cache), falls back to the last good copy offline.
+ *  - data.enc: NETWORK-FIRST (bypasses HTTP cache), falls back to the last good copy offline.
  *  - app shell: CACHE-FIRST. Bump CACHE below whenever index.html/app.js/styles.css/icons change,
  *    so phones pick up the new version. Install skipWaiting()s and activate clients.claim()s; the page (app.js) then
  *    reloads itself on controllerchange, and checks for a new sw.js on start, on foreground and on refresh.
  */
-const CACHE = 'fd-shell-v12';
+const CACHE = 'fd-shell-v13';
 const DATA_CACHE = 'fd-data';
-const SHELL = ['./', 'index.html', 'styles.css', 'app.js', 'recur.js', 'calc.js', 'logos.js', 'manifest.webmanifest', 'logos/youtube.svg', 'logos/netflix.svg', 'logos/att.svg', 'logos/google.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png', 'icons/favicon-32.png'];
-const DATA_FILES = ['data.enc', 'wrapped-key.json'];
+const SHELL = ['./', 'index.html', 'styles.css', 'app.js', 'pin-gate.js', 'recur.js', 'calc.js', 'logos.js', 'manifest.webmanifest', 'logos/youtube.svg', 'logos/netflix.svg', 'logos/att.svg', 'logos/google.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png', 'icons/favicon-32.png'];
+const DATA_FILES = ['data.enc'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL.map((u) => new Request(u, { cache: 'reload' })))).then(() => self.skipWaiting()));

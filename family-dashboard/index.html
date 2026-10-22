@@ -22,22 +22,6 @@
 <body>
 <div class="bg" aria-hidden="true"><i></i><i></i><i></i></div>
 
-<!-- ============ LOCK SCREEN ============ -->
-<main id="lock" class="lock" hidden>
-  <div class="lock-card">
-    <img class="lock-logo" src="icons/icon-192.png" alt="" width="84" height="84">
-    <h1>Family Dashboard</h1>
-    <p class="lock-sub" id="lockSub">Type the family passcode.<br>You only need to do this once on this phone.</p>
-    <form id="lockForm" autocomplete="off">
-      <label class="sr" for="pass">Family passcode</label>
-      <input id="pass" type="password" inputmode="text" autocomplete="current-password" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Passcode" enterkeyhint="go" required>
-      <button id="unlockBtn" class="btn-primary" type="submit"><span>Open</span></button>
-      <p id="lockErr" class="lock-err" role="alert"></p>
-    </form>
-    <button id="showPass" class="link" type="button">Show passcode</button>
-  </div>
-</main>
-
 <!-- ============ DASHBOARD ============ -->
 <div class="ptr" id="ptr" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M20 12a8 8 0 1 1-2.34-5.66" fill="none" stroke-width="2.4" stroke-linecap="round"/><path d="M20 4v5h-5" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
 <main id="app" class="app" hidden>
@@ -148,6 +132,7 @@
 <script src="recur.js"></script>
 <script src="calc.js"></script>
 <script src="logos.js"></script>
+<script src="pin-gate.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

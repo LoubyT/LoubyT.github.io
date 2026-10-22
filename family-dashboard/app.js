@@ -1,54 +1,18 @@
-/* Family Dashboard — vanilla JS, no network calls except same-origin data files. */
+/* Family Dashboard — vanilla JS. Network: same-origin data files + the relay (PIN unlock, refresh). */
 'use strict';
 (() => {
 const $ = (s) => document.querySelector(s);
 const enc = new TextEncoder();
 const DATA_AAD = enc.encode('family-dashboard:data:v1');
-const WRAP_AAD = enc.encode('family-dashboard:wrap:v1');
 const b64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
-// Must match tools/set-passcode.html exactly. Case/extra spaces don't matter (easier on phones).
-const normPass = (p) => p.normalize('NFKC').trim().replace(/\s+/g, ' ').toLowerCase();
 
-/* ---------------- key storage (IndexedDB, non-extractable CryptoKey) ---------------- */
-const IDB = {
-  db: null,
-  open() {
-    if (this.db) return Promise.resolve(this.db);
-    return new Promise((res, rej) => {
-      const r = indexedDB.open('family-dashboard', 1);
-      r.onupgradeneeded = () => r.result.createObjectStore('keys');
-      r.onsuccess = () => res((this.db = r.result));
-      r.onerror = () => rej(r.error);
-    });
-  },
-  async op(mode, fn) {
-    const db = await this.open();
-    return new Promise((res, rej) => {
-      const tx = db.transaction('keys', mode); const req = fn(tx.objectStore('keys'));
-      tx.oncomplete = () => res(req && req.result); tx.onerror = () => rej(tx.error);
-    });
-  },
-  get: (k) => IDB.op('readonly', (s) => s.get(k)),
-  set: (k, v) => IDB.op('readwrite', (s) => s.put(v, k)),
-  del: (k) => IDB.op('readwrite', (s) => s.delete(k)),
-};
+/* ---------------- key: from the 4-digit PIN (pin-gate.js), held in memory only ---------------- */
+let KEY = null; // { key: non-extractable CryptoKey, kid } — never stored on the phone
 
 async function fetchJSON(url) {
   const r = await fetch(url + '?t=' + Date.now(), { cache: 'no-store' });
   if (!r.ok) throw new Error(url + ' ' + r.status);
   return r.json();
-}
-
-async function unlockWithPasscode(pass) {
-  const w = await fetchJSON('wrapped-key.json');
-  const base = await crypto.subtle.importKey('raw', enc.encode(normPass(pass)), 'PBKDF2', false, ['deriveKey']);
-  const kek = await crypto.subtle.deriveKey({ name: 'PBKDF2', hash: 'SHA-256', salt: b64(w.salt), iterations: w.iterations },
-    base, { name: 'AES-GCM', length: 256 }, false, ['unwrapKey']);
-  // Throws if the passcode is wrong (GCM auth tag fails). Result is NON-extractable.
-  const dk = await crypto.subtle.unwrapKey('raw', b64(w.wrapped), kek, { name: 'AES-GCM', iv: b64(w.iv), additionalData: WRAP_AAD },
-    { name: 'AES-GCM' }, false, ['decrypt']);
-  await IDB.set('dk', { key: dk, kid: w.kid });
-  return { key: dk, kid: w.kid };
 }
 
 async function decryptData(stored) {
@@ -557,39 +521,17 @@ document.addEventListener('click', (e) => {
 });
 function refreshView() { const y = scrollY; render(); if (!$('#tlView').hidden) renderTimeline(); if (!$('#pcView').hidden) renderPaychecks(); scrollTo(0, y); }
 
-/* ---------------- boot / lock ---------------- */
-function showLock(msg) { $('#app').hidden = true; $('#tlView').hidden = true; $('#pcView').hidden = true; $('#evWrap').hidden = true; evOpen = false; $('#lock').hidden = false; if (msg) $('#lockSub').innerHTML = msg; }
-function showApp() { $('#lock').hidden = true; $('#app').hidden = false; render(); if (location.hash === '#timeline') showTimeline(true); else if (location.hash === '#paychecks') showPaychecks(true); }
+/* ---------------- boot / lock (4-digit PIN, checked by the relay; see pin-gate.js) ---------------- */
+function showLock() { location.reload(); } // the key changed or got lost: start over (asks for the PIN again)
+function showApp() { $('#app').hidden = false; render(); if (location.hash === '#timeline') showTimeline(true); else if (location.hash === '#paychecks') showPaychecks(true); }
 
-async function boot() {
-  let stored = null;
-  try { stored = await IDB.get('dk'); } catch {}
-  if (!stored) return showLock();
-  try { DATA = await decryptData(stored); lastCheck = Date.now(); showApp(); }
-  catch (e) {
-    if (e.code === 'KID') { await IDB.del('dk'); return showLock('The passcode was changed.<br>Please type the new family passcode.'); }
-    if (e.name === 'OperationError') { await IDB.del('dk'); return showLock(); }
-    showLock('Can’t reach the dashboard right now.<br>Check your internet and try again.');
-  }
+function boot() {
+  PinGate.start({
+    title: 'Family Dashboard', icon: 'icons/icon-192.png', theme: 'dark',
+    onKey: async (key, kid) => { const k = { key, kid }; DATA = await decryptData(k); KEY = k; lastCheck = Date.now(); showApp(); },
+  });
 }
 
-$('#lockForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const pass = $('#pass').value; if (!pass.trim()) return;
-  const btn = $('#unlockBtn'); btn.disabled = true; btn.classList.add('busy'); btn.querySelector('span').textContent = 'Opening';
-  $('#lockErr').textContent = '';
-  try {
-    const stored = await unlockWithPasscode(pass);
-    DATA = await decryptData(stored);
-    $('#pass').value = '';
-    showApp();
-  } catch (err) {
-    const wrong = err && err.name === 'OperationError';
-    $('#lockErr').textContent = wrong ? 'That passcode didn’t work. Try again.' : 'Couldn’t open it. Check your internet and try again.';
-    const l = $('#lock'); l.classList.remove('shake'); void l.offsetWidth; l.classList.add('shake');
-  } finally { btn.disabled = false; btn.classList.remove('busy'); btn.querySelector('span').textContent = 'Open'; }
-});
-$('#showPass').addEventListener('click', () => { const p = $('#pass'); const show = p.type === 'password'; p.type = show ? 'text' : 'password'; $('#showPass').textContent = show ? 'Hide passcode' : 'Show passcode'; });
 /* ---------------- refresh: button, pull-to-refresh, foreground, timer ---------------- */
 let refreshing = false, lastCheck = 0;
 const sig = (d) => d ? (d.published_at || '') + '|' + (d.updated_at || '') : '';
@@ -598,8 +540,8 @@ async function refreshData({ silent = false } = {}) {
   const btn = $('#refreshTop'); btn.classList.add('spin');
   if (!silent) $('#app').classList.add('refreshing');
   try {
-    const stored = await IDB.get('dk'); if (!stored) return showLock();
-    const fresh = await decryptData(stored); // data.enc?t=<now>, cache:'no-store'; SW is network-first for it
+    if (!KEY) return;
+    const fresh = await decryptData(KEY); // data.enc?t=<now>, cache:'no-store'; SW is network-first for it
     const changed = sig(fresh) !== sig(DATA);
     DATA = fresh;
     if (changed || !silent) {
@@ -611,7 +553,7 @@ async function refreshData({ silent = false } = {}) {
     if (!silent) toast(changed ? 'New numbers loaded' : 'Already up to date');
     else if (changed) toast('Numbers updated');
   } catch (e) {
-    if (e.code === 'KID') { await IDB.del('dk'); DATA = null; return showLock('The passcode was changed.<br>Please type the new family passcode.'); }
+    if (e.code === 'KID') { DATA = null; KEY = null; return showLock(); }
     if (!silent) toast(navigator.onLine === false ? 'You’re offline — showing the last numbers' : 'Couldn’t refresh — try again in a bit');
   } finally { refreshing = false; btn.classList.remove('spin'); $('#app').classList.remove('refreshing'); }
 }
@@ -713,10 +655,10 @@ setInterval(() => { if (!document.hidden) refreshData({ silent: true }); }, 15 *
  *  - register with updateViaCache:'none' (sw.js never comes from the HTTP cache) and check for a new sw.js on start,
  *    whenever the app comes to the foreground, on refresh / pull-to-refresh, and every 30 minutes;
  *  - the new sw skipWaiting()s + clients.claim()s; when it takes over (controllerchange) the page reloads itself so the
- *    new code runs right away — unless a sheet is open or a passcode is being typed, then a small "Update ready" bar
+ *    new code runs right away — unless a sheet is open or the PIN screen is up, then a small "Update ready" bar
  *    is shown and the reload happens on tap (or the next time the app is backgrounded). */
 let swReg = null, reloading = false, updatePending = false;
-const busy = () => !$('#evWrap').hidden || (!$('#lock').hidden && $('#pass').value);
+const busy = () => !$('#evWrap').hidden || PinGate.isOpen();
 function applyUpdate() { if (reloading) return; reloading = true; location.reload(); }
 function checkForUpdate() { if (swReg) swReg.update().catch(() => {}); }
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
