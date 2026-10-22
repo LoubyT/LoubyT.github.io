@@ -204,7 +204,8 @@
     return norm(c.name).replace(/^any brand /, '').replace(/\b(any|select) (variety|varieties|size|sizes|flavor)\b/g, '').replace(/\s+/g, ' ').trim()
       + (c.note ? '|' + norm(c.note) : '');
   }
-  function store() { try { return root.localStorage || null; } catch { return null; } }
+  const memStore = { m: {}, getItem(k) { return k in this.m ? this.m[k] : null; }, setItem(k, v) { this.m[k] = String(v); } };
+  function store() { if (root.__dealDemo) return memStore; try { return root.localStorage || null; } catch { return null; } } // demo: in memory only
   function getPicks() { try { return JSON.parse(store().getItem(PICKS_KEY)) || {}; } catch { return {}; } }
   function remember(coupon, product) {
     const s = store(); if (!s) return;
@@ -234,7 +235,7 @@
     const ctok = tokens(text).filter((t) => !brandTok.has(t));
     const res = { product: null, confidence: 0, auto: false, candidates: [], reason: '', brand, category: cat, key: couponKey(coupon) };
 
-    // 1. Kaylee already picked for this exact offer before.
+    // 1. Already picked for this exact offer before.
     const pick = getPicks()[res.key];
     if (pick) {
       if (pick.search) return Object.assign(res, { reason: 'remembered: search Walmart', confidence: 1, remembered: true });

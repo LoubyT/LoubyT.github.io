@@ -2,6 +2,8 @@
   'use strict';
 
   const KEY = 'deals.v1';
+  // Demo mode (savings-boot.js / demo-mode.js): made-up deals in memory only; nothing is read from or saved to this phone.
+  const DEMO = !!window.__dealDemo;
   const TAB_KEY = 'deals.tab';
   const $ = (s) => document.querySelector(s);
 
@@ -27,6 +29,7 @@
 
   /* ---------- data ---------- */
   function load() {
+    if (DEMO) return (window.DealsDemo ? window.DealsDemo.deals() : []).map(normalize);
     let d;
     try { d = JSON.parse(localStorage.getItem(KEY)); } catch { return []; }
     return Array.isArray(d) ? d.filter((x) => x && typeof x === 'object').map(normalize) : [];
@@ -112,6 +115,7 @@
     return all ? `<span class="note">${all}</span>` : '';
   }
   function save() {
+    if (DEMO) return;
     try { localStorage.setItem(KEY, JSON.stringify(deals)); }
     catch {
       // Storage full: drop photos from checked-off deals first, then from all, and retry.
@@ -289,7 +293,7 @@
     const b = e.target.closest('.seg-btn');
     if (!b || b.dataset.store === store) return;
     store = b.dataset.store;
-    localStorage.setItem(TAB_KEY, store);
+    if (!DEMO) localStorage.setItem(TAB_KEY, store);
     render();
   });
 
@@ -379,7 +383,7 @@
     if (product) { nd.product = slimProduct(product); nd.qty = startQty(nd, product); }
     deals.unshift(normalize(nd));
     save();
-    if (store !== formStore) { store = formStore; localStorage.setItem(TAB_KEY, store); }
+    if (store !== formStore) { store = formStore; if (!DEMO) localStorage.setItem(TAB_KEY, store); }
     closeSheets();
     render();
   });

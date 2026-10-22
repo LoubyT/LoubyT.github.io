@@ -1,10 +1,10 @@
 // Bump VERSION whenever app files change so phones pick up the update.
-const VERSION = 'deals-v9';
+const VERSION = 'deals-v10';
 // The OCR engine (~7 MB) is NOT precached. It is cached on first use, in its own
 // cache that survives app updates (bump only when vendor/tesseract changes).
 const OCR_CACHE = 'deals-ocr-tesseract7';
 const ASSETS = [
-  './', 'index.html', 'styles.css', 'app.js', 'match.js', 'import.js', 'pin-gate.js', 'savings-boot.js', 'manifest.webmanifest',
+  './', 'index.html', 'styles.css', 'app.js', 'match.js', 'import.js', 'pin-gate.js', 'demo-mode.js', 'demo-data.js', 'savings-boot.js', 'manifest.webmanifest',
   'icons/apple-touch-icon.png', 'icons/icon-192.png', 'icons/icon-512.png',
 ];
 

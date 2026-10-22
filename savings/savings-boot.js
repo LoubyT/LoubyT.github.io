@@ -10,9 +10,20 @@
   function loadScript(src) {
     return new Promise(function (res, rej) { var s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = function () { rej(new Error(src)); }; document.body.appendChild(s); });
   }
+  // Demo mode (demo-mode.js): triple-tap the header. The PIN is still required, but the encrypted usuals are never
+  // fetched or decrypted: made-up products and deals (demo-data.js), in memory only.
+  var DEMO = !!(window.DemoMode && window.DealsDemo && DemoMode.isOn('savings'));
+  if (window.DemoMode) {
+    DemoMode.bindTripleTap(['.top .eyebrow', '#total'], function () { DemoMode.toggle('savings'); });
+    if (DEMO) DemoMode.pill('.top .eyebrow', { margin: '0 0 0 8px' });
+  }
   PinGate.start({
     title: 'Deals', icon: 'icons/icon-192.png', theme: 'light', lockCorner: true,
     onKey: async function (key, kid) {
+      if (DEMO) {
+        window.__dealDemo = true; window.__dealUsuals = window.DealsDemo.usuals();
+        await loadScript('match.js'); await loadScript('app.js'); return;
+      }
       var r = await fetch('data/usuals.enc?t=' + Date.now(), { cache: 'no-store' });
       if (!r.ok) throw new Error('usuals ' + r.status);
       var env = await r.json();
