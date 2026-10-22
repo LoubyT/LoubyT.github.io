@@ -1,11 +1,11 @@
 // Stonks service worker (scope: this folder only).
-// - Only same-origin requests inside this folder are handled; the quote relay and
-//   ../family-dashboard/wrapped-key.json always go straight to the network.
+// - Only same-origin requests inside this folder are handled; the relay (quote + PIN unlock)
+//   always goes straight to the network.
 // - data.enc and page loads are network-first (falls back to the last good copy offline).
 // - Other files are cache-first.
 const PREFIX = 'vest-';
-const CACHE = PREFIX + 'v13';
-const ASSETS = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './icon.svg'];
+const CACHE = PREFIX + 'v14';
+const ASSETS = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './icon.svg', './pin-gate.js'];
 const SCOPE = new URL('./', self.location).href;
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS.map(u => new Request(u, { cache: 'reload' })))).then(() => self.skipWaiting()));

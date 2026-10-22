@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-gbCpFkY/rD2L2DFZre7DmBCx76VwCWoccvPlCXfpSdA='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://fd-refresh-relay.vercel.app; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-p9PnJx+QnRQ9FG7VBWyW/QTyIEW908maLQQ8K4YWb8U='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://fd-refresh-relay.vercel.app; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
 <meta name="robots" content="noindex, nofollow, noarchive">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -181,35 +181,12 @@ label.f b{color:var(--txt);font-variant-numeric:tabular-nums}
 .note details[open] summary::after{transform:rotate(180deg)}
 .disc{border-color:rgba(255,143,163,.3)}
 footer{color:var(--dim);font-size:12px;text-align:center;margin-top:18px;line-height:1.6}
-/* lock screen */
-.lock{min-height:calc(100vh - 60px);display:flex;align-items:center;justify-content:center}
-.lock .card{width:100%;max-width:380px;padding:24px 20px;text-align:center}
-.lock .brand{margin-bottom:6px}
-.lock p{color:var(--mute);font-size:14px;margin:6px 0 18px}
-.lock input{width:100%;min-height:52px;background:#0b0d12;border:1px solid var(--line);color:var(--txt);border-radius:12px;padding:10px 14px;font-size:18px;font-family:inherit;text-align:center;letter-spacing:.04em}
-.lock input:focus{outline:none;border-color:rgba(255,255,255,.6)}
-.lock .btn{width:100%;min-height:52px;margin-top:12px;font-size:16px}
-.lock .link{background:none;border:0;color:var(--mute);font:inherit;font-size:13px;min-height:var(--tap);cursor:pointer;text-decoration:underline}
-.lock .err{color:var(--warn);font-size:14px;min-height:20px;margin-top:10px}
-.lock.shake .card{animation:shake .35s}
-@keyframes shake{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
 @media(prefers-reduced-motion:reduce){.bar i,.vi summary::after,.note summary::after{transition:none}}
 </style>
 </head>
 <body>
 <canvas id="stars" aria-hidden="true"></canvas>
 <div class="wrap">
-  <section class="lock" id="lock" hidden>
-    <form class="card" id="lockForm" autocomplete="off">
-      <div class="brand">Stonks</div>
-      <p id="lockSub">Type the family passcode to open.</p>
-      <label class="sr" for="pass">Family passcode</label>
-      <input type="password" id="pass" autocomplete="current-password" autocapitalize="none" spellcheck="false" enterkeyhint="go" placeholder="Passcode">
-      <button class="btn primary" id="unlockBtn" type="submit"><span>Open</span></button>
-      <button class="link" id="showPass" type="button">Show passcode</button>
-      <div class="err" id="lockErr" role="alert"></div>
-    </form>
-  </section>
   <div id="app" hidden>
   <header>
     <div class="wm">
@@ -309,6 +286,7 @@ footer{color:var(--dim);font-size:12px;text-align:center;margin-top:18px;line-he
   </div>
 </div>
 
+<script src="pin-gate.js"></script>
 <script>
 (function(){
 'use strict';
@@ -564,30 +542,10 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) naviga
 let deferred; addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferred = e; $('install').style.display='inline-flex'; });
 $('install').addEventListener('click', async () => { if (!deferred) return; deferred.prompt(); await deferred.userChoice; deferred = null; $('install').style.display='none'; });
 
-/* ---------- lock: family passcode (same key setup as the Family Dashboard) ---------- */
+/* ---------- lock: shared 4-digit PIN (pin-gate.js; checked by the relay, key kept in memory only) ---------- */
 const enc = new TextEncoder();
 const DATA_AAD = enc.encode('stonks:data:v1');
-const WRAP_AAD = enc.encode('family-dashboard:wrap:v1');          // must match the dashboard's wrapped-key.json
-const WRAPPED_URL = '../family-dashboard/wrapped-key.json';
 const b64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
-const normPass = p => p.normalize('NFKC').trim().replace(/\s+/g, ' ').toLowerCase();  // same as the dashboard
-// IndexedDB holding a NON-extractable CryptoKey. 'family-dashboard' is the dashboard's own store (read only here,
-// never created); 'stonks' is ours, used when the dashboard hasn't been unlocked on this phone.
-function idb(name, mode, fn, create){
-  return new Promise((res, rej) => {
-    const r = indexedDB.open(name, 1);
-    r.onupgradeneeded = () => { if (!create) { r.transaction.abort(); return; } r.result.createObjectStore('keys'); };
-    r.onerror = () => rej(r.error);
-    r.onsuccess = () => { const db = r.result; let q;
-      try { const tx = db.transaction('keys', mode); q = fn(tx.objectStore('keys'));
-        tx.oncomplete = () => { db.close(); res(q && q.result); }; tx.onerror = () => { db.close(); rej(tx.error); };
-      } catch(e){ db.close(); rej(e); } };
-  });
-}
-const fdGet  = () => idb('family-dashboard', 'readonly', s => s.get('dk'), false);
-const ownGet = () => idb('stonks', 'readonly', s => s.get('dk'), true);
-const ownSet = v => idb('stonks', 'readwrite', s => s.put(v, 'dk'), true);
-const ownDel = () => idb('stonks', 'readwrite', s => s.delete('dk'), true);
 async function fetchJSON(url){
   const r = await fetch(url + '?t=' + Date.now(), { cache:'no-store' });
   if (!r.ok) throw new Error(url + ' ' + r.status);
@@ -597,17 +555,6 @@ async function decryptEnv(env, key){
   const pt = await crypto.subtle.decrypt({ name:'AES-GCM', iv:b64(env.iv), additionalData:DATA_AAD }, key, b64(env.ct));
   return JSON.parse(new TextDecoder().decode(pt));
 }
-async function unlockWithPasscode(pass){
-  const w = await fetchJSON(WRAPPED_URL);
-  const base = await crypto.subtle.importKey('raw', enc.encode(normPass(pass)), 'PBKDF2', false, ['deriveKey']);
-  const kek = await crypto.subtle.deriveKey({ name:'PBKDF2', hash:'SHA-256', salt:b64(w.salt), iterations:w.iterations },
-    base, { name:'AES-GCM', length:256 }, false, ['unwrapKey']);
-  // Throws OperationError if the passcode is wrong. Result is NON-extractable.
-  const key = await crypto.subtle.unwrapKey('raw', b64(w.wrapped), kek, { name:'AES-GCM', iv:b64(w.iv), additionalData:WRAP_AAD },
-    { name:'AES-GCM' }, false, ['decrypt']);
-  return { key, kid:w.kid };
-}
-function showLock(msg){ $('app').hidden = true; $('lock').hidden = false; $('lockSub').innerHTML = msg || 'Type the family passcode to open.'; }
 let started = false;
 function start(data){
   initData(data);
@@ -616,48 +563,20 @@ function start(data){
   $('vestedBarWrap').setAttribute('aria-valuemax', TOTAL);
   $('rateHint').innerHTML = data.rateHint || '';
   $('taxNotes').innerHTML = (data.taxNotes || []).map(p => '<p>' + p + '</p>').join('');
-  $('lock').hidden = true; $('app').hidden = false;
+  $('app').hidden = false;
   render();
   if (started) return; started = true;
   setInterval(render, 30000);
   fetchQuote();
   addEventListener('online', fetchQuote);
 }
-const CHANGED = 'The passcode was changed.<br>Please type the new family passcode.';
-async function boot(){
-  const cands = [];
-  try { const d = await fdGet(); if (d && d.key) cands.push(Object.assign({ own:false }, d)); } catch(e){}
-  try { const d = await ownGet(); if (d && d.key) cands.push(Object.assign({ own:true }, d)); } catch(e){}
-  if (!cands.length) return showLock();
-  let env;
-  try { env = await fetchJSON('data.enc'); } catch(e){ return showLock('Can’t reach it right now.<br>Check your internet and try again.'); }
-  let changed = false;
-  for (const c of cands){
-    if (c.kid !== env.kid){ changed = true; if (c.own) await ownDel().catch(()=>{}); continue; }
-    try { return start(await decryptEnv(env, c.key)); }
-    catch(e){ if (c.own) await ownDel().catch(()=>{}); }
-  }
-  showLock(changed ? CHANGED : undefined);
-}
-$('lockForm').addEventListener('submit', async e => {
-  e.preventDefault();
-  const pass = $('pass').value; if (!pass.trim()) return;
-  const btn = $('unlockBtn'); btn.disabled = true; btn.querySelector('span').textContent = 'Opening…'; $('lockErr').textContent = '';
-  try {
-    const k = await unlockWithPasscode(pass);
+function boot(){
+  PinGate.start({ title:'Stonks', icon:'icon-192.png', theme:'dark', onKey: async (key, kid) => {
     const env = await fetchJSON('data.enc');
-    if (env.kid !== k.kid){ const er = new Error('kid'); er.code = 'KID'; throw er; }
-    const data = await decryptEnv(env, k.key);
-    await ownSet({ key:k.key, kid:k.kid }).catch(()=>{});
-    $('pass').value = '';
-    start(data);
-  } catch(err){
-    $('lockErr').textContent = err && err.name === 'OperationError' ? 'That passcode didn’t work. Try again.'
-      : err && err.code === 'KID' ? 'This page hasn’t been updated for the new passcode yet.' : 'Couldn’t open it. Check your internet and try again.';
-    const l = $('lock'); l.classList.remove('shake'); void l.offsetWidth; l.classList.add('shake');
-  } finally { btn.disabled = false; btn.querySelector('span').textContent = 'Open'; }
-});
-$('showPass').addEventListener('click', () => { const p = $('pass'); const show = p.type === 'password'; p.type = show ? 'text' : 'password'; $('showPass').textContent = show ? 'Hide passcode' : 'Show passcode'; });
+    if (env.kid !== kid){ const er = new Error('kid'); er.code = 'KID'; throw er; }
+    start(await decryptEnv(env, key));
+  } });
+}
 boot();
 })();
 </script>

@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Deals</title>
+  <meta name="description" content="Your Ibotta cash-back list for Walmart and H-E-B.">
+  <meta name="theme-color" content="#F5F4F0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Deals">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="referrer" content="no-referrer">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app">
+    <header class="top">
+      <p class="eyebrow">Ibotta cash back this trip</p>
+      <h1 class="total" id="total" aria-live="polite">$0.00</h1>
+      <p class="sub" id="sub">No deals yet</p>
+
+      <div class="seg" id="tabs" role="tablist" aria-label="Store">
+        <span class="seg-thumb" aria-hidden="true"></span>
+        <button class="seg-btn" role="tab" data-store="walmart" aria-selected="true">Walmart</button>
+        <button class="seg-btn" role="tab" data-store="heb" aria-selected="false">H‑E‑B</button>
+      </div>
+    </header>
+
+    <section class="list-wrap">
+      <ul class="list" id="list" aria-label="Deals"></ul>
+
+      <div class="empty" id="empty" hidden>
+        <div class="empty-art" aria-hidden="true">
+          <svg viewBox="0 0 64 64" width="72" height="72"><path d="M34.6 8H52a4 4 0 0 1 4 4v17.4a4 4 0 0 1-1.2 2.8L32.2 54.8a4 4 0 0 1-5.6 0L9.2 37.4a4 4 0 0 1 0-5.6L31.8 9.2A4 4 0 0 1 34.6 8Z" fill="currentColor" opacity=".16"/><circle cx="45" cy="19" r="4.5" fill="currentColor"/></svg>
+        </div>
+        <p class="empty-title" id="emptyTitle">No deals yet</p>
+        <p class="empty-text">Tap <b>+</b> to add an Ibotta offer you want to grab.</p>
+      </div>
+
+      <button class="clear-link" id="clearChecked" hidden>Clear checked</button>
+    </section>
+
+    <footer class="dock">
+      <div class="dock-inner">
+        <button class="shop-btn" id="shopBtn" hidden>
+          <span id="shopLabel">Shop at Walmart</span>
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="fab" id="addBtn" aria-label="Add a deal">
+          <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+    </footer>
+  </main>
+
+
+  <div class="scrim" id="scrim"></div>
+
+  <!-- Add deal sheet -->
+  <form class="sheet" id="sheet" aria-hidden="true" autocomplete="off" novalidate>
+    <div class="grabber" aria-hidden="true"></div>
+    <h2 class="sheet-title">New Ibotta deal</h2>
+
+    <label class="shot-btn">
+      <input type="file" id="shotInput" accept="image/*" multiple hidden>
+      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="9" cy="10" r="1.8" fill="currentColor"/><path d="m4 18 5.5-5 4 3.5 2.5-2 4 3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+      <span>Add from screenshots</span>
+    </label>
+    <p class="or"><span>or type it in</span></p>
+
+    <label class="field">
+      <span>What is it?</span>
+      <input id="fName" name="name" type="text" placeholder="e.g. Cheerios" enterkeyhint="next" autocapitalize="sentences" maxlength="80">
+    </label>
+
+    <label class="field">
+      <span>Cash back</span>
+      <span class="money"><i>$</i><input id="fAmount" name="amount" type="text" inputmode="decimal" placeholder="0.00" enterkeyhint="done" maxlength="8"></span>
+    </label>
+
+    <div class="seg seg-sm" id="fStore" role="radiogroup" aria-label="Store">
+      <span class="seg-thumb" aria-hidden="true"></span>
+      <button type="button" class="seg-btn" role="radio" data-store="walmart" aria-checked="true">Walmart</button>
+      <button type="button" class="seg-btn" role="radio" data-store="heb" aria-checked="false">H‑E‑B</button>
+    </div>
+
+    <label class="field" id="linkField">
+      <span>Walmart link <em>optional</em></span>
+      <input id="fLink" name="link" type="url" inputmode="url" placeholder="Paste from the Walmart app" autocapitalize="off" autocorrect="off" spellcheck="false">
+    </label>
+
+    <button type="button" class="more-btn" id="moreBtn" aria-expanded="false" aria-controls="moreOpts">
+      More options
+      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="m6 9 6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div class="more-opts" id="moreOpts" hidden>
+      <div class="opt-row"><span>Must buy<em>items per cash back</em></span><span class="opt-step" data-k="mustBuy"></span></div>
+      <div class="opt-row"><span>Limit<em>times per receipt</em></span><span class="opt-step" data-k="limit"></span></div>
+    </div>
+
+    <button class="primary" type="submit">Add deal</button>
+  </form>
+
+  <!-- Shop sheet (used when some Walmart deals have no link) -->
+  <div class="sheet" id="shopSheet" aria-hidden="true">
+    <div class="grabber" aria-hidden="true"></div>
+    <h2 class="sheet-title">Shop at Walmart</h2>
+    <div id="shopBody"></div>
+  </div>
+
+  <!-- Screenshot import sheet -->
+  <div class="sheet" id="importSheet" aria-hidden="true">
+    <div class="grabber" aria-hidden="true"></div>
+    <div id="importBusy">
+      <h2 class="sheet-title">Reading your screenshots…</h2>
+      <div class="bar"><span id="importBar"></span></div>
+      <p class="busy-text" id="importStatus">Getting ready</p>
+    </div>
+    <div id="importReview" hidden>
+      <h2 class="sheet-title" id="reviewTitle">Found 0 deals</h2>
+      <ul class="review" id="reviewList"></ul>
+      <div class="sheet-foot">
+        <button class="primary" type="button" id="reviewAdd">Add deals</button>
+        <button class="ghost" type="button" id="reviewCancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status">
+    <span id="toastText">Deleted</span>
+    <button id="toastUndo" type="button">Undo</button>
+  </div>
+
+  <!-- match.js + app.js load only after the PIN unlocks (savings-boot.js) -->
+  <script src="pin-gate.js"></script>
+  <script src="savings-boot.js"></script>
+</body>
+</html>
