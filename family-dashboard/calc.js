@@ -52,7 +52,8 @@
     const next = list.findIndex((p) => p.date >= todayIso);
     return next >= 0 ? next : list.length - 1;
   }
-  // Category actuals (tracked spending from the budget file). Values are used exactly as given; nothing is recomputed.
+  // Category actuals (tracked spending from the budget file). Values are used exactly as given here (publish.js may set
+  // actual.budget/left per period first — see periodBudget).
   // stale: 'ended' when today is after period_end; 'old' when as_of is before period_start of a period that has begun.
   // upcoming: the period hasn't started yet (e.g. plan starts at the next payday) — not stale.
   // left may be null (e.g. a line that hasn't started); it is never computed.
@@ -62,9 +63,34 @@
     const asOf = typeof a.as_of === 'string' ? a.as_of.slice(0, 10) : '';
     const upcoming = !!(a.period_start && todayIso < a.period_start);
     const stale = a.period_end && todayIso > a.period_end ? 'ended' : !upcoming && asOf && a.period_start && asOf < a.period_start ? 'old' : null;
-    const plan = typeof c.amount === 'number' ? c.amount : null;
+    // plan = this period's budget when the data carries one (actual.budget: from the budget source, or derived at publish time
+    // by periodBudget below); otherwise the line's flat amount.
+    const plan = typeof a.budget === 'number' ? a.budget : typeof c.amount === 'number' ? c.amount : null;
     const frac = plan ? a.spent / plan : 0;
     return { spent: a.spent, left: typeof a.left === 'number' ? a.left : null, plan, frac, stale, upcoming, note: typeof a.note === 'string' && a.note ? a.note : null, transactions: Array.isArray(a.transactions) ? a.transactions : [] };
+  }
+  // Per-period budget for a tracked line (used by publish.js; pure, no rounding beyond whole cents).
+  // Order: 1) actual.budget from the source (explicit — left as given, or budget − spent if left is missing);
+  //        2) a source left that is NOT simply "flat amount − spent" (the source already used its own period amount,
+  //           e.g. two units bought in one order) → kept, budget = spent + left;
+  //        3) the planned timeline "spending" rows for this line dated period_start..period_end (matched by name,
+  //           e.g. "Groceries", "Bob's snacks" = "Bob snacks", "Pets (food + litter)" = "Pets") → budget = their sum, left = budget − spent;
+  //        4) otherwise the flat amount (left exactly as given).
+  // left = null (line not started) always stays null.
+  const nameKey = (v) => String(v || '').toLowerCase().replace(/\([^)]*\)/g, ' ').replace(/['\u2019]s\b/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+  const c2 = (x) => Math.round(x * 100);
+  function periodBudget(c, timeline) {
+    const a = c && c.actual;
+    if (!a || typeof a !== 'object' || typeof a.spent !== 'number') return null;
+    const flat = typeof c.amount === 'number' ? c.amount : null;
+    if (typeof a.budget === 'number') return { budget: a.budget, source: 'source', left: a.left === null ? null : typeof a.left === 'number' ? a.left : (c2(a.budget) - c2(a.spent)) / 100 };
+    if (a.left === null) return { budget: flat, source: 'flat', left: null };
+    const flatLeft = flat != null ? (c2(flat) - c2(a.spent)) / 100 : null;
+    if (typeof a.left === 'number' && flatLeft != null && c2(a.left) !== c2(flatLeft)) return { budget: (c2(a.spent) + c2(a.left)) / 100, source: 'source-left', left: a.left };
+    const keys = new Set([nameKey(c.name), nameKey(String(c.id || '').replace(/-/g, ' '))].filter(Boolean));
+    const rows = (timeline || []).filter((e) => e && e.type === 'spending' && typeof e.amount === 'number' && e.date >= a.period_start && e.date <= a.period_end && keys.has(nameKey(e.name)));
+    if (rows.length) { const b = rows.reduce((t, e) => t + c2(e.amount), 0); return { budget: b / 100, source: 'timeline', left: (b - c2(a.spent)) / 100, rows: rows.length }; }
+    return { budget: flat, source: 'flat', left: typeof a.left === 'number' ? a.left : flatLeft };
   }
   // Summary of tracked lines only (current: not stale, not upcoming). Uses only the data file — never on-device entries.
   function trackedTotals(cats, todayIso) {
@@ -92,6 +118,6 @@
     if (now < next) return { kind: t && pub <= t ? 'late' : 'cooldown', next };
     return { kind: 'idle' };
   }
-  const api = { refreshState, tlBucket, tlTotals, exactMoney, breakdownCheck, paycheckCheck, pickCurrentPaycheck, actualStatus, trackedTotals };
+  const api = { refreshState, tlBucket, tlTotals, exactMoney, breakdownCheck, paycheckCheck, pickCurrentPaycheck, actualStatus, trackedTotals, periodBudget, nameKey };
   if (typeof module === 'object' && module.exports) module.exports = api; else root.FDCalc = api;
 })(typeof self !== 'undefined' ? self : this);
