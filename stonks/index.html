@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-NIJk9e/+JblekgnWonX0rAyhUoxx80kmiZSqE2n+WOY='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://fd-refresh-relay.vercel.app; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-EEI1KONUDtlYbQukJkXl2UXS6aOq61ZdJhlMQTMGNns='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://fd-refresh-relay.vercel.app; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
 <meta name="robots" content="noindex, nofollow, noarchive">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -287,6 +287,7 @@ footer{color:var(--dim);font-size:12px;text-align:center;margin-top:18px;line-he
 </div>
 
 <script src="pin-gate.js"></script>
+<script src="demo-mode.js"></script>
 <script>
 (function(){
 'use strict';
@@ -299,7 +300,23 @@ const DEFAULT_RATE = 29.65;
    [{name, total, schedule:[{date:'YYYY-MM-DD', shares}]}]; to add a grant, append one there. */
 const LS = 'spcxVest.v1';
 let GRANTS, TOTAL, SCHEDULE, DEF, S;
-const save = () => { try { localStorage.setItem(LS, JSON.stringify(S)); } catch(e){} };
+/* Demo mode (demo-mode.js): triple-tap the logo. The PIN is still required, but data.enc is never fetched or
+   decrypted, the quote relay is never called and nothing is saved: made-up grants, built for today, at a made-up price. */
+const DEMO = !!(window.DemoMode && DemoMode.isOn('stonks'));
+const DEMO_PRICE = 118.4;
+function demoData(){
+  const now = new Date(), y = now.getFullYear(), m = now.getMonth();
+  const at = mo => { const d = new Date(y, m + mo, 15); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-15'; };
+  const a = [{ date: at(-2), shares: 640 }]; for (let q = 1; q <= 12; q++) a.push({ date: at(-2 + 3*q), shares: 160 });
+  const b = []; for (let q = 0; q < 8; q++) b.push({ date: at(4 + 3*q), shares: 90 });
+  return {
+    grants: [{ name: 'Sample new-hire grant', total: 2560, schedule: a }, { name: 'Sample refresh grant', total: 720, schedule: b }],
+    rateHint: 'Demo mode: made-up grants and price. Try any rate.',
+    taxNotes: ['<b>Sample notes.</b> Everything on this page is made up for the demo: the grants, the share counts, the dates and the price.',
+      'With sell-to-cover, shares are withheld at the rate above (rounded up to whole shares); the rest are yours to sell or hold.']
+  };
+}
+const save = () => { if (DEMO) return; try { localStorage.setItem(LS, JSON.stringify(S)); } catch(e){} };
 function initData(data){
   GRANTS = data.grants;
   TOTAL = GRANTS.reduce((a,g)=>a+g.total,0);
@@ -329,7 +346,8 @@ function initData(data){
     plan: SCHEDULE.map((_,i)=> i===0 ? 'sell' : 'hold'),
     lastQuote: null          // {price, time, src, asOf?, state?}
   };
-  try { S = Object.assign({}, DEF, JSON.parse(localStorage.getItem(LS)||'{}')); }
+  if (DEMO) S = JSON.parse(JSON.stringify(DEF));   // demo: fresh in-memory state, the saved plan/price is never read
+  else try { S = Object.assign({}, DEF, JSON.parse(localStorage.getItem(LS)||'{}')); }
   catch(e){ S = JSON.parse(JSON.stringify(DEF)); }
   if (!Array.isArray(S.plan) || S.plan.length !== SCHEDULE.length) S.plan = DEF.plan.slice();
   // growth scenarios were removed: drop any saved growth value so it can never affect anything
@@ -351,6 +369,7 @@ const fmtMD = t => new Date(t).toLocaleDateString('en-US',{month:'short',day:'nu
 
 function currentPrice(){
   if (S.mode === 'manual' && S.manualPrice > 0) return { p:S.manualPrice, kind:'manual' };
+  if (DEMO) return { p:DEMO_PRICE, kind:'demo' };
   if (livePrice) return { p:livePrice, kind:'live' };
   if (S.lastQuote && S.lastQuote.price > 0 && S.lastQuote.time > Date.parse(LAST_KNOWN.date+'T21:00:00Z'))
     return { p:S.lastQuote.price, kind:'cached' };
@@ -379,22 +398,23 @@ function render(){
           : kind==='cached' ? { st:S.lastQuote.state, asOf:S.lastQuote.asOf || S.lastQuote.time, src:S.lastQuote.src } : null;
   const isOpen = q && q.st === 'regular';
   const closeLbl = q ? 'Last close · ' + fmtMD(q.asOf) : 'Last close · ' + LAST_KNOWN.short;
-  pill.textContent = kind==='manual' ? 'Manual'
+  pill.textContent = kind==='demo' ? 'Sample price' : kind==='manual' ? 'Manual'
     : kind==='live' ? (isOpen ? 'Live · ' + fmtHM(q.asOf) : closeLbl)
     : kind==='cached' ? (isOpen ? 'Fetched · ' + fmtTime(q.asOf) : closeLbl) : closeLbl;
   if (kind==='live' && !isOpen) pill.className = 'chip last';
   const src = $('srcLine');
   if (kind==='manual'){
-    const ref = livePrice || (S.lastQuote&&S.lastQuote.price) || LAST_KNOWN.price;
-    const refLbl = livePrice ? (liveState==='regular' ? 'live' : 'last close') : (S.lastQuote&&S.lastQuote.price) ? 'last fetched' : LAST_KNOWN.short + ' close';
+    const ref = DEMO ? DEMO_PRICE : livePrice || (S.lastQuote&&S.lastQuote.price) || LAST_KNOWN.price;
+    const refLbl = DEMO ? 'sample' : livePrice ? (liveState==='regular' ? 'live' : 'last close') : (S.lastQuote&&S.lastQuote.price) ? 'last fetched' : LAST_KNOWN.short + ' close';
     src.innerHTML = 'Your price. Market: <b class="num" data-k="ref">' + usd2(ref) + '</b> (' + refLbl + ')';
   }
+  else if (kind==='demo') src.innerHTML = '<b>' + TICKER + ' ' + usd2(p) + '</b> · made-up price for the demo';
   else if (kind==='live') src.innerHTML = '<b>' + TICKER + ' ' + usd2(p) + '</b> · ' + (isOpen ? 'market open' : liveState==='pre' ? 'pre-market' : liveState==='post' ? 'after hours' : 'market closed') + ' · via ' + (liveSrc||'') + ', checked ' + fmtHM(liveTime);
   else if (kind==='cached') src.innerHTML = '<b>' + TICKER + ' ' + usd2(p) + '</b> · offline · fetched ' + fmtTime(S.lastQuote.time);
   else src.innerHTML = '<b>' + TICKER + ' ' + usd2(p) + '</b> · built-in close · live quote unavailable';
   const rb = $('refresh');
   rb.disabled = fetching;
-  rb.textContent = fetching ? 'Checking…' : kind==='manual' ? 'Use market' : kind==='live' ? '↻ Update' : '↻ Try live';
+  rb.textContent = fetching ? 'Checking…' : kind==='demo' ? '↻ Sample' : kind==='manual' ? (DEMO ? 'Use sample' : 'Use market') : kind==='live' ? '↻ Update' : '↻ Try live';
   rb.setAttribute('aria-label', kind==='manual' ? 'Go back to the market price' : 'Try to get a live quote');
 
   if (document.activeElement !== $('price')) $('price').value = p.toFixed(2);
@@ -475,7 +495,7 @@ function render(){
     hp.hidden = false; hp.className = 'chip plain ' + (sell?'psell':'phold'); hp.textContent = 'Plan: ' + (sell?'Sell':'Hold');
     $('hvalK').textContent = sell ? 'Est. after-tax cash from this vest' : 'Est. after-tax value of shares kept';
     $('hvalV').textContent = usd(heroC.netUsd);
-    const pl = kind==='manual' ? 'your price' : kind==='live' ? (liveState==='regular' ? 'live price' : 'last close') : kind==='cached' ? 'last fetched price' : 'last close';
+    const pl = kind==='demo' ? 'sample price' : kind==='manual' ? 'your price' : kind==='live' ? (liveState==='regular' ? 'live price' : 'last close') : kind==='cached' ? 'last fetched price' : 'last close';
     $('hvalS').innerHTML = heroC.net + ' of ' + next.shares + ' shares after ' + heroC.withheld + ' withheld (' + rate + '%)<br>at <span class="num">' + usd2(heroPP) + '</span>/share · ' + pl;
   } else { hv.hidden = true; hp.hidden = true; }
 }
@@ -500,6 +520,7 @@ document.addEventListener('keydown', e => { if (e.key==='Enter' && e.target.matc
 // On any failure the app keeps the last fetched price or the built-in last close.
 const QUOTE_URL = 'https://fd-refresh-relay.vercel.app/api/quote?symbol=' + TICKER;
 async function fetchQuote(){
+  if (DEMO) { render(); return; }   // demo mode never calls the relay
   if (!navigator.onLine) { render(); return; }
   if (fetching) return;
   fetching = true; render();
@@ -572,10 +593,15 @@ function start(data){
 }
 function boot(){
   PinGate.start({ title:'Stonks', icon:'icon-192.png', theme:'dark', lockMount:'.hright', onKey: async (key, kid) => {
+    if (DEMO) return start(demoData());
     const env = await fetchJSON('data.enc');
     if (env.kid !== kid){ const er = new Error('kid'); er.code = 'KID'; throw er; }
     start(await decryptEnv(env, key));
   } });
+  if (window.DemoMode){
+    DemoMode.bindTripleTap(['.wm'], () => DemoMode.toggle('stonks'));
+    if (DEMO) DemoMode.pill('.hright', { where:'start' });
+  }
 }
 boot();
 })();
