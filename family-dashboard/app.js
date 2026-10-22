@@ -527,7 +527,7 @@ function showApp() { $('#app').hidden = false; render(); if (location.hash === '
 
 function boot() {
   PinGate.start({
-    title: 'Family Dashboard', icon: 'icons/icon-192.png', theme: 'dark',
+    title: 'Family Dashboard', icon: 'icons/icon-192.png', theme: 'dark', lockMount: '.top-btns',
     onKey: async (key, kid) => { const k = { key, kid }; DATA = await decryptData(k); KEY = k; lastCheck = Date.now(); showApp(); },
   });
 }

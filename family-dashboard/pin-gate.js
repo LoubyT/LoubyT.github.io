@@ -1,8 +1,10 @@
 /* pin-gate.js — shared 4-digit PIN screen for the family-dashboard, stonks and savings pages.
  * Source of truth: /workspace/pin-gate/pin-gate.js (copied into each app by its build/deploy step).
  * The PIN is checked by the relay (POST /api/unlock). On the right PIN the relay returns the family data key,
- * which is imported as a NON-extractable CryptoKey and kept in memory only — nothing is saved on the phone, so
- * every visit (and every reload, or coming back after 5+ minutes away) asks for the PIN again.
+ * which is imported as a NON-extractable CryptoKey. That CryptoKey (never the raw bytes) is kept in IndexedDB
+ * ('pin-gate-session') with a FIXED expiry of PIN time + 1 hour, shared by all three pages on this origin: within
+ * the hour, reloads and moving between the apps don't ask again. When the hour is up — on load or while a page is
+ * open — the stored key is deleted and the page reloads to the PIN pad. The small lock icon locks right away.
  * Lockouts are enforced on the server; this file only shows them.
  *
  *   PinGate.start({ title, icon, theme: 'dark'|'light', onKey: async (cryptoKey, kid) => {...} })
@@ -12,7 +14,9 @@
   'use strict';
   var URL_ = 'https://fd-refresh-relay.vercel.app/api/unlock';
   var DEV_KEY = 'pin.device', LOCK_KEY = 'pin.lock';
-  var RELOCK_MS = 3e5; // 5 minutes
+  var WINDOW_MS = 36e5; // 1 hour, fixed from the PIN entry (not sliding)
+  var SDB = 'pin-gate-session', SKEY = 'current';
+  var noop = function () {};
   var CSS = [
     '.pg{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top)) 16px max(16px,env(safe-area-inset-bottom));font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,system-ui,sans-serif;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;overflow:auto}',
     '.pg.dark{background:radial-gradient(120% 80% at 50% -10%,#1d2340 0,#0b0d14 60%);color:#eef1f8;--pg-mute:#9aa3b8;--pg-key:rgba(255,255,255,.08);--pg-key-on:rgba(255,255,255,.2);--pg-line:rgba(255,255,255,.35);--pg-fill:#fff;--pg-warn:#ff9fae}',
@@ -32,6 +36,12 @@
     '.pg-pad button.ghost{background:none;font-size:15px;font-weight:600}',
     '.pg-pad button:disabled{opacity:.35;cursor:default}',
     '.pg-pad .sp{visibility:hidden}',
+    '.pg.checking .pg-box{visibility:hidden}',
+    '.pg-lock{align-self:center;display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;padding:0;border-radius:50%;border:0;background:transparent;color:inherit;opacity:.5;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}',
+    '.pg-lock:hover,.pg-lock:focus-visible{opacity:.9}',
+    '.pg-lock svg{width:17px;height:17px;display:block}',
+    '.pg-lock.float{position:fixed;left:max(10px,env(safe-area-inset-left));bottom:max(10px,env(safe-area-inset-bottom));z-index:50}',
+    '.pg-lock.corner{position:absolute;right:max(8px,env(safe-area-inset-right));top:max(8px,env(safe-area-inset-top));z-index:5}',
     '.pg.busy .pg-dots i.on{animation:pgpulse .8s infinite alternate}',
     '.pg.shake .pg-dots{animation:pgshake .4s}',
     '.pg.locked .pg-pad{opacity:.35;pointer-events:none}',
@@ -53,6 +63,24 @@
     }
     return id;
   }
+  // session store: { key: non-extractable CryptoKey, kid, exp } under its own DB name (wipeLegacy never touches it)
+  function sdb(mode, fn) {
+    return new Promise(function (res, rej) {
+      var r; try { r = indexedDB.open(SDB, 1); } catch (e) { return rej(e); }
+      r.onupgradeneeded = function () { r.result.createObjectStore('s'); };
+      r.onerror = function () { rej(r.error); };
+      r.onsuccess = function () {
+        var db = r.result, q;
+        try { var tx = db.transaction('s', mode); q = fn(tx.objectStore('s'));
+          tx.oncomplete = function () { db.close(); res(q && q.result); }; tx.onerror = function () { db.close(); rej(tx.error); };
+        } catch (e) { db.close(); rej(e); }
+      };
+    });
+  }
+  var sGet = function () { return sdb('readonly', function (s) { return s.get(SKEY); }); };
+  var sPut = function (v) { return sdb('readwrite', function (s) { return s.put(v, SKEY); }); };
+  var sDel = function () { return sdb('readwrite', function (s) { return s.delete(SKEY); }); };
+  var bc = null; try { bc = new BroadcastChannel('pin-gate'); } catch (e) {}
   function wipeLegacy() {   // the old long-passcode setup remembered the key in IndexedDB — remove it
     try { ['family-dashboard', 'stonks'].forEach(function (n) { indexedDB.deleteDatabase(n); }); } catch (e) {}
   }
@@ -67,7 +95,7 @@
     if (started) return; started = true;
     wipeLegacy();
     var st = el('style'); st.textContent = CSS; document.head.appendChild(st);
-    var wrap = el('div', 'pg ' + (o.theme === 'light' ? 'light' : 'dark'));
+    var wrap = el('div', 'pg checking ' + (o.theme === 'light' ? 'light' : 'dark'));
     wrap.setAttribute('role', 'dialog'); wrap.setAttribute('aria-modal', 'true'); wrap.setAttribute('aria-labelledby', 'pgTitle');
     var box = el('div', 'pg-box');
     if (o.icon) { var im = el('img', 'pg-icon'); im.src = o.icon; im.alt = ''; box.appendChild(im); }
@@ -136,12 +164,12 @@
         var key;
         try { key = await crypto.subtle.importKey('raw', raw, { name: 'AES-GCM' }, false, ['decrypt']); } finally { raw.fill(0); }
         say('Opening…');
+        var exp = Date.now() + WINDOW_MS;
         try { await o.onKey(key, j.kid); }
         catch (e) { draw(); return say(e && e.code === 'KID' ? 'This page needs an update. Try again in a few minutes.' : 'Couldn’t open it. Check your internet and try again.', true); }
         try { localStorage.removeItem(LOCK_KEY); } catch (e) {}
-        wrap.remove(); document.documentElement.style.overflow = '';
-        watchAway();
-        return;
+        await sPut({ key: key, kid: j.kid, exp: exp }).catch(noop);
+        return opened(exp);
       }
       draw(); shake();
       if (r.status === 401) {
@@ -154,6 +182,25 @@
       if (r.status === 429) return lockFor(j.until, 'ip');
       say('Something went wrong (' + r.status + '). Try again in a minute.', true);
     }
+    function reveal() { wrap.classList.remove('checking'); }
+    function opened(exp) {
+      wrap.remove(); document.documentElement.style.overflow = '';
+      watchExpiry(exp);
+      addLockButton(o);
+    }
+    // 1) a key unlocked within the last hour (on any of the three pages)?
+    (async function () {
+      var s = null; try { s = await sGet(); } catch (e) {}
+      var now = Date.now();
+      if (s && s.key && s.exp > now && s.exp - now <= WINDOW_MS + 6e4) {
+        try { await o.onKey(s.key, s.kid); return opened(s.exp); }
+        catch (e) {
+          if (e && (e.code === 'KID' || e.name === 'OperationError')) await sDel().catch(noop);
+          else { reveal(); return say('Couldn’t open it. Check your internet and try again.', true); }
+        }
+      } else if (s) await sDel().catch(noop);
+      reveal();
+    })();
     document.addEventListener('keydown', function onKey(e) {
       if (!wrap.isConnected) return document.removeEventListener('keydown', onKey);
       if (/^\d$/.test(e.key)) { press(e.key); flash(e.key); e.preventDefault(); }
@@ -161,14 +208,28 @@
     });
     function flash(k) { var b = btn[k]; if (!b) return; b.classList.add('hit'); setTimeout(function () { b.classList.remove('hit'); }, 120); }
   }
-  // coming back after 5+ minutes away counts as a new visit: reload, which asks for the PIN again
-  function watchAway() {
-    var hiddenAt = 0;
-    document.addEventListener('visibilitychange', function () {
-      if (document.hidden) hiddenAt = Date.now();
-      else if (hiddenAt && Date.now() - hiddenAt > RELOCK_MS) location.reload();
-    });
-    addEventListener('pageshow', function (e) { if (e.persisted) location.reload(); });
+  // lock again: forget the stored key everywhere, then reload (clears everything in memory, shows the PIN pad)
+  var locking = false;
+  function lockNow() {
+    if (locking) return; locking = true;
+    sDel().catch(noop).then(function () { try { bc && bc.postMessage('lock'); } catch (e) {} location.reload(); });
   }
-  root.PinGate = { start: start, isOpen: function () { return !!document.querySelector('.pg'); } };
+  function watchExpiry(exp) {
+    function check() { if (Date.now() >= exp) lockNow(); }
+    setTimeout(check, Math.min(Math.max(0, exp - Date.now()) + 250, 2147483000));
+    setInterval(check, 15e3);                                 // timers can be paused in the background
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) check(); });
+    addEventListener('pageshow', check);
+    if (bc) bc.onmessage = function (m) { if (m && m.data === 'lock' && !locking) { locking = true; location.reload(); } };
+  }
+  function addLockButton(o) {
+    if (document.querySelector('.pg-lock')) return;
+    var host = o.lockMount ? document.querySelector(o.lockMount) : null;
+    var b = el('button', 'pg-lock' + (host ? '' : o.lockCorner ? ' corner' : ' float'));
+    b.type = 'button'; b.title = 'Lock now'; b.setAttribute('aria-label', 'Lock now');
+    b.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2.2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+    b.addEventListener('click', lockNow);
+    (host || document.body).appendChild(b);
+  }
+  root.PinGate = { start: start, lock: lockNow, isOpen: function () { return !!document.querySelector('.pg'); } };
 })(window);
