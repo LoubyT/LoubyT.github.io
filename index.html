@@ -24,7 +24,7 @@
     <link rel="apple-touch-icon" href="/images/opt/favicon.png">
     <link rel="preload" href="/fonts/outfit-latin.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" as="image" href="/images/opt/project-hero.webp" type="image/webp" fetchpriority="high">
-    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/style.css?v=20261021">
     <script>
       (function () {
         var n = new Date();
@@ -63,7 +63,6 @@
     <svg class="trace" id="trace" aria-hidden="true" focusable="false">
       <path class="trace-glow" d="M28 0 L28 800"></path>
       <path class="trace-core" pathLength="1000" d="M28 0 L28 800"></path>
-      <circle class="trace-bead" r="4.5" cx="28" cy="0"></circle>
     </svg>
     <svg class="margin-rocket" viewBox="0 0 20 48" aria-hidden="true" focusable="false">
       <path class="rocket-flame" d="M8.2 31.5C8.2 36 6.2 40 10 45.5C13.8 40 11.8 36 11.8 31.5C11.2 33.2 8.8 33.2 8.2 31.5Z"></path>
@@ -120,14 +119,15 @@
                 </picture>
               </a>
               <div class="gate-shade" aria-hidden="true"></div>
+              <div class="gate-glint" aria-hidden="true"></div>
             </div>
-            <div class="reticle" aria-hidden="true"></div>
             <svg class="sweep" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" focusable="false">
               <rect x="1.2" y="1.2" width="97.6" height="97.6" rx="4" pathLength="60"></rect>
             </svg>
-            <div class="gate-meta">
-              <p class="focus-readout" aria-hidden="true"><span>Focus</span> <strong id="focus">070</strong></p>
-              <button class="pulse-btn" id="pulse" type="button">Pulse</button>
+            <div class="gate-chips" aria-hidden="true">
+              <span class="gate-chip gate-chip--helpful">Helpful</span>
+              <span class="gate-chip gate-chip--gray">Gray Area</span>
+              <span class="gate-chip gate-chip--risky">Risky</span>
             </div>
           </div>
 
@@ -277,6 +277,6 @@
       </svg>
     </a>
 
-    <script src="/script.js" defer></script>
+    <script src="/script.js?v=20261021" defer></script>
   </body>
 </html>

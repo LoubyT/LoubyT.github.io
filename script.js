@@ -314,23 +314,11 @@
   var svg = qs("#trace");
   var glow = qs(".trace-glow");
   var core = qs(".trace-core");
-  var bead = qs(".trace-bead");
-  var gate = qs("#gate");
-  var lens = gate ? gate.querySelector(".gate-media") : null;
-  var reticle = gate ? gate.querySelector(".reticle") : null;
-  var focusEl = qs("#focus");
   var portrait = qs(".about-portrait img");
   var pointerX = window.innerWidth * 0.72;
   var pointerY = window.innerHeight * 0.28;
   var pointerOn = false;
   var docH = 0;
-  var gateRect = null;
-  var lastFocus = "";
-  var pulsing = false;
-  var pulseStart = 0;
-  var pulsePts = null;
-  var stationYs = [];
-  var pinged = [];
   var raf = 0;
   var lastDraw = 0;
 
@@ -340,26 +328,6 @@
     var w = window.innerWidth;
     svg.setAttribute("viewBox", "0 0 " + w + " " + docH);
     svg.style.height = docH + "px";
-    if (gate && lens) gateRect = lens.getBoundingClientRect();
-  }
-
-  function cacheStations() {
-    stationYs = qsa("[data-station]").map(function (el) {
-      return { el: el, y: el.getBoundingClientRect().top + window.scrollY };
-    });
-  }
-
-  function pointAt(pts, y) {
-    if (!pts.length) return { x: 24, y: y };
-    if (y <= pts[0].y) return pts[0];
-    for (var i = 0; i < pts.length - 1; i++) {
-      var a = pts[i], b = pts[i + 1];
-      if (y <= b.y) {
-        var t = (y - a.y) / Math.max(1, b.y - a.y);
-        return { x: a.x + (b.x - a.x) * t, y: y };
-      }
-    }
-    return pts[pts.length - 1];
   }
 
   function buildPoints(now) {
@@ -398,49 +366,6 @@
     return d;
   }
 
-  function setFocus(value) {
-    if (!focusEl) return;
-    var shown = String(Math.max(0, Math.min(100, Math.round(value)))).padStart(3, "0");
-    if (shown !== lastFocus) {
-      focusEl.textContent = shown;
-      lastFocus = shown;
-    }
-  }
-
-  function updateLens(now) {
-    if (!lens) return;
-    var lx = 50, ly = 46;
-    if (reduce) {
-      lx = 50; ly = 46;
-      setFocus(100);
-    } else if (!fine || !pointerOn || !gateRect || gateRect.width < 2) {
-      lx = 50 + Math.sin(now / 1800) * 10;
-      ly = 46 + Math.cos(now / 2200) * 7;
-      setFocus(70 + Math.sin(now / 900) * 8);
-    } else {
-      lx = ((pointerX - gateRect.left) / gateRect.width) * 100;
-      ly = ((pointerY - gateRect.top) / gateRect.height) * 100;
-      lx = Math.max(8, Math.min(92, lx));
-      ly = Math.max(8, Math.min(78, ly));
-      var cx = gateRect.left + gateRect.width / 2;
-      var cy = gateRect.top + gateRect.height / 2;
-      var dist = Math.hypot(pointerX - cx, pointerY - cy);
-      var reach = Math.max(gateRect.width, gateRect.height);
-      setFocus(100 * (1 - Math.min(1, dist / (reach * 1.15))));
-    }
-    lens.style.setProperty("--lx", lx.toFixed(1) + "%");
-    lens.style.setProperty("--ly", ly.toFixed(1) + "%");
-    if (reticle && gateRect) {
-      var half = (reticle.offsetWidth || 64) / 2;
-      var x = (lx / 100) * gateRect.width;
-      var y = (ly / 100) * gateRect.height;
-      var maxY = Math.max(half + 8, gateRect.height - 72 - half);
-      if (y > maxY) y = maxY;
-      if (y < half) y = half;
-      reticle.style.transform = "translate3d(" + x.toFixed(1) + "px," + y.toFixed(1) + "px,0) translate(-50%,-50%)";
-    }
-  }
-
   function updateProgress() {
     if (!core) return;
     var h = docH || 1;
@@ -455,9 +380,7 @@
     var d = pathFrom(pts);
     glow.setAttribute("d", d);
     core.setAttribute("d", d);
-    pulsePts = pts;
     updateProgress();
-    updateLens(now || 0);
 
     if (!reduce && fine && portrait && pointerOn) {
       var ox = (pointerX / window.innerWidth - 0.5) * 12;
@@ -465,29 +388,7 @@
       portrait.style.transform = "translate3d(" + ox.toFixed(1) + "px," + oy.toFixed(1) + "px,0)";
     }
 
-    if (pulsing && pulsePts && bead) {
-      var t = Math.min(1, (now - pulseStart) / 1700);
-      var eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
-      var y = eased * (docH || 0);
-      var p = pointAt(pulsePts, y);
-      bead.setAttribute("cx", p.x.toFixed(1));
-      bead.setAttribute("cy", p.y.toFixed(1));
-      bead.style.opacity = "1";
-      root.style.setProperty("--px", p.x.toFixed(1) + "px");
-      root.style.setProperty("--py", (p.y - window.scrollY).toFixed(1) + "px");
-      stationYs.forEach(function (st, i) {
-        if (pinged[i]) return;
-        if (st.y <= y + 8) {
-          pinged[i] = true;
-          st.el.classList.add("ping");
-          setTimeout(function () { st.el.classList.remove("ping"); }, 700);
-        }
-      });
-      if (t >= 1) {
-        pulsing = false;
-        bead.style.opacity = "0";
-      }
-    } else if (!reduce) {
+    if (!reduce) {
       root.style.setProperty("--px", pointerX.toFixed(1) + "px");
       root.style.setProperty("--py", pointerY.toFixed(1) + "px");
     }
@@ -499,32 +400,6 @@
     lastDraw = now;
     draw(now);
   }
-
-  function startPulse() {
-    cacheStations();
-    if (reduce) {
-      stationYs.forEach(function (st) {
-        st.el.classList.add("ping");
-        setTimeout(function () { st.el.classList.remove("ping"); }, 450);
-      });
-      return;
-    }
-    if (pulsing) return;
-    pulsing = true;
-    pulseStart = performance.now();
-    pinged = stationYs.map(function () { return false; });
-  }
-
-  var pulseBtn = qs("#pulse");
-  if (pulseBtn) pulseBtn.addEventListener("click", startPulse);
-
-  document.addEventListener("keydown", function (e) {
-    if (e.key !== "p" && e.key !== "P") return;
-    var tag = (e.target.tagName || "").toLowerCase();
-    if (tag === "input" || tag === "textarea" || e.target.isContentEditable) return;
-    if (e.metaKey || e.ctrlKey || e.altKey) return;
-    startPulse();
-  });
 
   window.addEventListener("pointermove", function (e) {
     pointerX = e.clientX;
@@ -543,13 +418,11 @@
 
   window.addEventListener("scroll", function () {
     toggleTop();
-    if (lens) gateRect = lens.getBoundingClientRect();
     updateProgress();
   }, { passive: true });
 
   window.addEventListener("resize", function () {
     measure();
-    cacheStations();
     syncTime(false);
   });
 
@@ -558,7 +431,6 @@
   }
 
   measure();
-  cacheStations();
   toggleTop();
   draw(reduce ? 0 : performance.now());
   if (!reduce) raf = requestAnimationFrame(frame);
