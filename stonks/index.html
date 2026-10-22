@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-EEI1KONUDtlYbQukJkXl2UXS6aOq61ZdJhlMQTMGNns='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://fd-refresh-relay.vercel.app; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-DnbrCja1+0DB7oDO+vAFqYcWbfFkri7cg4NA2CtB77c='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://fd-refresh-relay.vercel.app; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
 <meta name="robots" content="noindex, nofollow, noarchive">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -307,10 +307,10 @@ const DEMO_PRICE = 118.4;
 function demoData(){
   const now = new Date(), y = now.getFullYear(), m = now.getMonth();
   const at = mo => { const d = new Date(y, m + mo, 15); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-15'; };
-  const a = [{ date: at(-2), shares: 640 }]; for (let q = 1; q <= 12; q++) a.push({ date: at(-2 + 3*q), shares: 160 });
-  const b = []; for (let q = 0; q < 8; q++) b.push({ date: at(4 + 3*q), shares: 90 });
+  const a = [{ date: at(-2), shares: 540 }]; for (let q = 1; q <= 12; q++) a.push({ date: at(-2 + 3*q), shares: 135 });
+  const b = []; for (let q = 0; q < 8; q++) b.push({ date: at(4 + 3*q), shares: 45 });
   return {
-    grants: [{ name: 'Sample new-hire grant', total: 2560, schedule: a }, { name: 'Sample refresh grant', total: 720, schedule: b }],
+    grants: [{ name: 'Sample new-hire grant', total: 2160, schedule: a }, { name: 'Sample refresh grant', total: 360, schedule: b }],
     rateHint: 'Demo mode: made-up grants and price. Try any rate.',
     taxNotes: ['<b>Sample notes.</b> Everything on this page is made up for the demo: the grants, the share counts, the dates and the price.',
       'With sell-to-cover, shares are withheld at the rate above (rounded up to whole shares); the rest are yours to sell or hold.']
