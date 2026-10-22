@@ -9,6 +9,13 @@ const b64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
 /* ---------------- key: from the 4-digit PIN (pin-gate.js), held in memory only ---------------- */
 let KEY = null; // { key: non-extractable CryptoKey, kid } — never stored on the phone
 
+/* ---------------- demo mode (demo-mode.js + demo-data.js) ----------------
+ * Triple-tap the greeting to switch. In demo mode the PIN is still required, but data.enc is never fetched or
+ * decrypted: the page shows made-up sample numbers built on the phone, never calls the refresh relay and saves nothing. */
+const DEMO_APP = 'family-dashboard';
+const DEMO = !!(window.DemoMode && window.FDDemo && DemoMode.isOn(DEMO_APP));
+const demoData = () => FDDemo.build(isoDay(today0()));
+
 async function fetchJSON(url) {
   const r = await fetch(url + '?t=' + Date.now(), { cache: 'no-store' });
   if (!r.ok) throw new Error(url + ' ' + r.status);
@@ -229,7 +236,7 @@ function render() {
 
   $('#updated').textContent = lastUpdatedText(d.updated_at || d.published_at);
   if (typeof lrRender === 'function') lrRender();
-  $('#foot').textContent = 'Private & encrypted';
+  $('#foot').textContent = DEMO ? 'Demo · made-up sample numbers' : 'Private & encrypted';
   animateIn();
 }
 
@@ -528,8 +535,12 @@ function showApp() { $('#app').hidden = false; render(); if (location.hash === '
 function boot() {
   PinGate.start({
     title: 'Family Dashboard', icon: 'icons/icon-192.png', theme: 'dark', lockMount: '.top-btns',
-    onKey: async (key, kid) => { const k = { key, kid }; DATA = await decryptData(k); KEY = k; lastCheck = Date.now(); showApp(); },
+    onKey: async (key, kid) => { const k = { key, kid }; DATA = DEMO ? demoData() : await decryptData(k); KEY = k; lastCheck = Date.now(); showApp(); },
   });
+  if (window.DemoMode) {
+    DemoMode.bindTripleTap(['#hello', '#today'], () => DemoMode.toggle(DEMO_APP));
+    if (DEMO) DemoMode.pill('.top-btns', { where: 'start', margin: '0 2px 0 0' });
+  }
 }
 
 /* ---------------- refresh: button, pull-to-refresh, foreground, timer ---------------- */
@@ -541,7 +552,7 @@ async function refreshData({ silent = false } = {}) {
   if (!silent) $('#app').classList.add('refreshing');
   try {
     if (!KEY) return;
-    const fresh = await decryptData(KEY); // data.enc?t=<now>, cache:'no-store'; SW is network-first for it
+    const fresh = DEMO ? demoData() : await decryptData(KEY); // data.enc?t=<now>, cache:'no-store'; SW is network-first for it
     const changed = sig(fresh) !== sig(DATA);
     DATA = fresh;
     if (changed || !silent) {
@@ -568,7 +579,7 @@ $('#refreshTop').addEventListener('click', () => { checkForUpdate(); onRefreshTa
  * re-fetch the current numbers — never pretend it worked. Pull-to-refresh stays a plain re-fetch. */
 const LR_KEY = 'fd:refresh:tap';
 let lrTimer = null, lrNote = '';
-const lrCfg = () => (DATA && DATA.refresh && DATA.refresh.url ? DATA.refresh : null);
+const lrCfg = () => (!DEMO && DATA && DATA.refresh && DATA.refresh.url ? DATA.refresh : null); // never in demo mode
 const hm = (ms) => new Date(ms).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 function lrState(now = Date.now()) {
   let tap = ''; try { tap = localStorage.getItem(LR_KEY) || ''; } catch {}
@@ -598,7 +609,7 @@ async function lrPoll() {
 }
 async function onRefreshTap() {
   const cfg = lrCfg();
-  if (!cfg) return refreshData();                       // no live refresh configured → plain re-fetch
+  if (!cfg || DEMO) return refreshData();               // no live refresh configured (or demo) → plain re-fetch / rebuild
   if (lrState().kind !== 'idle') return lrRender();
   const btn = $('#refreshTop'); btn.disabled = true; btn.classList.add('spin'); lrNote = '';
   $('#refreshStatus').textContent = 'Asking for an update…'; $('#refreshStatus').hidden = false;
