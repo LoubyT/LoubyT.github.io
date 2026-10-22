@@ -94,6 +94,7 @@ function ring(size, stroke, frac, colors, inner) {
 /* ---------------- render ---------------- */
 let DATA = null;
 function render() {
+  FDLogos.setRules(DATA && DATA.logo_rules); // private payee marks travel in the encrypted data (none in demo)
   const d = DATA, t = today0(), now = new Date();
   const h = now.getHours();
   $('#hello').textContent = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
@@ -217,21 +218,21 @@ function render() {
     ${hasPh ? '<div class="lbl" style="margin-top:8px">Some amounts are still placeholders.</div>' : ''}</div>`;
   $('#summary').classList.add('reveal');
 
-  /* dental fund */
-  const df = d.dental_fund;
-  $('#dentalSec').hidden = !df;
+  /* savings goal (its name and emoji come from the data) */
+  const df = d.savings_goal;
+  $('#goalSec').hidden = !df;
   if (df) {
     const bal = df.balance ?? 0, goal = df.goal, td = parseD(df.target_date);
     const daysLeft = Math.max(0, daysBetween(t, td)), weeks = Math.max(1, daysLeft / 7), months = Math.max(1, daysLeft / 30.44);
     const need = Math.max(0, goal - bal), frac = goal ? bal / goal : 0;
-    $('#dental').innerHTML = `<h3>🦷 ${esc(df.name || 'Savings goal')}${df.placeholder ? '<span class="badge ph">Balance TBD</span>' : ''}</h3>
+    $('#goal').innerHTML = `<h3>${df.icon ? esc(df.icon) + ' ' : ''}${esc(df.name || 'Savings goal')}${df.placeholder ? '<span class="badge ph">Balance TBD</span>' : ''}</h3>
       <div class="sub">Goal ${usd(goal)} by ${fmtD(td, { month: 'long', day: 'numeric', year: 'numeric' })}</div>
       <div class="amt"><b data-money="${bal}">${usd(0)}</b><span>saved of ${usd(goal)}</span></div>
       <div class="track"><i data-w="${Math.min(100, frac * 100)}"></i></div>
       <div class="ticks"><span>${usd(0)}</span><span>${usd(goal / 2)}</span><span>${usd(goal)}</span></div>
       <div class="pace"><div>Still needed<b>${usd(need)}</b></div><div>Per week<b>${usdSmart(Math.ceil(need / weeks * 100) / 100)}</b></div><div>Per month<b>${usd(Math.ceil(need / months))}</b></div><div>Days left<b>${daysLeft}</b></div></div>
       ${df.note ? `<div class="sub" style="margin-top:10px">${esc(df.note)}</div>` : ''}`;
-    $('#dental').classList.add('reveal');
+    $('#goal').classList.add('reveal');
   }
 
   $('#updated').textContent = lastUpdatedText(d.updated_at || d.published_at);

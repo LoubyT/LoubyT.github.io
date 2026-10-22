@@ -72,9 +72,9 @@
   // Per-period budget for a tracked line (used by publish.js; pure, no rounding beyond whole cents).
   // Order: 1) actual.budget from the source (explicit — left as given, or budget − spent if left is missing);
   //        2) a source left that is NOT simply "flat amount − spent" (the source already used its own period amount,
-  //           e.g. two units bought in one order) → kept, budget = spent + left;
+  //           e.g. a bulk purchase) → kept, budget = spent + left;
   //        3) the planned timeline "spending" rows for this line dated period_start..period_end (matched by name,
-  //           e.g. "Groceries", "Bob's snacks" = "Bob snacks", "Pets (food + litter)" = "Pets") → budget = their sum, left = budget − spent;
+  //           e.g. "Groceries", "Kid's snacks" = "Kid snacks", "Coffee (beans + filters)" = "Coffee") → budget = their sum, left = budget − spent;
   //        4) otherwise the flat amount (left exactly as given).
   // left = null (line not started) always stays null.
   const nameKey = (v) => String(v || '').toLowerCase().replace(/\([^)]*\)/g, ' ').replace(/['\u2019]s\b/g, '').replace(/[^a-z0-9]+/g, ' ').trim();

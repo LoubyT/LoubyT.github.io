@@ -129,20 +129,20 @@ p.stale-note{margin:0 4px 12px}
 .ring .pct small{font-size:10px;font-weight:600;color:var(--dim);display:block;margin-top:2px;letter-spacing:.06em;text-transform:uppercase}
 .fine{color:var(--faint);font-size:13px;text-align:center;margin:14px 10px 0}
 
-/* dental */
-.dental{padding:20px}
-.dental h3{margin:0 0 2px;font-size:19px}
-.dental .sub{color:var(--dim);font-size:14px}
-.dental .amt{display:flex;align-items:baseline;gap:8px;margin:16px 0 10px}
-.dental .amt b{font-size:34px;letter-spacing:-.03em}
-.dental .amt span{color:var(--dim)}
+/* savings goal */
+.goal{padding:20px}
+.goal h3{margin:0 0 2px;font-size:19px}
+.goal .sub{color:var(--dim);font-size:14px}
+.goal .amt{display:flex;align-items:baseline;gap:8px;margin:16px 0 10px}
+.goal .amt b{font-size:34px;letter-spacing:-.03em}
+.goal .amt span{color:var(--dim)}
 .track{height:18px;border-radius:99px;background:rgba(255,255,255,.07);overflow:hidden;position:relative}
 .track i{position:absolute;inset:0 auto 0 0;width:0;border-radius:99px;background:linear-gradient(90deg,#2ee6c5,#4da3ff,#8b7bff);transition:width 1.8s var(--ease);min-width:18px}
 .track i::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);transform:translateX(-100%);animation:shine 3s ease-in-out 1.8s infinite}
 .ticks{display:flex;justify-content:space-between;color:var(--faint);font-size:12px;margin-top:6px}
-.dental .pace{margin-top:14px;display:flex;gap:10px;flex-wrap:wrap}
-.dental .pace div{flex:1;min-width:120px;background:rgba(255,255,255,.05);border-radius:14px;padding:10px 12px;font-size:13px;color:var(--dim)}
-.dental .pace b{display:block;color:var(--txt);font-size:18px;margin-top:2px}
+.goal .pace{margin-top:14px;display:flex;gap:10px;flex-wrap:wrap}
+.goal .pace div{flex:1;min-width:120px;background:rgba(255,255,255,.05);border-radius:14px;padding:10px 12px;font-size:13px;color:var(--dim)}
+.goal .pace b{display:block;color:var(--txt);font-size:18px;margin-top:2px}
 .foot{color:var(--faint);font-size:12px;text-align:center;margin-top:26px}
 
 /* sheet */

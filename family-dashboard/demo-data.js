@@ -14,20 +14,20 @@
   const sum = (a) => a.reduce((t, x) => t + cents(x), 0) / 100;
   const onDay = (y, m, day) => new Date(y, m, Math.min(day, new Date(y, m + 1, 0).getDate()));
 
-  const PAY = 2688.4, START_BAL = 1212.48, ACCT = 'Checking';
+  const PAY = 4215.6, START_BAL = 1674.2, ACCT = 'Checking';
   const BILLS = [
-    { id: 'rent', name: 'Rent', amount: 1385, due_day: 1, protected: true, icon: '🏠' },
-    { id: 'health', name: 'Health insurance', amount: 412.3, due_day: 16, protected: true, autopay: true, icon: '🩺' },
-    { id: 'daycare', name: 'Daycare', amount: 640, due_day: 19, protected: true, icon: '🧸' },
-    { id: 'music', name: 'Music streaming', amount: 11.99, due_day: 6, autopay: true, icon: '🎵' },
-    { id: 'internet', name: 'Internet', amount: 69.99, due_day: 9, autopay: true, icon: '📶' },
-    { id: 'car-insurance', name: 'Car insurance', amount: 136.75, due_day: 13, autopay: true, icon: '🚗' },
-    { id: 'gym', name: 'Gym', amount: 29, due_day: 15, autopay: true, icon: '🏋️' },
-    { id: 'electric', name: 'Electric', amount: 118.36, due_day: 18, icon: '💡' },
-    { id: 'phone', name: 'Phone plan', amount: 92.4, due_day: 21, autopay: true, icon: '📱' },
-    { id: 'water', name: 'Water & trash', amount: 47.2, due_day: 24, icon: '🚰' },
+    { id: 'rent', name: 'Rent', amount: 1645, due_day: 1, protected: true, icon: '🏠' },
+    { id: 'health', name: 'Health insurance', amount: 568.4, due_day: 16, protected: true, autopay: true, icon: '🩺' },
+    { id: 'daycare', name: 'Daycare', amount: 884, due_day: 19, protected: true, icon: '🧸' },
+    { id: 'music', name: 'Music streaming', amount: 16.49, due_day: 6, autopay: true, icon: '🎵' },
+    { id: 'internet', name: 'Internet', amount: 89.95, due_day: 9, autopay: true, icon: '📶' },
+    { id: 'car-insurance', name: 'Car insurance', amount: 188.7, due_day: 13, autopay: true, icon: '🚗' },
+    { id: 'gym', name: 'Gym', amount: 39.5, due_day: 15, autopay: true, icon: '🏋️' },
+    { id: 'electric', name: 'Electric', amount: 121.3, due_day: 18, icon: '💡' },
+    { id: 'phone', name: 'Phone plan', amount: 127.6, due_day: 21, autopay: true, icon: '📱' },
+    { id: 'water', name: 'Water & trash', amount: 65.15, due_day: 24, icon: '🚰' },
   ];
-  const GROC = [64.18, 23.47, 41.09, 12.86, 37.52], GROC_AT = ['Fresh Fields Market', 'Corner Grocer', 'Fresh Fields Market', 'Bakery on Fifth', 'Corner Grocer'];
+  const GROC = [53.52, 19.49, 34.14, 10.68, 31.12], GROC_AT = ['Fresh Fields Market', 'Corner Grocer', 'Fresh Fields Market', 'Bakery on Fifth', 'Corner Grocer'];
 
   function build(todayIso) {
     const T = pd(todayIso);
@@ -43,10 +43,10 @@
       const s = iso(d), dow = d.getDay(), dom = d.getDate();
       if (paydays.some((p) => +p === +d)) {
         L.push({ date: s, type: 'income', name: 'Paycheck · Northwind Co.', amount: PAY, direction: 'in', account: ACCT });
-        L.push({ date: s, type: 'savings', name: 'Braces fund', amount: 75, direction: 'out', account: ACCT, note: 'Every payday' });
-        L.push({ date: s, type: 'transfer', name: 'Move to joint savings', amount: 140, account: 'Checking → Joint savings' });
+        L.push({ date: s, type: 'savings', name: 'Braces fund', amount: 104, direction: 'out', account: ACCT, note: 'Every payday' });
+        L.push({ date: s, type: 'transfer', name: 'Move to joint savings', amount: 1365, account: 'Checking → Joint savings' });
       }
-      if (dom === 20) L.push({ date: s, type: 'income', name: 'Tutoring', amount: 172.5, direction: 'in', account: ACCT, estimated: true });
+      if (dom === 20) L.push({ date: s, type: 'income', name: 'Tutoring', amount: 238, direction: 'in', account: ACCT, estimated: true });
       for (const b of BILLS) { // the electric bill is always paid two days before it's due
         const early = b.id === 'electric' ? 2 : 0, due = add(d, early);
         if (+onDay(due.getFullYear(), due.getMonth(), b.due_day) === +due)
@@ -54,13 +54,13 @@
       }
       if (dow === 6) { // Saturday shop; one bigger stock-up week three weeks out
         const big = days(T, d) >= 15 && days(T, d) <= 21;
-        L.push({ date: s, type: 'spending', name: 'Groceries', amount: big ? 240 : 180, direction: 'out', account: ACCT, ...(big ? { note: 'Stock-up week' } : {}) });
+        L.push({ date: s, type: 'spending', name: 'Groceries', amount: big ? 206.5 : 152.5, direction: 'out', account: ACCT, ...(big ? { note: 'Stock-up week' } : {}) });
       }
-      if (dow === 1) L.push({ date: s, type: 'spending', name: 'Gas', amount: 68, direction: 'out', account: ACCT });
-      if (dow === 5) L.push({ date: s, type: 'spending', name: 'Dining out', amount: 60, direction: 'out', account: ACCT });
-      if (dom === 3) L.push({ date: s, type: 'spending', name: 'Kids activities', amount: 90, direction: 'out', account: ACCT });
-      if (dom === 7) L.push({ date: s, type: 'spending', name: 'Biscuit (dog)', amount: 55, direction: 'out', account: ACCT });
-      if (dom === 11) L.push({ date: s, type: 'spending', name: 'Household', amount: 70, direction: 'out', account: ACCT });
+      if (dow === 1) L.push({ date: s, type: 'spending', name: 'Gas', amount: 93.6, direction: 'out', account: ACCT });
+      if (dow === 5) L.push({ date: s, type: 'spending', name: 'Dining out', amount: 83, direction: 'out', account: ACCT });
+      if (dom === 3) L.push({ date: s, type: 'spending', name: 'Kids activities', amount: 124, direction: 'out', account: ACCT });
+      if (dom === 7) L.push({ date: s, type: 'spending', name: 'Biscuit (dog)', amount: 76, direction: 'out', account: ACCT });
+      if (dom === 11) L.push({ date: s, type: 'spending', name: 'Household', amount: 97, direction: 'out', account: ACCT });
     }
     let bal = START_BAL;
     for (const e of L) {
@@ -92,13 +92,13 @@
       { id: 'maya-bday', name: 'Maya’s birthday', date: '2017-03-14', kind: 'birthday', repeat: 'yearly', icon: '🎂' },
       { id: 'theo-bday', name: 'Theo’s birthday', date: '2021-12-09', kind: 'birthday', repeat: 'yearly', icon: '🎈' },
       { id: 'sam-bday', name: 'Sam’s birthday', date: '1989-06-30', kind: 'birthday', repeat: 'yearly', icon: '🎁' },
-      { id: 'lake', name: 'Lake weekend', date: iso(lake), end_date: iso(add(lake, 2)), kind: 'event', repeat: 'once', icon: '🏕️', budget: 435, estimated: true },
-      { id: 'book-fair', name: 'School book fair', date: iso(fair), kind: 'event', repeat: 'once', icon: '📚', budget: 35 },
+      { id: 'lake', name: 'Lake weekend', date: iso(lake), end_date: iso(add(lake, 2)), kind: 'event', repeat: 'once', icon: '🏕️', budget: 600, estimated: true },
+      { id: 'book-fair', name: 'School book fair', date: iso(fair), kind: 'event', repeat: 'once', icon: '📚', budget: 48 },
       { id: 'dentist', name: 'Dentist check-up', date: iso(dentist), kind: 'event', repeat: 'once', icon: '🦷' },
     ];
     const timeline = L.filter((e) => e.date >= todayIso).map((e) => ({ ...e }));
-    timeline.push({ date: iso(lake), end_date: iso(add(lake, 2)), type: 'event', name: 'Lake weekend', amount: 435, estimated: true, note: 'Paid from the fun envelope',
-      breakdown: [{ item: 'Cabin, 2 nights', amount: 260, when: iso(lake) }, { item: 'Food & snacks', amount: 125 }, { item: 'Gas', amount: 50, note: 'Round trip' }] });
+    timeline.push({ date: iso(lake), end_date: iso(add(lake, 2)), type: 'event', name: 'Lake weekend', amount: 600, estimated: true, note: 'Paid from the fun envelope',
+      breakdown: [{ item: 'Cabin, 2 nights', amount: 359, when: iso(lake) }, { item: 'Food & snacks', amount: 172 }, { item: 'Gas', amount: 69, note: 'Round trip' }] });
     timeline.sort((a, b) => a.date.localeCompare(b.date));
 
     // budget lines with tracked spending (this week / this month / this paycheck)
@@ -116,12 +116,12 @@
       return c;
     };
     const categories = [
-      line({ id: 'groceries', name: 'Groceries', amount: 180, period: 'week', icon: '🛒' }, wkS, wkE, tx(wkS, wkE, 2, GROC, GROC_AT)),
-      line({ id: 'dining', name: 'Dining out', amount: 60, period: 'week', icon: '🌮' }, wkS, wkE, tx(add(wkS, 1), wkE, 3, [18.4, 26.15], ['Taco Truck', 'Pizza Place'])),
-      line({ id: 'gas', name: 'Gas', amount: 136, period: 'paycheck', icon: '⛽' }, curPay, payE, tx(add(curPay, 1), payE, 5, [41.22, 38.9], ['Gas station'])),
-      line({ id: 'kids', name: 'Kids activities', amount: 90, period: 'month', icon: '🎨' }, moS, moE, tx(add(moS, 2), moE, 12, [45, 16.48], ['Swim lessons', 'Art supplies'])),
-      line({ id: 'pet', name: 'Biscuit (dog)', amount: 55, period: 'month', icon: '🐶' }, moS, moE, tx(add(moS, 6), moE, 14, [32.99, 14.5], ['Pet supply store', 'Dog park pass'])),
-      { id: 'household', name: 'Household', amount: 70, period: 'month', icon: '🧺', note: 'Cleaning stuff, paper goods' },
+      line({ id: 'groceries', name: 'Groceries', amount: 152.5, period: 'week', icon: '🛒' }, wkS, wkE, tx(wkS, wkE, 2, GROC, GROC_AT)),
+      line({ id: 'dining', name: 'Dining out', amount: 83, period: 'week', icon: '🌮' }, wkS, wkE, tx(add(wkS, 1), wkE, 3, [25.39, 36.09], ['Taco Truck', 'Pizza Place'])),
+      line({ id: 'gas', name: 'Gas', amount: 187.2, period: 'paycheck', icon: '⛽' }, curPay, payE, tx(add(curPay, 1), payE, 5, [56.88, 53.68], ['Gas station'])),
+      line({ id: 'kids', name: 'Kids activities', amount: 124, period: 'month', icon: '🎨' }, moS, moE, tx(add(moS, 2), moE, 12, [62.1, 22.74], ['Swim lessons', 'Art supplies'])),
+      line({ id: 'pet', name: 'Biscuit (dog)', amount: 76, period: 'month', icon: '🐶' }, moS, moE, tx(add(moS, 6), moE, 14, [45.53, 20.01], ['Pet supply store', 'Dog park pass'])),
+      { id: 'household', name: 'Household', amount: 97, period: 'month', icon: '🧺', note: 'Cleaning stuff, paper goods' },
       { id: 'fun', name: 'Fun money', amount: null, period: 'paycheck', icon: '🎉', placeholder: true },
     ];
     for (const c of categories) {
@@ -154,7 +154,7 @@
       v: 1, sample: false, demo: true, updated_at: stamp,
       categories, bills,
       paychecks: { frequency: 'list', dates },
-      dental_fund: { name: 'Braces fund', goal: 4200, balance: 1640, placeholder: false, target_date: iso(target), note: 'For Maya — a little every payday' },
+      savings_goal: { name: 'Braces fund', goal: 5800, balance: 2265, target_date: iso(target), placeholder: false, note: 'For Maya — a little every payday', icon: '🦷' },
       events, timeline, published_at: stamp,
     };
   }
