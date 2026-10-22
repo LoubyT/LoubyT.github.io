@@ -1,5 +1,5 @@
 // Bump VERSION whenever app files change so phones pick up the update.
-const VERSION = 'deals-v8';
+const VERSION = 'deals-v9';
 // The OCR engine (~7 MB) is NOT precached. It is cached on first use, in its own
 // cache that survives app updates (bump only when vendor/tesseract changes).
 const OCR_CACHE = 'deals-ocr-tesseract7';

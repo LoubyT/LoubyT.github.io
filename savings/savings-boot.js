@@ -11,7 +11,7 @@
     return new Promise(function (res, rej) { var s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = function () { rej(new Error(src)); }; document.body.appendChild(s); });
   }
   PinGate.start({
-    title: 'Deals', icon: 'icons/icon-192.png', theme: 'light',
+    title: 'Deals', icon: 'icons/icon-192.png', theme: 'light', lockCorner: true,
     onKey: async function (key, kid) {
       var r = await fetch('data/usuals.enc?t=' + Date.now(), { cache: 'no-store' });
       if (!r.ok) throw new Error('usuals ' + r.status);

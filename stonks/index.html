@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-p9PnJx+QnRQ9FG7VBWyW/QTyIEW908maLQQ8K4YWb8U='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://fd-refresh-relay.vercel.app; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-NIJk9e/+JblekgnWonX0rAyhUoxx80kmiZSqE2n+WOY='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://fd-refresh-relay.vercel.app; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
 <meta name="robots" content="noindex, nofollow, noarchive">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -571,7 +571,7 @@ function start(data){
   addEventListener('online', fetchQuote);
 }
 function boot(){
-  PinGate.start({ title:'Stonks', icon:'icon-192.png', theme:'dark', onKey: async (key, kid) => {
+  PinGate.start({ title:'Stonks', icon:'icon-192.png', theme:'dark', lockMount:'.hright', onKey: async (key, kid) => {
     const env = await fetchJSON('data.enc');
     if (env.kid !== kid){ const er = new Error('kid'); er.code = 'KID'; throw er; }
     start(await decryptEnv(env, key));
