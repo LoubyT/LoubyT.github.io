@@ -378,13 +378,23 @@ function openEvent(idx) {
   };
   const items = e.breakdown.filter((it) => it.paid !== true).map(bRow).join('') + e.breakdown.filter((it) => it.paid === true).map(bRow).join('');
   const rem = typeof e.remaining === 'number' ? e.remaining : (typeof e.spent === 'number' && typeof e.amount === 'number' ? Math.round((e.amount - e.spent) * 100) / 100 : null);
-  const spentBox = typeof e.spent === 'number' ? `<div class="pc-sum ev-spent"><div><span>Spent</span><b>${esc(exactMoney(e.spent))}</b></div>${rem != null ? `<div class="${rem < 0 ? 'neg' : 'pos'}"><span>Remaining</span><b>${esc(signed(rem))}</b></div>` : ''}</div>` : '';
+  // spent vs remaining donut (replaces the "Paid with" text when spending is tracked)
+  const spentBox = (() => {
+    if (typeof e.spent !== 'number') return '';
+    const tot = typeof e.amount === 'number' && e.amount > 0 ? e.amount : e.spent + Math.max(rem || 0, 0);
+    const over = rem != null && rem < 0;
+    const frac = tot > 0 ? Math.min(e.spent / tot, 1) : 0, C = 2 * Math.PI * 42;
+    const ring = `<svg class="ev-donut" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="42" class="dn-bg"/>${frac > 0 ? `<circle cx="50" cy="50" r="42" class="dn-spent${over ? ' over' : ''}" stroke-dasharray="${(frac * C).toFixed(2)} ${C.toFixed(2)}" transform="rotate(-90 50 50)"/>` : ''}</svg>`;
+    const mid = `<div class="dn-mid"><b>${esc(exactMoney(over ? -rem : (rem != null ? rem : 0)))}</b><span>${over ? 'over' : 'left'}</span></div>`;
+    const leg = `<div class="dn-leg"><div><i class="sw-spent"></i><span>Spent</span><b>${esc(exactMoney(e.spent))}</b></div>${rem != null ? `<div class="${over ? 'neg' : 'pos'}"><i class="sw-left"></i><span>${over ? 'Over' : 'Remaining'}</span><b>${esc(exactMoney(Math.abs(rem)))}</b></div>` : ''}<p>${Math.round(frac * 100)}% of the budget used</p></div>`;
+    return `<div class="ev-chart" role="img" aria-label="Spent ${esc(exactMoney(e.spent))}${rem != null ? ', ' + (over ? 'over by ' : 'remaining ') + esc(exactMoney(Math.abs(rem))) : ''}"><div class="dn-wrap">${ring}${mid}</div>${leg}</div>`;
+  })();
   const diff = chk && !chk.matches ? `<p class="ev-diff">Note: the items add up to ${esc(exactMoney(chk.sumCents / 100))}, and the event total is ${e.amount == null ? 'not set' : esc(exactMoney(e.amount))}. Both are shown exactly as planned.</p>` : '';
   $('#evBody').innerHTML = `<h3 id="evTitle">${esc(e.name)}</h3>
     <p class="ev-date">${esc(rawDate(e.date))}${e.end_date ? ' → ' + esc(rawDate(e.end_date)) : ''}</p>
     <div class="ev-total"><span>Total</span><b>${e.amount == null ? 'TBD' : (e.estimated ? '~' : '') + esc(exactMoney(e.amount))}</b></div>
     ${spentBox}
-    ${e.funding ? `<div class="ev-fund"><span>Paid with</span><b>${esc(e.funding)}</b></div>` : ''}
+    ${e.funding && typeof e.spent !== 'number' ? `<div class="ev-fund"><span>Paid with</span><b>${esc(e.funding)}</b></div>` : ''}
     <h4 class="ev-h">Breakdown</h4><ul class="ev-items">${items}</ul>${diff}
     <p class="ev-foot">Info only — not added to the totals.</p>`;
   showSheet();

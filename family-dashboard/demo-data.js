@@ -14,7 +14,7 @@
   const sum = (a) => a.reduce((t, x) => t + cents(x), 0) / 100;
   const onDay = (y, m, day) => new Date(y, m, Math.min(day, new Date(y, m + 1, 0).getDate()));
 
-  const PAY = 4215.6, START_BAL = 1674.2, ACCT = 'Checking';
+  const PAY = 4215.6, START_BAL = 1674.57, ACCT = 'Checking';
   const BILLS = [
     { id: 'rent', name: 'Rent', amount: 1645, due_day: 1, protected: true, icon: '🏠' },
     { id: 'health', name: 'Health insurance', amount: 568.4, due_day: 16, protected: true, autopay: true, icon: '🩺' },

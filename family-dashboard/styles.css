@@ -317,3 +317,23 @@ div.pc-card{cursor:default}
 .done-tag{color:#7bd88f;font-weight:600}
 .ev-h.done-h{opacity:.7}
 .ev-spent{margin:8px 0 4px}
+
+.ev-chart{display:flex;align-items:center;gap:18px;margin:8px 0 4px;padding:16px;border-radius:14px;background:rgba(255,255,255,.05)}
+.dn-wrap{position:relative;width:128px;height:128px;flex:none}
+.ev-donut{width:100%;height:100%}
+.ev-donut circle{fill:none;stroke-width:12}
+.ev-donut .dn-bg{stroke:var(--green)}
+.ev-donut .dn-spent{stroke:#f0a14a;stroke-linecap:butt}
+.ev-donut .dn-spent.over{stroke:var(--red)}
+.dn-mid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.dn-mid b{font-size:20px;font-variant-numeric:tabular-nums}
+.dn-mid span{font-size:12px;color:var(--dim)}
+.dn-leg{flex:1;display:grid;gap:10px;min-width:0}
+.dn-leg div{display:flex;align-items:center;gap:8px}
+.dn-leg span{color:var(--dim);font-size:14px;flex:1}
+.dn-leg b{font-size:17px;font-variant-numeric:tabular-nums}
+.dn-leg .pos b{color:var(--green)}.dn-leg .neg b{color:var(--red)}
+.dn-leg i{width:10px;height:10px;border-radius:50%;flex:none}
+.sw-spent{background:#f0a14a}.sw-left{background:var(--green)}
+.dn-leg .neg .sw-left{background:var(--red)}
+.dn-leg p{margin:0;font-size:12px;color:var(--dim)}
