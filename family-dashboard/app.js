@@ -120,7 +120,7 @@ function render() {
   renderMoneyCard(d, t);
   renderPayNow(t);
   plans.sort((a, b) => a.when - b.when);
-  const soon = plans.filter((x) => x.days <= 120);
+  const soon = plans.filter((x) => x.days <= 120 || x.always_show);
   $('#plansSec').hidden = !soon.length;
   $('#plans').innerHTML = soon.map((x) => {
     const range = x.end_date ? `${fmtD(x.when)}–${x.end.getMonth() === x.when.getMonth() ? x.end.getDate() : fmtD(x.end)}` : fmtD(x.when, { weekday: 'short', month: 'short', day: 'numeric' });
