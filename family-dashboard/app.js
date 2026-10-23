@@ -369,11 +369,21 @@ function openEvent(idx) {
   const e = DATA && DATA.timeline && DATA.timeline[idx];
   if (!hasBreakdown(e)) return;
   const chk = breakdownCheck(e);
-  const items = e.breakdown.map((it) => `<li><div class="bi-main"><span class="bi-name">${esc(it.item)}</span><span class="bi-amt">${esc(exactMoney(it.amount))}</span></div>${it.when || it.note ? `<div class="bi-sub">${esc([it.when ? rawDate(it.when) : '', it.note || ''].filter(Boolean).join(' · '))}</div>` : ''}</li>`).join('');
+  // paid items: crossed out and moved to the bottom (same look as the paycheck sheet); totals check stays on planned amounts
+  const bRow = (it) => {
+    const dn = it.paid === true, rest = [it.when ? rawDate(it.when) : '', it.note || ''].filter(Boolean).join(' · ');
+    const paidTxt = dn ? `<span class="done-tag">✓ Paid ${esc(exactMoney(typeof it.actual === 'number' ? it.actual : it.amount))}</span>${typeof it.actual === 'number' ? ` (plan ${esc(exactMoney(it.amount))})` : ''}` : '';
+    const sub = [paidTxt, esc(rest)].filter(Boolean).join(' · ');
+    return `<li class="${dn ? 'done' : ''}"><div class="bi-main"><span class="bi-name">${esc(it.item)}</span><span class="bi-amt">${esc(exactMoney(it.amount))}</span></div>${sub ? `<div class="bi-sub">${sub}</div>` : ''}</li>`;
+  };
+  const items = e.breakdown.filter((it) => it.paid !== true).map(bRow).join('') + e.breakdown.filter((it) => it.paid === true).map(bRow).join('');
+  const rem = typeof e.remaining === 'number' ? e.remaining : (typeof e.spent === 'number' && typeof e.amount === 'number' ? Math.round((e.amount - e.spent) * 100) / 100 : null);
+  const spentBox = typeof e.spent === 'number' ? `<div class="pc-sum ev-spent"><div><span>Spent</span><b>${esc(exactMoney(e.spent))}</b></div>${rem != null ? `<div class="${rem < 0 ? 'neg' : 'pos'}"><span>Remaining</span><b>${esc(signed(rem))}</b></div>` : ''}</div>` : '';
   const diff = chk && !chk.matches ? `<p class="ev-diff">Note: the items add up to ${esc(exactMoney(chk.sumCents / 100))}, and the event total is ${e.amount == null ? 'not set' : esc(exactMoney(e.amount))}. Both are shown exactly as planned.</p>` : '';
   $('#evBody').innerHTML = `<h3 id="evTitle">${esc(e.name)}</h3>
     <p class="ev-date">${esc(rawDate(e.date))}${e.end_date ? ' → ' + esc(rawDate(e.end_date)) : ''}</p>
     <div class="ev-total"><span>Total</span><b>${e.amount == null ? 'TBD' : (e.estimated ? '~' : '') + esc(exactMoney(e.amount))}</b></div>
+    ${spentBox}
     ${e.funding ? `<div class="ev-fund"><span>Paid with</span><b>${esc(e.funding)}</b></div>` : ''}
     <h4 class="ev-h">Breakdown</h4><ul class="ev-items">${items}</ul>${diff}
     <p class="ev-foot">Info only — not added to the totals.</p>`;
