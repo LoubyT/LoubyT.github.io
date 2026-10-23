@@ -310,3 +310,9 @@ div.pc-card{cursor:default}
 .icon-btn:disabled{opacity:.45}
 .icon-btn.lr-busy svg{animation:spin 1.6s linear infinite;opacity:1}
 .icon-btn.lr-busy{opacity:.8}
+
+/* paycheck sheet: paid items crossed out and moved to the bottom */
+.ev-items li.done .bi-name,.ev-items li.done .bi-amt{text-decoration:line-through;text-decoration-thickness:1.5px;opacity:.5}
+.ev-items li.done .bi-sub{opacity:.6}
+.done-tag{color:#7bd88f;font-weight:600}
+.ev-h.done-h{opacity:.7}

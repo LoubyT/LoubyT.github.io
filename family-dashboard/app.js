@@ -449,22 +449,31 @@ function renderPaychecks() {
 }
 function openPaycheck(i) {
   const p = payList()[i]; if (!pcHasDetail(p)) return;
-  const chk = paycheckCheck(p), items = p.items || [];
-  const rows = items.map((it) => {
+  const chk = paycheckCheck(p), today = isoDay(today0());
+  // done = marked paid, or dated before today (unless marked paid:false). Still-to-pay first (by date), done at the bottom.
+  const isDone = (it) => it.paid === true || (it.paid !== false && it.date < today);
+  const tagged = (p.items || []).map((it, k) => ({ it, k, done: isDone(it) }));
+  const byDate = (a, b) => a.it.date.localeCompare(b.it.date) || a.k - b.k;
+  const open = tagged.filter((x) => !x.done).sort(byDate), done = tagged.filter((x) => x.done).sort(byDate);
+  const row = ({ it, done: dn }) => {
     const mv = it.type === 'transfer';
     const due = it.due_date && it.due_date !== it.date ? `due ${mdIso(it.due_date)}${it.date > it.due_date ? ' (after due date)' : ''}` : '';
     const sub = [rawDate(it.date), due, it.account, it.note].filter(Boolean).join(' · ');
-    return `<li class="${mv ? 'mv' : ''}"><div class="bi-main"><span class="bi-name">${it.type === 'bill' ? `<span class="emoji mini">${FDLogos.logoHtml(it.name)}</span>` : ''}${esc(it.name)}${it.protected ? `<span class="badge prot">${SHIELD}Protected</span>` : ''}</span>
+    const doneTag = dn ? `<span class="done-tag">✓ ${mv || it.type === 'event' ? 'Done' : 'Paid'}</span> · ` : '';
+    return `<li class="${mv ? 'mv' : ''}${dn ? ' done' : ''}"><div class="bi-main"><span class="bi-name">${it.type === 'bill' ? `<span class="emoji mini">${FDLogos.logoHtml(it.name)}</span>` : ''}${esc(it.name)}${it.protected ? `<span class="badge prot">${SHIELD}Protected</span>` : ''}</span>
       <span class="bi-amt">${it.amount == null ? 'TBD' : (it.estimated ? '~' : '') + esc(exactMoney(it.amount))}</span></div>
-      <div class="bi-sub"><span class="pc-type ${mv ? 'mv' : ''}">${mv ? '⇄ Moving money · not in total out' : PC_TYPE[it.type] || it.type}</span>${sub ? ' · ' + esc(sub) : ''}</div></li>`;
-  }).join('');
+      <div class="bi-sub">${doneTag}<span class="pc-type ${mv ? 'mv' : ''}">${mv ? '⇄ Moving money · not in total out' : PC_TYPE[it.type] || it.type}</span>${sub ? ' · ' + esc(sub) : ''}</div></li>`;
+  };
+  const rows = open.map(row).join('');
+  const doneRows = done.map(row).join('');
   const oi = (p.other_income || []).map((o) => `<li><div class="bi-main"><span class="bi-name">${esc(o.name || 'Other income')}</span><span class="bi-amt pos">${o.amount == null ? 'TBD' : (o.estimated ? '~' : '') + '+' + esc(exactMoney(o.amount))}</span></div>${o.date || o.account || o.note ? `<div class="bi-sub">${esc([o.date ? rawDate(o.date) : '', o.account, o.note].filter(Boolean).join(' · '))}</div>` : ''}</li>`).join('');
   const diff = chk && !chk.matches ? `<p class="ev-diff">Note: the items (not counting moving money) add up to ${esc(exactMoney(chk.sumCents / 100))}, and total out is ${chk.totalCents === null ? 'not set' : esc(exactMoney(p.total_out))}. Both are shown exactly as planned.</p>` : '';
   $('#evBody').innerHTML = `<h3 id="evTitle">Paycheck${p.label ? ' ' + esc(p.label) : ''}</h3>
     <p class="ev-date">${esc(rawDate(p.date))}${p.period_end ? ' → ' + esc(rawDate(p.period_end)) : ''}</p>
     ${p.amount != null ? `<div class="ev-total"><span>Check amount</span><b>${esc(exactMoney(p.amount))}</b></div>` : ''}
     ${p.note ? `<p class="bi-sub" style="margin:0 4px 8px">${esc(p.note)}</p>` : ''}
-    ${items.length ? `<h4 class="ev-h">Where it goes</h4><ul class="ev-items">${rows}</ul>` : ''}
+    ${rows ? `<h4 class="ev-h">${doneRows ? 'Still to pay' : 'Where it goes'}</h4><ul class="ev-items">${rows}</ul>` : ''}
+    ${doneRows ? `<h4 class="ev-h done-h">${rows ? 'Already paid' : 'All paid'}</h4><ul class="ev-items">${doneRows}</ul>` : ''}
     <div class="pc-sum">
       ${typeof p.total_out === 'number' ? `<div><span>Total out</span><b>${esc(exactMoney(p.total_out))}</b></div>` : ''}
       ${typeof p.left_over === 'number' ? `<div class="${p.left_over < 0 ? 'neg' : 'pos'}"><span>Left over</span><b>${esc(signed(p.left_over))}</b></div>` : ''}
