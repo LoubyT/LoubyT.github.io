@@ -134,7 +134,15 @@
 
   document.getElementById("restart").addEventListener("click", function (e) {
     e.preventDefault();
-    document.getElementById("dossier").classList.remove("open");
+    if (typeof closeDossier === "function") {
+      // force-hide without waiting (restart)
+      var d0 = document.getElementById("dossier");
+      if (d0) {
+        d0.classList.remove("is-open", "is-closing");
+        d0.hidden = true;
+        d0.setAttribute("aria-hidden", "true");
+      }
+    }
     var od = document.getElementById("open-dossier");
     if (od) od.setAttribute("aria-expanded", "false");
     document.querySelectorAll(".choice").forEach(function (c) {
@@ -346,7 +354,7 @@
       if (wfDone) return;
       wfDone = true;
       document.querySelectorAll(".wf-row.cuttable").forEach(function (row, i) {
-        setTimeout(function () { row.classList.add("gone"); }, reduce ? 0 : 120 * i);
+        setTimeout(function () { row.classList.add("gone"); }, reduce ? 0 : 90 * i);
       });
       document.querySelectorAll(".wf-row:not(.cuttable)").forEach(function (row) {
         row.classList.add("kept");
@@ -369,26 +377,77 @@
   syncChromeVars();
   window.addEventListener("resize", syncChromeVars, { passive: true });
 
-  document.getElementById("open-dossier").addEventListener("click", function () {
-    var d = document.getElementById("dossier");
-    var btn = document.getElementById("open-dossier");
-    var open = !d.classList.contains("open");
-    d.classList.toggle("open", open);
-    btn.setAttribute("aria-expanded", open ? "true" : "false");
-    if (open) {
-      syncChromeVars();
-      var desktop = window.matchMedia("(min-width: 861px)").matches;
-      if (!desktop) {
-        d.scrollIntoView({ behavior: reduce ? "auto" : "smooth" });
-      } else {
-        d.scrollTop = 0;
-      }
-      var h = document.getElementById("dossier-heading");
-      if (h) {
-        try { h.focus({ preventScroll: true }); } catch (e) {}
-      }
-    }
-  });
+  var dossier = document.getElementById("dossier");
+  var dossierBtn = document.getElementById("open-dossier");
+  var dossierPanel = dossier ? dossier.querySelector(".dossier-panel") : null;
+  var dossierClosing = false;
+
+  function dossierFocusables() {
+    if (!dossierPanel) return [];
+    return Array.prototype.slice.call(
+      dossierPanel.querySelectorAll('a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])')
+    ).filter(function (el) {
+      return el.offsetParent !== null || el === document.activeElement;
+    });
+  }
+
+  function openDossier() {
+    if (!dossier || !dossierBtn) return;
+    dossierClosing = false;
+    dossier.hidden = false;
+    dossier.setAttribute("aria-hidden", "false");
+    dossierBtn.setAttribute("aria-expanded", "true");
+    dossier.classList.remove("is-closing");
+    // force reflow then open for transition
+    void dossier.offsetWidth;
+    dossier.classList.add("is-open");
+    if (dossierPanel) dossierPanel.scrollTop = 0;
+    var h = document.getElementById("dossier-heading");
+    var closeBtn = dossier.querySelector(".dossier-close");
+    setTimeout(function () {
+      try { (closeBtn || h).focus({ preventScroll: true }); } catch (e) {}
+    }, reduce ? 0 : 280);
+  }
+
+  function closeDossier() {
+    if (!dossier || !dossier.classList.contains("is-open") || dossierClosing) return;
+    dossierClosing = true;
+    dossier.classList.add("is-closing");
+    dossier.classList.remove("is-open");
+    dossierBtn.setAttribute("aria-expanded", "false");
+    var done = function () {
+      dossier.hidden = true;
+      dossier.setAttribute("aria-hidden", "true");
+      dossier.classList.remove("is-closing");
+      dossierClosing = false;
+      try { dossierBtn.focus({ preventScroll: true }); } catch (e) {}
+    };
+    if (reduce) { done(); return; }
+    var finished = false;
+    var finish = function () {
+      if (finished) return;
+      finished = true;
+      done();
+    };
+    dossierPanel && dossierPanel.addEventListener("transitionend", function te(e) {
+      if (e.target !== dossierPanel) return;
+      dossierPanel.removeEventListener("transitionend", te);
+      finish();
+    });
+    setTimeout(finish, 280);
+  }
+
+  if (dossierBtn) {
+    dossierBtn.addEventListener("click", function () {
+      if (dossier.classList.contains("is-open")) closeDossier();
+      else openDossier();
+    });
+  }
+  if (dossier) {
+    dossier.addEventListener("click", function (e) {
+      if (e.target && e.target.hasAttribute("data-dossier-close")) closeDossier();
+    });
+  }
 
   // Formspree (same endpoint as live site)
   var form = document.getElementById("contact-form");
@@ -413,6 +472,25 @@
   });
 
   document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && dossier && dossier.classList.contains("is-open")) {
+      e.preventDefault();
+      closeDossier();
+      return;
+    }
+    if (e.key === "Tab" && dossier && dossier.classList.contains("is-open")) {
+      var list = dossierFocusables();
+      if (!list.length) return;
+      var first = list[0];
+      var last = list[list.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+      return;
+    }
     var tag = (e.target && e.target.tagName) || "";
     if (tag === "INPUT" || tag === "TEXTAREA") return;
     if (e.key === "ArrowRight") {

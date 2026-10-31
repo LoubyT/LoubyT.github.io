@@ -266,8 +266,8 @@
       <!-- 6 GRADUATION -->
       <section class="panel" data-step="6" aria-labelledby="t6" hidden>
         <div class="diploma">
-          <div class="seal" aria-hidden="true">
-            <img src="assets/logo.svg" alt="" width="68" height="68">
+          <div class="seal seal-portrait">
+            <img src="assets/headshot.webp" alt="Louby Trahan" width="120" height="120">
           </div>
           <p class="eyebrow">You made it</p>
           <h2 id="t6">Alright. You get the idea.</h2>
@@ -323,35 +323,63 @@
       </section>
     </main>
 
-    <aside class="dossier" id="dossier" aria-label="Longer bio">
-      <h3 id="dossier-heading" tabindex="-1">Longer bio</h3>
-      <p>
-        I'm an Instructional Designer II at SpaceX. Most days I'm turning complicated work into training people can use right away,
-        for teams that move fast and sweat the details.
-      </p>
-      <p>
-        Before SpaceX I led learning and development ops for Quality Verification at EA,
-        supporting teams across Apex Legends, Battlefield 6, and Star Wars Jedi.
-      </p>
-      <p>
-        I've onboarded 1,500+ employees so far.
-        I'm an expert in Articulate Storyline 360, and I use AI to build the tools and dashboards that keep training operations running clean.
-      </p>
-      <p>
-        Quiet extras from the EA chapter: 10 days to 4 on QA onboarding, an AI hub for about 5,000 to 6,000 people,
-        and a facilitator bench that could run curriculum across regions.
-      </p>
-      <div class="chips">
-        <span class="chip-tag">Storyline 360</span>
-        <span class="chip-tag">Onboarding</span>
-        <span class="chip-tag">AI enablement</span>
-        <span class="chip-tag">Workflow automation</span>
-        <span class="chip-tag chip-tag-quiet">Adobe Premiere Pro <span class="chip-note">learning</span></span>
-        <span class="chip-tag chip-tag-quiet">After Effects <span class="chip-note">learning</span></span>
+    <div class="dossier-root" id="dossier" hidden aria-hidden="true">
+      <div class="dossier-backdrop" data-dossier-close tabindex="-1"></div>
+      <div class="dossier-panel" role="dialog" aria-modal="true" aria-labelledby="dossier-heading">
+        <button type="button" class="dossier-close" aria-label="Close" data-dossier-close>
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+            <path fill="currentColor" d="M6.4 6.4a1 1 0 0 1 1.4 0L12 10.6l4.2-4.2a1 1 0 1 1 1.4 1.4L13.4 12l4.2 4.2a1 1 0 0 1-1.4 1.4L12 13.4l-4.2 4.2a1 1 0 0 1-1.4-1.4L10.6 12 6.4 7.8a1 1 0 0 1 0-1.4z"/>
+          </svg>
+        </button>
+        <header class="dossier-head dossier-stagger">
+          <div class="dossier-avatar" aria-hidden="false">
+            <img src="assets/headshot.webp" alt="Louby Trahan" width="192" height="192">
+          </div>
+          <div class="dossier-titles">
+            <h3 id="dossier-heading" tabindex="-1">Louby Trahan</h3>
+            <p class="dossier-role">Instructional Designer II at SpaceX</p>
+          </div>
+        </header>
+        <div class="dossier-body">
+          <p class="dossier-stagger">
+            Most days I'm turning complicated work into training people can use right away,
+            for teams that move fast and sweat the details.
+          </p>
+          <p class="dossier-stagger">
+            Before SpaceX I led learning and development ops for Quality Verification at EA,
+            supporting teams across Apex Legends, Battlefield 6, and Star Wars Jedi.
+          </p>
+          <p class="dossier-stagger">
+            I've onboarded 1,500+ employees so far.
+            I'm an expert in Articulate Storyline 360, and I use AI to build the tools and dashboards that keep training operations running clean.
+          </p>
+          <div class="dossier-stats dossier-stagger" aria-label="Quiet extras from the EA chapter">
+            <div class="dossier-stat">
+              <span class="dossier-stat-val">10 days to 4</span>
+              <span class="dossier-stat-label">QA onboarding</span>
+            </div>
+            <div class="dossier-stat">
+              <span class="dossier-stat-val">5,000 to 6,000</span>
+              <span class="dossier-stat-label">AI hub reach</span>
+            </div>
+            <div class="dossier-stat">
+              <span class="dossier-stat-val">Facilitator bench</span>
+              <span class="dossier-stat-label">Curriculum across regions</span>
+            </div>
+          </div>
+          <div class="chips dossier-stagger">
+            <span class="chip-tag">Storyline 360</span>
+            <span class="chip-tag">Onboarding</span>
+            <span class="chip-tag">AI enablement</span>
+            <span class="chip-tag">Workflow automation</span>
+            <span class="chip-tag chip-tag-quiet">Adobe Premiere Pro <span class="chip-note">learning</span></span>
+            <span class="chip-tag chip-tag-quiet">After Effects <span class="chip-note">learning</span></span>
+          </div>
+        </div>
       </div>
-    </aside>
+    </div>
 
-    <footer>
+<footer>
       <p>© 2026 Louby Trahan</p>
     </footer>
   </div>
