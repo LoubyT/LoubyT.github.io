@@ -314,11 +314,19 @@
               <button class="btn btn-primary" type="submit" style="justify-self:start">Send</button>
               <p class="form-status" id="form-status" role="status" aria-live="polite"></p>
             </form>
+            <!--
+              Beat 06 keyboard / DOM order (documented):
+              1) contact lede + LinkedIn mark/link
+              2) contact form (name, email, message, send)
+              3) contact-actions: Back, then Open the longer bio
+              Desktop CSS pins these actions to the bottom of the left column;
+              mobile stacks them under the form. No separate nav row below the card.
+            -->
+            <div class="contact-actions nav-lesson" role="navigation" aria-label="Lesson and bio">
+              <button type="button" class="ghost-link" data-back>Back</button>
+              <button type="button" class="btn btn-ghost" id="open-dossier" aria-expanded="false" aria-controls="dossier">Open the longer bio</button>
+            </div>
           </div>
-        </div>
-        <div class="nav-lesson">
-          <button type="button" class="ghost-link" data-back>Back</button>
-          <button type="button" class="btn btn-ghost" id="open-dossier" aria-expanded="false" aria-controls="dossier">Open the longer bio</button>
         </div>
       </section>
     </main>

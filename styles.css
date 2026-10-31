@@ -796,7 +796,7 @@ body.at-end footer { opacity: 0.9; border-top-color: var(--line); }
   .dossier-avatar { width: 88px; height: 88px; }
 }
 
-@media (min-width: 861px) and (max-height: 560px) {
+@media (min-width: 861px) and (max-height: 640px) {
   .dossier-panel {
     max-height: calc(100dvh - 1.5rem);
     padding: 1rem 1.15rem 1.15rem;
@@ -833,6 +833,21 @@ body.at-end footer { opacity: 0.9; border-top-color: var(--line); }
   .btn-row .btn { width: 100%; }
   .nav-lesson { flex-direction: column-reverse; align-items: stretch; }
   .nav-lesson .btn { width: 100%; }
+  .panel[data-step="6"] .contact-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+  }
+  .panel[data-step="6"] .contact-copy,
+  .panel[data-step="6"] .form,
+  .panel[data-step="6"] .contact-actions.nav-lesson {
+    grid-column: auto;
+    grid-row: auto;
+  }
+  .panel[data-step="6"] .contact-actions.nav-lesson {
+    margin-top: 1rem;
+    width: 100%;
+  }
+  .panel[data-step="6"] .contact-actions .btn { width: 100%; }
   .brand span { display: none; }
   .mission { grid-template-columns: 1fr; }
   .mission .mini-port { width: 110px; }
@@ -1144,16 +1159,61 @@ body.at-end footer { opacity: 0.9; border-top-color: var(--line); }
     color: #b4b4ba;
   }
   .panel[data-step="6"] .contact-box {
-    flex: 0 1 auto;
+    flex: 1 1 auto;
     min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .panel[data-step="6"] .contact-box .ab-inner,
+  .panel[data-step="6"] .contact-box .contact-grid {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: 100%;
+  }
+  .panel[data-step="6"] .form {
+    min-height: 0;
+    overflow: auto;
   }
   .panel[data-step="6"] .ab-inner {
     padding: clamp(0.65rem, 1.4dvh, 1.05rem) clamp(0.75rem, 1.5dvh, 1.15rem);
   }
   .contact-grid {
     grid-template-columns: minmax(180px, 0.9fr) minmax(220px, 1.2fr);
+    grid-template-rows: 1fr auto;
     gap: 0.55rem 1.1rem;
-    align-items: start;
+    align-items: stretch;
+  }
+  .panel[data-step="6"] .contact-copy {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: start;
+    padding-right: 2.5rem;
+  }
+  .panel[data-step="6"] .form {
+    grid-column: 2;
+    grid-row: 1 / -1;
+    align-self: stretch;
+  }
+  /* Desktop: pin Back + Open bio into left column bottom; no separate nav row */
+  .panel[data-step="6"] .contact-actions.nav-lesson {
+    grid-column: 1;
+    grid-row: 2;
+    align-self: end;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 0.65rem 0.85rem;
+    margin-top: 0.75rem;
+    padding-top: 0;
+    width: 100%;
+  }
+  .panel[data-step="6"] .contact-actions .ghost-link {
+    order: -1; /* Back before bio visually beside/above pill if wrap */
+    font-size: 0.85rem;
+  }
+  .panel[data-step="6"] .contact-actions .btn-ghost {
+    /* clear secondary pill */
+    border-color: rgba(167, 139, 250, 0.45);
+    color: var(--purple-soft, #c4b5fd);
   }
   .contact-copy { padding-right: 2.5rem; }
   .ab-inner .contact-line,
@@ -1167,7 +1227,7 @@ body.at-end footer { opacity: 0.9; border-top-color: var(--line); }
   .field input, .field textarea { padding: 0.4rem 0.65rem; }
   .field textarea { min-height: clamp(3.25rem, 9dvh, 5.5rem); max-height: 6rem; resize: none; }
   .field label { font-size: 0.6rem; }
-  .panel[data-step="6"] .nav-lesson { padding-top: 0; margin-top: max(1.75rem, 28px); }
+  .panel[data-step="6"] .contact-actions.nav-lesson { margin-top: 0.75rem; padding-top: 0; }
   .panel[data-step="6"] h2 { margin-bottom: 0.3rem; }
 
   /* dossier modal handled globally */
@@ -1292,7 +1352,7 @@ body.at-end footer { opacity: 0.9; border-top-color: var(--line); }
   .panel[data-step="6"] .contact-line-follow { margin-bottom: 0; }
   .panel[data-step="6"] .ab-inner { padding: 0.5rem 0.65rem; }
   .panel[data-step="6"] .form { gap: 0.25rem; }
-  .panel[data-step="6"] .nav-lesson { padding-top: 0; margin-top: max(1.75rem, 28px); }
+  .panel[data-step="6"] .contact-actions.nav-lesson { margin-top: 0.75rem; padding-top: 0; }
   .panel[data-step="5"] .metric { font-size: clamp(1.75rem, 4.2dvh, 2.05rem); }
 }
 
@@ -1313,11 +1373,11 @@ body.at-end footer { opacity: 0.9; border-top-color: var(--line); }
   .panel[data-step="6"] .contact-line-follow { margin-bottom: 0; }
   .panel[data-step="6"] .ab-inner { padding: 0.55rem 0.7rem; }
   .panel[data-step="6"] .form { gap: 0.3rem; }
-  .panel[data-step="6"] .nav-lesson { padding-top: 0; margin-top: max(1.75rem, 28px); }
+  .panel[data-step="6"] .contact-actions.nav-lesson { margin-top: 0.75rem; padding-top: 0; }
 }
 
 
-@media (min-width: 861px) and (max-height: 560px) {
+@media (min-width: 861px) and (max-height: 640px) {
   .brand span { display: none; }
   h1, h2 { font-size: clamp(1.9rem, 4vw + 0.9vh, 2.65rem); margin-bottom: 0.18rem; }
   .panel[data-step="5"] h2 { font-size: clamp(1.2rem, 2.2vw + 0.4vh, 1.75rem); margin-bottom: 0.25rem; }
@@ -1433,9 +1493,9 @@ body.at-end footer { opacity: 0.9; border-top-color: var(--line); }
   .panel[data-step="6"] .contact-line-follow { margin-bottom: 0; }
   .panel[data-step="6"] .ab-inner { padding: 0.4rem 0.6rem; }
   .panel[data-step="6"] .form { gap: 0.25rem; }
-  .panel[data-step="6"] .nav-lesson {
+  .panel[data-step="6"] .contact-actions.nav-lesson {
+    margin-top: 0.5rem;
     padding-top: 0;
-    margin-top: max(1.75rem, 28px);
     position: relative;
     z-index: 2;
   }
@@ -1452,7 +1512,7 @@ body.at-end footer { opacity: 0.9; border-top-color: var(--line); }
     width: 56px; height: 56px;
   }
   .panel[data-step="6"] .diploma { grid-template-columns: 56px minmax(0, 1fr); }
-  .panel[data-step="6"] .nav-lesson { padding-top: 0; margin-top: max(1.75rem, 28px); }
+  .panel[data-step="6"] .contact-actions.nav-lesson { margin-top: 0.75rem; padding-top: 0; }
   .panel[data-step="6"] .field textarea { min-height: 3.25rem; max-height: 3.8rem; }
 }
 
@@ -1461,4 +1521,28 @@ body.at-end footer { opacity: 0.9; border-top-color: var(--line); }
 @media (min-width: 861px) and (max-height: 480px) {
   /* Extremely short: drop builds-intro only */
   .panel[data-step="5"] .builds-intro { display: none; }
+}
+
+
+/* SHORT-DESKTOP-SCROLL */
+/* Design call: below 480px desktop height, allow vertical page scroll rather than forcing a crushed layout. */
+@media (min-width: 861px) and (max-height: 479px) {
+  html, body {
+    height: auto;
+    min-height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+  body {
+    height: auto;
+  }
+  .shell, .lesson {
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+  .panel.active {
+    height: auto;
+    min-height: 0;
+  }
 }
