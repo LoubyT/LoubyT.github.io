@@ -1,0 +1,162 @@
+/* Progress traveler: chalk rocket (shipped default).
+   Calm motion, prefers-reduced-motion safe. Neutralizes prior blob rocket. */
+
+.progress-track {
+  overflow: visible !important;
+  position: relative !important;
+}
+
+.progress-traveler,
+.progress-traveler.is-rocket {
+  font-size: 0 !important;
+  width: 44px !important;
+  height: 24px !important;
+  max-width: none !important;
+  background: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  filter: drop-shadow(0 1px 2px rgba(8, 10, 18, 0.5)) !important;
+  position: absolute !important;
+  top: 50% !important;
+  margin-top: 0 !important;
+  transform: translateY(-50%) rotate(-10deg) !important;
+  z-index: 4 !important;
+  pointer-events: none !important;
+  transition: left 0.5s cubic-bezier(0.22, 1, 0.36, 1), transform 0.35s ease !important;
+  overflow: visible !important;
+}
+
+#progress-traveler {
+  font-size: 0 !important;
+  background: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  position: absolute !important;
+  top: 50% !important;
+  margin-top: 0 !important;
+  z-index: 4 !important;
+  pointer-events: none !important;
+  overflow: visible !important;
+  width: 44px !important;
+  height: 24px !important;
+  max-width: none !important;
+  transform: translateY(-50%) rotate(-10deg) !important;
+  filter: drop-shadow(0 1px 2px rgba(8, 10, 18, 0.5)) !important;
+  transition: left 0.5s cubic-bezier(0.22, 1, 0.36, 1), transform 0.35s ease !important;
+}
+
+.progress-traveler::before,
+.progress-traveler::after,
+.progress-traveler.is-rocket::before,
+.progress-traveler.is-rocket::after,
+#progress-traveler::before,
+#progress-traveler::after {
+  content: none !important;
+  display: none !important;
+  background: none !important;
+  box-shadow: none !important;
+  clip-path: none !important;
+}
+
+.progress-traveler .tv-rocket,
+#progress-traveler .tv-rocket {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.progress-traveler.is-moving,
+#progress-traveler.is-moving {
+  transform: translateY(-50%) rotate(-14deg) !important;
+}
+
+.progress-traveler.is-end,
+#progress-traveler.is-end {
+  transform: translateY(-50%) rotate(-4deg) !important;
+  animation: tv-rocket-land 0.72s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes tv-rocket-land {
+  0% { transform: translateY(-50%) rotate(-12deg); }
+  45% { transform: translateY(calc(-50% - 5px)) rotate(-2deg); }
+  100% { transform: translateY(-50%) rotate(-4deg); }
+}
+
+.tv-flame {
+  transform-origin: 9px 11px;
+  animation: tv-flame 0.85s ease-in-out infinite alternate;
+}
+@keyframes tv-flame {
+  from { opacity: 0.55; transform: scaleX(0.8) scaleY(1); }
+  to { opacity: 1; transform: scaleX(1.05) scaleY(0.95); }
+}
+.progress-traveler.is-end .tv-flame,
+#progress-traveler.is-end .tv-flame {
+  animation: none;
+  opacity: 0.3;
+}
+
+/* Beat-change bob (keeps tilt) */
+@keyframes tv-bob-rocket {
+  0% { transform: translateY(-50%) rotate(-10deg); }
+  40% { transform: translateY(calc(-50% - 3px)) rotate(-12deg); }
+  100% { transform: translateY(-50%) rotate(-10deg); }
+}
+.progress.is-tick .progress-traveler:not(.is-end),
+.progress.is-tick #progress-traveler:not(.is-end) {
+  animation: tv-bob-rocket 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Soft puff on beat tick */
+.progress.is-tick .progress-traveler:not(.is-end)::after,
+.progress.is-tick #progress-traveler:not(.is-end)::after {
+  content: "" !important;
+  display: block !important;
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  margin-top: -3.5px;
+  border-radius: 50%;
+  background: rgba(168, 155, 255, 0.35);
+  box-shadow: none !important;
+  clip-path: none !important;
+  animation: tv-puff 0.55s ease-out forwards;
+}
+@keyframes tv-puff {
+  from { opacity: 0.45; transform: scale(0.5); }
+  to { opacity: 0; transform: scale(1.7) translateX(-5px); }
+}
+
+@media (max-width: 600px) {
+  .progress-traveler,
+  .progress-traveler.is-rocket,
+  #progress-traveler {
+    width: 36px !important;
+    height: 20px !important;
+    max-width: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progress-traveler,
+  .progress-traveler.is-rocket,
+  #progress-traveler,
+  .progress-traveler.is-moving,
+  #progress-traveler.is-moving,
+  .progress-traveler.is-end,
+  #progress-traveler.is-end {
+    transition: none !important;
+    animation: none !important;
+    transform: translateY(-50%) rotate(-10deg) !important;
+  }
+  .tv-flame,
+  .progress.is-tick .progress-traveler:not(.is-end),
+  .progress.is-tick #progress-traveler:not(.is-end),
+  .progress.is-tick .progress-traveler:not(.is-end)::after,
+  .progress.is-tick #progress-traveler:not(.is-end)::after {
+    animation: none !important;
+  }
+}

@@ -2,6 +2,7 @@
   var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   if (reduce) document.body.classList.add("reduce-motion");
 
+
   // Calm starfield (capped ~24fps, pauses when tab hidden or reduced-motion)
   (function initStars() {
     var canvas = document.getElementById("stars");
@@ -115,10 +116,18 @@
     var traveler = document.getElementById("progress-traveler");
     if (traveler) {
       var pct = (step / total) * 100;
-      // Keep rocket fully inside the track (half-width inset), never past 100%
-      var half = Math.max(8, Math.round((traveler.offsetWidth || 22) / 2));
-      traveler.style.left = "calc(" + pct + "% - " + half + "px)";
-      if (step === total) traveler.style.left = "calc(100% - " + (half * 2) + "px)";
+      // Keep traveler fully inside the track (half-width inset), never past 100%
+      var half = Math.max(10, Math.round((traveler.offsetWidth || 28) / 2));
+      var nextLeft = "calc(" + pct + "% - " + half + "px)";
+      if (step === total) nextLeft = "calc(100% - " + (half * 2) + "px)";
+      if (!reduce && traveler.style.left && traveler.style.left !== nextLeft) {
+        traveler.classList.add("is-moving");
+        clearTimeout(traveler._moveTimer);
+        traveler._moveTimer = setTimeout(function () {
+          traveler.classList.remove("is-moving");
+        }, 520);
+      }
+      traveler.style.left = nextLeft;
       traveler.classList.toggle("is-end", step === total);
     }
     document.body.classList.toggle("at-end", step === total);

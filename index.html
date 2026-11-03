@@ -34,6 +34,7 @@
   <link rel="stylesheet" href="whimsy-glance.css">
   <link rel="stylesheet" href="whimsy-r2.css">
   <link rel="stylesheet" href="whimsy-r3.css">
+  <link rel="stylesheet" href="whimsy-traveler.css">
 </head>
 <body data-contact-concept="b">
   <a class="skip" href="#lesson">Skip to lesson</a>
@@ -70,7 +71,23 @@
         <span id="step-label">00 / 06</span>
         <div class="progress-track" aria-hidden="true">
           <div class="progress-fill" id="progress-fill"></div>
-          <span class="progress-traveler is-rocket" id="progress-traveler" title="lesson rocket" aria-hidden="true"></span>
+                    <span class="progress-traveler" id="progress-traveler" title="lesson rocket" aria-hidden="true">
+            <svg class="tv-rocket" viewBox="0 0 44 22" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <g class="tv-rocket-g">
+                <path d="M9 7.2 L9 14.8 L27 14.8 L38.5 11 L27 7.2 Z"
+                      fill="#6b5ce0" fill-opacity="0.55"
+                      stroke="#ede9fe" stroke-width="1.85"
+                      stroke-linejoin="round"/>
+                <circle cx="20.5" cy="11" r="2.0" fill="#ede9fe"/>
+                <path d="M11.2 7.2 L5.2 2.6 L9 7.2 Z"
+                      fill="#a89bff" stroke="#c4b5fd" stroke-width="1.2" stroke-linejoin="round"/>
+                <path d="M11.2 14.8 L5.2 19.4 L9 14.8 Z"
+                      fill="#a89bff" stroke="#c4b5fd" stroke-width="1.2" stroke-linejoin="round"/>
+                <path class="tv-flame" d="M9 11 L2.2 8.4 L3.8 11 L2.2 13.6 Z"
+                      fill="#e8c478" fill-opacity="0.95"/>
+              </g>
+            </svg>
+          </span>
         </div>
       </div>
     </header>
