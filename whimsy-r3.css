@@ -1,0 +1,786 @@
+/* Kody r3 — contact functional polish + hero chalk/hi/aside */
+
+/* ---- 1. Success status: one confirmation (bubble only); status for AT ---- */
+.form-chat-v2 .form-status.is-sr-only-status {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+.form-chat-v2.is-success .chat-composer { display: none !important; }
+
+/* ---- 2. Full-circle contact headshot (never flat-clipped) ---- */
+.contact-host-shot,
+.panel[data-step="6"] .contact-host-shot,
+.concept-b .contact-host-shot {
+  width: clamp(96px, 14vh, 132px) !important;
+  height: clamp(96px, 14vh, 132px) !important;
+  aspect-ratio: 1 / 1 !important;
+  border-radius: 50% !important;
+  overflow: hidden !important; /* clip img to circle */
+  flex-shrink: 0 !important;
+  align-self: start !important;
+}
+.contact-host-shot img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  object-position: center top !important;
+  border-radius: 50% !important;
+  display: block !important;
+}
+/* Spark lives just outside the circle so it is not clipped */
+.contact-host-shot .host-spark {
+  display: none !important; /* avoid edge clip; use margin doodles instead */
+}
+
+/* ---- 3. Remove soft-landing strip ---- */
+.chat-thread::after {
+  content: none !important;
+  display: none !important;
+}
+
+/* ---- 4. Balance columns: note sizes to content; thread grows ---- */
+@media (min-width: 901px) {
+  .contact-grid-v2 {
+    align-items: stretch !important;
+    grid-template-rows: 1fr auto !important;
+  }
+  .contact-grid-v2 .contact-host {
+    height: 100% !important;
+    max-height: 100% !important;
+  }
+  .note-preview {
+    flex: 0 0 auto !important;
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    padding: 0.65rem 0.8rem 0.7rem !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.35rem !important;
+  }
+  .contact-host .btn-li {
+    margin-top: 0.45rem !important;
+  }
+  .contact-grid-v2 .form-chat-v2 {
+    align-self: stretch !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+  }
+  .chat-thread {
+    flex: 1 1 auto !important;
+    min-height: 8rem !important;
+    max-height: none !important;
+    justify-content: flex-start !important;
+    overflow: hidden !important;
+  }
+  .form-chat-v2 .chat-composer {
+    margin-top: auto !important;
+    flex: 0 0 auto !important;
+  }
+}
+
+/* Note lines: always separate blocks, never run together */
+.note-preview .note-label,
+.note-preview .note-name,
+.note-preview .note-email,
+.note-preview .note-msg {
+  display: block !important;
+  width: 100% !important;
+  margin: 0 !important;
+  font-style: normal !important;
+  white-space: normal !important;
+  word-break: break-word !important;
+}
+.note-preview .note-label {
+  font-size: 0.7rem !important;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: rgba(200, 190, 230, 0.75) !important;
+  margin-bottom: 0.1rem !important;
+}
+.note-preview .note-name,
+.note-preview .note-email,
+.note-preview .note-msg {
+  font-size: 1rem !important;
+  line-height: 1.35 !important;
+  color: rgba(235, 232, 245, 0.92) !important;
+  min-height: 1.35em;
+}
+.note-preview .note-empty {
+  color: rgba(180, 170, 210, 0.5) !important;
+  font-style: normal !important;
+}
+
+/* ---- 5. Chat type ~16–17px ---- */
+.chat-bubble,
+.louby-bubble,
+.user-bubble,
+.speech-text {
+  font-size: 1.0625rem !important; /* 17px */
+  line-height: 1.4 !important;
+}
+.form-chat-v2 .field input,
+.form-chat-v2 .field textarea {
+  font-size: 1rem !important; /* 16px */
+  line-height: 1.4 !important;
+  min-height: 2.6rem;
+  padding: 0.55rem 0.75rem !important;
+}
+.form-chat-v2 .btn-send,
+.form-chat-v2 .btn-chat-back {
+  font-size: 1rem !important;
+}
+
+/* ---- 6. Hero chalk underline: under the words, soft lilac ---- */
+.hero-em {
+  position: relative;
+  z-index: 1;
+}
+.chalk-underline {
+  position: absolute !important;
+  left: 0;
+  right: 0;
+  z-index: 0 !important;
+  height: 0.18em !important;
+  bottom: -0.12em !important;
+  top: auto !important;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 18% 50%, rgba(196, 181, 253, 0.85) 0 42%, transparent 70%),
+    radial-gradient(ellipse at 52% 60%, rgba(237, 233, 254, 0.7) 0 48%, transparent 72%),
+    radial-gradient(ellipse at 86% 45%, rgba(196, 181, 253, 0.75) 0 40%, transparent 70%) !important;
+  opacity: 0.85 !important;
+  mix-blend-mode: normal !important;
+  transform: rotate(-0.6deg);
+}
+.hero-em {
+  color: inherit;
+  -webkit-text-fill-color: currentColor;
+}
+.panel[data-step="0"] .hero-em {
+  color: #d4c4ff;
+}
+
+/* ---- 7. 'hi' fully visible, outside photo clip ---- */
+.is-hero-portrait,
+.portrait .frame {
+  overflow: visible !important;
+}
+.portrait .frame img {
+  /* keep photo clipped inside frame */
+}
+.portrait .frame {
+  position: relative;
+}
+.frame > img,
+.portrait .frame > img {
+  border-radius: inherit;
+}
+/* Put hi outside the frame's overflow:hidden child by parent overflow visible */
+.chalk-hi {
+  position: absolute !important;
+  right: -1.35rem !important;
+  bottom: 14% !important;
+  left: auto !important;
+  z-index: 6 !important;
+  font-size: 1.45rem !important;
+  color: rgba(210, 195, 255, 0.88) !important;
+  background: transparent !important;
+  padding: 0 !important;
+  overflow: visible !important;
+  white-space: nowrap;
+}
+.chalk-hi::after {
+  background: rgba(196, 181, 253, 0.65) !important;
+}
+
+/* ---- 8. Hero aside already updated in HTML; keep calm ---- */
+.hero-aside {
+  font-style: italic;
+  color: rgba(180, 175, 200, 0.7);
+  font-size: 0.92rem;
+}
+
+/* Balance: pin LinkedIn to bottom of left column; textured thread fill (no label strip) */
+@media (min-width: 901px) {
+  .contact-grid-v2 .contact-host {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+  }
+  .contact-host .btn-li {
+    margin-top: auto !important;
+  }
+  .chat-thread {
+    background:
+      radial-gradient(ellipse at 12% 18%, rgba(180,160,230,0.07), transparent 42%),
+      radial-gradient(ellipse at 88% 72%, rgba(196,181,253,0.05), transparent 45%),
+      repeating-linear-gradient(
+        transparent,
+        transparent 1.55rem,
+        rgba(180, 170, 220, 0.045) 1.55rem,
+        rgba(180, 170, 220, 0.045) calc(1.55rem + 1px)
+      ) !important;
+    border-radius: 14px;
+    padding: 0.55rem 0.45rem 0.65rem !important;
+  }
+}
+
+/* Ensure frame clips photo but portrait does not clip hi */
+.portrait .frame {
+  overflow: hidden !important;
+}
+.portrait.is-hero-portrait {
+  overflow: visible !important;
+}
+
+/* Only pin LI with auto margin when there is vertical room */
+@media (min-width: 901px) and (max-height: 700px) {
+  .contact-host .btn-li {
+    margin-top: 0.35rem !important;
+  }
+  .note-preview { display: none !important; }
+  .chat-thread { min-height: 3.5rem !important; }
+}
+@media (min-width: 901px) and (min-height: 701px) and (max-height: 820px) {
+  .contact-host .btn-li {
+    margin-top: 0.55rem !important; /* don't auto-push into actions on mid-short */
+  }
+}
+
+/* Short desktop: keep LI and actions from overlapping */
+@media (min-width: 901px) and (max-height: 520px) {
+  .note-preview { display: none !important; }
+  .contact-host .btn-li { margin-top: 0.2rem !important; }
+  .contact-grid-v2 {
+    grid-template-rows: auto auto !important;
+  }
+  .contact-grid-v2 .contact-host {
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    gap: 0.35rem 0.55rem !important;
+    height: auto !important;
+  }
+  .contact-grid-v2 .form-chat-v2 {
+    height: auto !important;
+  }
+  .chat-thread { min-height: 2.5rem !important; flex: 0 1 auto !important; }
+  .form-chat-v2 .chat-composer { margin-top: 0.35rem !important; }
+  .contact-host-shot { width: 48px !important; height: 48px !important; }
+  .speech-intro { flex: 1 1 180px; padding: 0.3rem 0.45rem !important; }
+  .contact-actions .btn-ghost { min-height: 2rem; padding: 0.25rem 0.5rem; font-size: 0.8rem; }
+}
+
+/* Hero aside: real sentence case, no forced lowercase */
+.hero-aside,
+.panel[data-step="0"] .hero-aside {
+  text-transform: none !important;
+  font-style: italic;
+}
+
+/* Make chalk hi unmistakably outside the photo, not bubble-like */
+.chalk-hi {
+  right: -1.75rem !important;
+  bottom: 18% !important;
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+}
+.chalk-hi::before { content: none !important; display: none !important; }
+
+/* Clearer rocket traveler (body + nose + flame) */
+.progress-traveler,
+.progress-traveler.is-rocket {
+  width: 30px !important;
+  height: 18px !important;
+}
+.progress-traveler::before {
+  content: "" !important;
+  left: 7px !important;
+  top: 2px !important;
+  width: 20px !important;
+  height: 12px !important;
+  background: linear-gradient(90deg, #7c5cff 0%, #c4b5fd 55%, #ede9fe 100%) !important;
+  clip-path: polygon(0 28%, 58% 0, 100% 50%, 58% 100%, 0 72%, 12% 50%) !important;
+  box-shadow: 0 0 10px rgba(167,139,250,0.7) !important;
+}
+.progress-traveler::after {
+  content: "" !important;
+  left: -1px !important;
+  top: 4px !important;
+  width: 10px !important;
+  height: 9px !important;
+  background:
+    radial-gradient(circle at 70% 50%, #fff3c4 0 35%, #ffb347 55%, transparent 70%) !important;
+  box-shadow: -3px 0 8px rgba(255,160,60,0.85) !important;
+}
+
+/* Ensure beats 1–5 keep a calm chalk aside when tall enough */
+@media (min-width: 901px) and (min-height: 700px) {
+  .panel[data-step="1"] .choices::before {
+    content: "pick one ✦";
+    display: block;
+    margin-bottom: 0.35rem;
+    font-size: 0.72rem;
+    color: rgba(190,170,240,0.55);
+    font-style: italic;
+    text-align: right;
+  }
+  .panel[data-step="2"] .fuse::after {
+    content: "snap the pieces ✧";
+    display: block; margin-top: 0.35rem; font-size: 0.72rem;
+    color: rgba(190,170,240,0.5); font-style: italic; text-align: right;
+  }
+}
+
+/* r3 self-review: hi fully clear of frame; chalk fully under ink */
+.panel[data-step="0"] .is-hero-portrait {
+  overflow: visible !important;
+}
+.panel[data-step="0"] .chalk-hi {
+  right: -2.85rem !important;
+  bottom: 20% !important;
+  left: auto !important;
+  z-index: 8 !important;
+  transform: none !important;
+  letter-spacing: 0.02em;
+}
+.panel[data-step="0"] .chalk-hi::after {
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  height: 3px !important;
+  bottom: -2px !important;
+  background: rgba(196, 181, 253, 0.7) !important;
+  border-radius: 40% 60% / 70% 30% !important;
+}
+/* Keep portrait ring from covering hi */
+.panel[data-step="0"] .portrait .ring {
+  z-index: 1 !important;
+  pointer-events: none;
+}
+.panel[data-step="0"] .portrait .frame {
+  z-index: 2 !important;
+}
+.panel[data-step="0"] .chalk-hi {
+  z-index: 9 !important;
+}
+
+/* Chalk underline: sit clearly under the italic, lilac only */
+.panel[data-step="0"] .hero-em {
+  position: relative;
+  z-index: 2;
+  isolation: isolate;
+}
+.panel[data-step="0"] .hero-em .chalk-underline,
+.panel[data-step="0"] .chalk-underline {
+  z-index: -1 !important;
+  bottom: -0.28em !important;
+  top: auto !important;
+  height: 0.14em !important;
+  opacity: 0.9 !important;
+  background:
+    radial-gradient(ellipse at 18% 50%, rgba(210, 195, 255, 0.9) 0 42%, transparent 70%),
+    radial-gradient(ellipse at 52% 60%, rgba(237, 233, 254, 0.75) 0 48%, transparent 72%),
+    radial-gradient(ellipse at 86% 45%, rgba(196, 181, 253, 0.8) 0 40%, transparent 70%) !important;
+  mix-blend-mode: normal !important;
+  filter: none !important;
+}
+
+/* Eyebrow stroke: drop mustard */
+.eyebrow-chalk::after,
+.panel[data-step="0"] .eyebrow-chalk::after {
+  background: rgba(196, 181, 253, 0.45) !important;
+}
+
+/* ========== Phone contact stack (<=600px) ========== */
+@media (max-width: 600px) {
+  /* One column; host children participate so we can reorder */
+  .contact-grid-v2 {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    grid-template-rows: none !important;
+    grid-auto-rows: auto !important;
+    gap: 0.75rem !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+  .contact-grid-v2 .contact-host {
+    display: contents !important;
+  }
+  .contact-grid-v2 .contact-host-shot,
+  .contact-grid-v2 .contact-seal {
+    order: 1 !important;
+    grid-column: 1 !important;
+    width: 88px !important;
+    height: 88px !important;
+    max-width: 88px !important;
+    justify-self: start !important;
+  }
+  .contact-grid-v2 .speech-intro {
+    order: 2 !important;
+    grid-column: 1 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  .contact-grid-v2 .form-chat-v2 {
+    order: 3 !important;
+    grid-column: 1 !important;
+    grid-row: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  .contact-grid-v2 .note-preview {
+    order: 4 !important;
+    grid-column: 1 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 0 !important;
+    flex: none !important;
+  }
+  .contact-grid-v2 .btn-li {
+    order: 5 !important;
+    grid-column: 1 !important;
+    width: auto !important;
+    margin-top: 0 !important;
+    justify-self: start !important;
+  }
+  .contact-grid-v2 .contact-actions {
+    order: 6 !important;
+    grid-column: 1 !important;
+    grid-row: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .form-chat-v2 .chat-thread {
+    min-height: 4.5rem !important;
+    max-height: none !important;
+    width: 100% !important;
+  }
+  .form-chat-v2 .chat-composer,
+  .form-chat-v2 .chat-actions,
+  .form-chat-v2 .field,
+  .form-chat-v2 .field input,
+  .form-chat-v2 .field textarea {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+  .form-chat-v2 .chat-actions {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 0.5rem !important;
+  }
+  .form-chat-v2 .btn-send {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+  }
+  .note-preview .note-label {
+    white-space: nowrap !important;
+    font-size: 0.72rem !important;
+    letter-spacing: 0.06em !important;
+  }
+
+  /* Beat 06 diploma: centered, fully inside viewport */
+  .panel[data-step="6"] .diploma,
+  .panel[data-step="6"] .diploma-restored {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-left: 0.15rem !important;
+    padding-right: 0.15rem !important;
+    box-sizing: border-box !important;
+    text-align: center !important;
+  }
+  .panel[data-step="6"] .diploma h2,
+  .panel[data-step="6"] h2 {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    text-align: center !important;
+    font-size: clamp(1.35rem, 6.2vw, 1.85rem) !important;
+    line-height: 1.15 !important;
+    overflow-wrap: anywhere !important;
+    word-break: normal !important;
+  }
+  .panel[data-step="6"] .diploma .lede,
+  .panel[data-step="6"] .diploma-bio {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    text-align: center !important;
+    font-size: 0.92rem !important;
+    line-height: 1.4 !important;
+    padding-inline: 0.1rem !important;
+    box-sizing: border-box !important;
+  }
+  .panel[data-step="6"] .contact-box,
+  .panel[data-step="6"] .ab-inner,
+  .panel[data-step="6"] .contact-stage {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Header progress traveler stays inside */
+  .progress {
+    max-width: min(42vw, 9.5rem) !important;
+    min-width: 0 !important;
+    overflow: visible !important;
+  }
+  .progress-track {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: visible !important;
+  }
+  .progress-traveler,
+  .progress-traveler.is-rocket {
+    width: 22px !important;
+    height: 14px !important;
+  }
+  #progress-traveler {
+    /* keep nose inside: left clamp via JS uses calc; CSS max */
+    max-width: 22px !important;
+  }
+  .topbar, .site-header, header.top, .app-header {
+    padding-inline: 0.65rem !important;
+    gap: 0.4rem !important;
+  }
+  .brand span { display: none !important; }
+}
+
+/* Short laptop contact heading: bump without scroll */
+@media (min-width: 901px) and (max-height: 560px) {
+  .panel[data-step="6"] .diploma h2,
+  .panel[data-step="6"] h2 {
+    font-size: clamp(1.55rem, 2.4vw + 1.1vh, 2.35rem) !important;
+    line-height: 1.12 !important;
+    margin-bottom: 0.25rem !important;
+  }
+  .panel[data-step="6"] .diploma .lede {
+    font-size: 0.88rem !important;
+    line-height: 1.35 !important;
+    margin-bottom: 0.35rem !important;
+  }
+}
+@media (min-width: 1000px) and (max-width: 1100px) and (max-height: 540px) {
+  .panel[data-step="6"] .diploma h2,
+  .panel[data-step="6"] h2 {
+    font-size: clamp(1.7rem, 2.8vw + 1.2vh, 2.5rem) !important;
+  }
+}
+
+/* Traveler must paint outside the thin fill line */
+.progress-track {
+  overflow: visible !important;
+  position: relative;
+}
+.progress-traveler {
+  position: absolute !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  z-index: 2;
+}
+@media (max-width: 600px) {
+  .bar {
+    padding-inline: 0.7rem !important;
+    gap: 0.45rem !important;
+    overflow: visible !important;
+  }
+  .progress {
+    flex: 0 1 auto !important;
+    max-width: calc(100vw - 5.5rem) !important;
+  }
+  .progress-track {
+    width: min(110px, 28vw) !important;
+  }
+  /* Phone panels: never wider than viewport */
+  .panel,
+  .panel.active,
+  .panel[data-step="6"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+  .lesson {
+    padding-left: 0.85rem !important;
+    padding-right: 0.85rem !important;
+    overflow-x: hidden !important; /* page may scroll Y; no horizontal spill */
+  }
+}
+
+/* 1024×494 contact heading: closer to other short-desktop beats */
+@media (min-width: 1000px) and (max-width: 1100px) and (min-height: 480px) and (max-height: 540px) {
+  .panel[data-step="6"] .diploma h2,
+  .panel[data-step="6"] h2 {
+    font-size: clamp(1.85rem, 2.2vw + 1.6vh, 2.55rem) !important;
+    line-height: 1.1 !important;
+  }
+  .panel[data-step="6"] .diploma .lede {
+    font-size: 0.9rem !important;
+    line-height: 1.32 !important;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
+@media (min-width: 1000px) and (max-width: 1100px) and (min-height: 480px) and (max-height: 540px) {
+  .panel[data-step="6"] .diploma h2,
+  .panel[data-step="6"] h2 {
+    font-size: 2.15rem !important; /* ~34.4px — readable vs other beats */
+  }
+}
+
+@media (max-width: 600px) {
+  .bar {
+    padding-inline: 1rem !important; /* keep brand left >= ~16px for logoM */
+  }
+  .lesson {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+}
+
+/* Phone stack integrity: no flex-collapse, no overflow clip */
+@media (max-width: 600px) {
+  .panel[data-step="6"] .contact-box,
+  .panel[data-step="6"] .contact-stage,
+  .panel[data-step="6"] .ab.contact-box {
+    overflow: visible !important;
+    max-height: none !important;
+    height: auto !important;
+    flex: 0 0 auto !important;
+    min-height: 0 !important;
+  }
+  .panel[data-step="6"] .ab-inner.contact-grid-v2 {
+    overflow: visible !important;
+    max-height: none !important;
+    height: auto !important;
+  }
+  .contact-grid-v2 .form-chat-v2 {
+    flex: 0 0 auto !important;
+    height: auto !important;
+    max-height: none !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+  .form-chat-v2 .chat-thread {
+    flex: 0 0 auto !important;
+    max-height: none !important;
+    min-height: 3.25rem !important;
+    overflow: visible !important;
+  }
+  .form-chat-v2 .chat-composer {
+    flex: 0 0 auto !important;
+    margin-top: 0.45rem !important;
+  }
+  .panel[data-step="6"] {
+    height: auto !important;
+    max-height: none !important;
+  }
+  .panel[data-step="6"] .diploma {
+    flex-shrink: 0 !important;
+  }
+  /* Note can show on tall phones; hide on very short to reduce scroll noise */
+  .note-preview { display: block !important; }
+}
+@media (max-width: 600px) and (max-height: 700px) {
+  .note-preview { display: none !important; }
+  .contact-grid-v2 .contact-host-shot,
+  .contact-grid-v2 .contact-seal {
+    width: 64px !important;
+    height: 64px !important;
+  }
+  .panel[data-step="6"] .diploma .lede {
+    font-size: 0.84rem !important;
+  }
+  .speech-intro { padding: 0.4rem 0.55rem !important; }
+}
+
+/* Beat styles.css (min-width:501px) specificity for phone stack */
+@media (max-width: 600px) {
+  .panel[data-step="6"] .contact-box .ab-inner.contact-grid.contact-grid-v2,
+  .panel[data-step="6"] .contact-box .ab-inner.contact-grid,
+  .panel[data-step="6"] .contact-grid.contact-grid-v2,
+  .panel[data-step="6"] .contact-grid {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: none !important;
+  }
+  .panel[data-step="6"] .contact-grid .contact-copy,
+  .panel[data-step="6"] .contact-grid .form,
+  .panel[data-step="6"] .contact-grid .contact-actions {
+    grid-column: 1 !important;
+    grid-row: auto !important;
+  }
+}
+
+/* Phone headshot: true circle (grid stretch was making a tall oval) */
+@media (max-width: 600px) {
+  .contact-grid-v2 .contact-host-shot,
+  .contact-grid-v2 .contact-seal,
+  .panel[data-step="6"] .contact-host-shot,
+  .panel[data-step="6"] .contact-seal {
+    width: 88px !important;
+    height: 88px !important;
+    max-width: 88px !important;
+    max-height: 88px !important;
+    min-width: 88px !important;
+    min-height: 88px !important;
+    aspect-ratio: 1 / 1 !important;
+    border-radius: 50% !important;
+    overflow: hidden !important;
+    align-self: start !important;
+    justify-self: start !important;
+    flex: 0 0 88px !important;
+  }
+  .contact-grid-v2 .contact-host-shot img,
+  .panel[data-step="6"] .contact-host-shot img,
+  .panel[data-step="6"] .contact-seal img {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    object-fit: cover !important;
+    object-position: center top !important;
+    border-radius: 50% !important;
+    display: block !important;
+  }
+}
+@media (max-width: 600px) and (max-height: 700px) {
+  .contact-grid-v2 .contact-host-shot,
+  .contact-grid-v2 .contact-seal,
+  .panel[data-step="6"] .contact-host-shot,
+  .panel[data-step="6"] .contact-seal {
+    width: 64px !important;
+    height: 64px !important;
+    max-width: 64px !important;
+    max-height: 64px !important;
+    min-width: 64px !important;
+    min-height: 64px !important;
+    flex: 0 0 64px !important;
+  }
+}

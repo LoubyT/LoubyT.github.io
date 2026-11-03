@@ -93,17 +93,36 @@
   var root = document.documentElement;
 
   function show(n) {
+    var prev = step;
     step = Math.max(0, Math.min(total, n));
     panels.forEach(function (p) {
       var s = Number(p.getAttribute("data-step"));
       var on = s === step;
       p.classList.toggle("active", on);
-      if (on) p.removeAttribute("hidden");
-      else p.setAttribute("hidden", "");
+      p.classList.remove("is-enter", "is-exit");
+      if (on) {
+        p.removeAttribute("hidden");
+        if (!reduce && prev !== step) {
+          p.classList.add("is-enter");
+          setTimeout(function () { p.classList.remove("is-enter"); }, 520);
+        }
+      } else {
+        p.setAttribute("hidden", "");
+      }
     });
     fill.style.width = (step / total) * 100 + "%";
     label.textContent = String(step).padStart(2, "0") + " / " + String(total).padStart(2, "0");
+    var traveler = document.getElementById("progress-traveler");
+    if (traveler) {
+      var pct = (step / total) * 100;
+      // Keep rocket fully inside the track (half-width inset), never past 100%
+      var half = Math.max(8, Math.round((traveler.offsetWidth || 22) / 2));
+      traveler.style.left = "calc(" + pct + "% - " + half + "px)";
+      if (step === total) traveler.style.left = "calc(100% - " + (half * 2) + "px)";
+      traveler.classList.toggle("is-end", step === total);
+    }
     document.body.classList.toggle("at-end", step === total);
+    document.body.setAttribute("data-beat", String(step));
     if (!reduce && flash) {
       flash.classList.add("on");
       setTimeout(function () { flash.classList.remove("on"); }, 420);
@@ -449,25 +468,367 @@
     });
   }
 
-  // Formspree (same endpoint as live site)
+  // Formspree (same endpoint as live site) + whimsy states
+
+  // --- Whimsical contact helpers (concepts A/B/C) ---
+  function prefersReduced() {
+    return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  }
+  function happySeal() {
+    var seals = document.querySelectorAll(".diploma .seal-portrait, .contact-seal");
+    seals.forEach(function (s) {
+      s.classList.add("is-happy");
+      setTimeout(function () { s.classList.remove("is-happy"); }, 1200);
+    });
+  }
+  function spawnPlane(stage) {
+    if (!stage || prefersReduced()) return;
+    stage.innerHTML = "";
+    var el = document.createElement("div");
+    el.className = "paper-plane go";
+    el.innerHTML = '<svg viewBox="0 0 24 24" width="28" height="28"><path fill="currentColor" d="M3.2 11.2 20.1 3.4c.7-.3 1.4.4 1.1 1.1l-7.8 16.9c-.3.7-1.3.6-1.5-.2l-1.7-6.3-6.3-1.7c-.8-.2-.9-1.2-.2-1.5z"/></svg>';
+    stage.appendChild(el);
+    setTimeout(function () { el.remove(); }, 1400);
+  }
+  function spawnSat(stage) {
+    if (!stage || prefersReduced()) return;
+    stage.innerHTML = "";
+    for (var i = 0; i < 3; i++) {
+      var bit = document.createElement("div");
+      bit.className = "sat-bit go";
+      bit.style.left = (40 + i * 12) + "%";
+      bit.style.bottom = (20 + i * 8) + "%";
+      bit.style.animationDelay = (i * 0.08) + "s";
+      stage.appendChild(bit);
+    }
+    setTimeout(function () { stage.innerHTML = ""; }, 1600);
+  }
+  function spawnEnv(stage) {
+    if (!stage || prefersReduced()) return;
+    stage.innerHTML = "";
+    var el = document.createElement("div");
+    el.className = "env-letter go";
+    stage.appendChild(el);
+    setTimeout(function () { el.remove(); }, 1300);
+  }
+
+  // Concept B: chat stepper (thread + typing + note preview)
+  (function initChat() {
+    var form = document.getElementById("contact-form");
+    if (!form || !form.classList.contains("form-chat")) return;
+    var chatStep = 0;
+    var prompts = [
+      "First up: what should I call you?",
+      "Where can I email you back?",
+      "Alright. What's on your mind?"
+    ];
+    var answers = ["", "", ""];
+    var steps = form.querySelectorAll(".cq-step");
+    var thread = document.getElementById("chat-thread");
+    var nextBtn = document.getElementById("chat-next");
+    var backBtn = document.getElementById("chat-back");
+    var sendBtn = document.getElementById("send-btn");
+    var noteName = document.getElementById("note-name");
+    var noteEmail = document.getElementById("note-email");
+    var noteMsg = document.getElementById("note-msg");
+    var typing = false;
+
+    function updateNote() {
+      function setEl(el, val, empty) {
+        if (!el) return;
+        if (val && val.trim()) el.textContent = val.trim();
+        else el.innerHTML = '<span class="note-empty">' + empty + "</span>";
+      }
+      setEl(noteName, answers[0], "name…");
+      setEl(noteEmail, answers[1], "email…");
+      setEl(noteMsg, answers[2], "message…");
+    }
+
+    function loubyBubble(text, withTyping, done) {
+      if (!thread) { if (done) done(); return; }
+      function addBubble() {
+        var row = document.createElement("div");
+        row.className = "chat-row louby";
+        row.innerHTML =
+          '<div class="chat-avatar" aria-hidden="true"><img src="assets/headshot.webp" alt="" width="36" height="36"></div>' +
+          '<div class="chat-bubble louby-bubble">' + text + "</div>";
+        thread.appendChild(row);
+        thread.scrollTop = thread.scrollHeight;
+        if (done) done();
+      }
+      if (withTyping && !reduce) {
+        typing = true;
+        var tip = document.createElement("div");
+        tip.className = "chat-row louby is-typing";
+        tip.innerHTML =
+          '<div class="chat-avatar" aria-hidden="true"><img src="assets/headshot.webp" alt="" width="36" height="36"></div>' +
+          '<div class="chat-bubble typing-bubble" aria-hidden="true"><span></span><span></span><span></span></div>';
+        thread.appendChild(tip);
+        thread.scrollTop = thread.scrollHeight;
+        setTimeout(function () {
+          tip.remove();
+          typing = false;
+          addBubble();
+        }, 520);
+      } else {
+        addBubble();
+      }
+    }
+
+    function userBubble(text) {
+      if (!thread) return;
+      var row = document.createElement("div");
+      row.className = "chat-row user";
+      row.innerHTML = '<div class="chat-bubble user-bubble">' + text.replace(/</g, "&lt;") + "</div>";
+      thread.appendChild(row);
+      thread.scrollTop = thread.scrollHeight;
+    }
+
+    function rebuildThread(upto, withTyping) {
+      if (!thread) return;
+      thread.innerHTML = "";
+      for (var i = 0; i <= upto; i++) {
+        if (i < upto) {
+          // prior Q+A without typing
+          loubyBubble(prompts[i], false);
+          if (answers[i]) userBubble(answers[i]);
+        } else {
+          loubyBubble(prompts[i], withTyping);
+        }
+      }
+    }
+
+    function showStep(n, opts) {
+      opts = opts || {};
+      chatStep = n;
+      steps.forEach(function (el, i) {
+        if (i === n) el.removeAttribute("hidden");
+        else el.setAttribute("hidden", "");
+      });
+      if (backBtn) backBtn.hidden = n === 0;
+      if (nextBtn) {
+        nextBtn.hidden = n >= steps.length - 1;
+        var nl = nextBtn.querySelector(".btn-send-label");
+        if (nl) nl.textContent = "Next";
+      }
+      if (sendBtn) {
+        var sl = sendBtn.querySelector(".btn-send-label");
+        if (sl) sl.textContent = "Send";
+      }
+      if (sendBtn) sendBtn.hidden = n < steps.length - 1;
+      form.classList.toggle("is-chatting", n > 0);
+      rebuildThread(n, opts.typing !== false && n > 0);
+      updateNote();
+      var focusEl = steps[n] && steps[n].querySelector("input, textarea");
+      if (focusEl) setTimeout(function () { focusEl.focus(); }, 40);
+    }
+
+    // Live note as they type
+    ["name", "email", "message"].forEach(function (id, i) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener("input", function () {
+        answers[i] = el.value;
+        updateNote();
+      });
+    });
+
+    if (nextBtn) nextBtn.addEventListener("click", function () {
+      if (typing) return;
+      var wrap = steps[chatStep];
+      var field = wrap && wrap.querySelector("input, textarea");
+      if (field && !field.reportValidity()) return;
+      answers[chatStep] = field ? field.value : "";
+      updateNote();
+      userBubble(answers[chatStep]);
+      happySeal();
+      if (chatStep < steps.length - 1) {
+        var next = chatStep + 1;
+        steps.forEach(function (el, i) {
+          if (i === next) el.removeAttribute("hidden");
+          else el.setAttribute("hidden", "");
+        });
+        chatStep = next;
+        form.classList.toggle("is-chatting", next > 0);
+        if (backBtn) backBtn.hidden = false;
+        if (nextBtn) {
+          nextBtn.hidden = next >= steps.length - 1;
+          var nl = nextBtn.querySelector(".btn-send-label");
+          if (nl) nl.textContent = "Next";
+        }
+        if (sendBtn) {
+          sendBtn.hidden = next < steps.length - 1;
+          var sl = sendBtn.querySelector(".btn-send-label");
+          if (sl) sl.textContent = "Send";
+        }
+        loubyBubble(prompts[next], true, function () {
+          var focusEl = steps[next] && steps[next].querySelector("input, textarea");
+          if (focusEl) focusEl.focus();
+        });
+      }
+    });
+
+    if (backBtn) backBtn.addEventListener("click", function () {
+      if (chatStep > 0) {
+        // keep answers; rebuild without re-typing animation
+        showStep(chatStep - 1, { typing: false });
+      }
+    });
+
+    // Commit message answer + user bubble right before submit
+    form._chatCommitMessage = function () {
+      var field = document.getElementById("message");
+      var val = field ? field.value : "";
+      answers[2] = val;
+      updateNote();
+      // Avoid duplicate user bubble if already present for this answer
+      var last = thread && thread.querySelector(".chat-row.user:last-child .user-bubble");
+      if (!last || last.textContent !== val) userBubble(val);
+      if (last && !prefersReduced()) {
+        var bubble = thread.querySelector(".chat-row.user:last-child .user-bubble");
+        if (bubble) {
+          bubble.classList.add("is-fold-plane");
+          setTimeout(function () { bubble.classList.remove("is-fold-plane"); }, 1200);
+        }
+      }
+    };
+
+    // One confirmation bubble; keep note; hide composer; do not reset yet
+    form._chatSuccess = function () {
+      form.classList.add("is-success", "is-chatting");
+      var composer = form.querySelector(".chat-composer");
+      if (composer) composer.setAttribute("hidden", "");
+      if (nextBtn) nextBtn.hidden = true;
+      if (backBtn) backBtn.hidden = true;
+      if (sendBtn) {
+        sendBtn.hidden = true;
+        sendBtn.classList.remove("is-sending");
+        sendBtn.classList.add("is-success");
+      }
+      updateNote();
+      loubyBubble("Got it. I will write back.", !prefersReduced());
+    };
+
+    form._chatReset = function () {
+      answers = ["", "", ""];
+      form.classList.remove("is-success", "is-chatting");
+      var composer = form.querySelector(".chat-composer");
+      if (composer) composer.removeAttribute("hidden");
+      showStep(0, { typing: false });
+    };
+
+    showStep(0, { typing: true });
+  })();
+
+  // Concept C: envelope open  })();
+
+  // Concept C: envelope open
+  (function initComposer() {
+    var root = document.getElementById("composer");
+    if (!root) return;
+    var openBtn = document.getElementById("open-composer");
+    var form = document.getElementById("contact-form");
+    if (!openBtn || !form) return;
+    openBtn.addEventListener("click", function () {
+      root.classList.add("is-open");
+      openBtn.setAttribute("aria-expanded", "true");
+      form.hidden = false;
+      var first = form.querySelector("input, textarea");
+      if (first) setTimeout(function () { first.focus(); }, 40);
+    });
+  })();
+
   var form = document.getElementById("contact-form");
   var status = document.getElementById("form-status");
-  form.addEventListener("submit", function (e) {
+  var sendBtn = document.getElementById("send-btn");
+  if (form) form.addEventListener("submit", function (e) {
     e.preventDefault();
-    status.textContent = "Sending...";
+    var isChat = form.classList.contains("form-chat");
+    // Chat: only submit on the message step
+    if (isChat) {
+      var msgStep = form.querySelector('.cq-step[data-step-field="2"]');
+      if (msgStep && msgStep.hasAttribute("hidden")) return;
+      var msgField = document.getElementById("message");
+      if (msgField && !msgField.reportValidity()) return;
+    }
+    if (status) {
+      status.textContent = "Sending...";
+      status.classList.remove("is-success", "is-error");
+    }
+    if (sendBtn) {
+      sendBtn.classList.remove("is-success", "is-error");
+      sendBtn.classList.add("is-sending");
+      sendBtn.disabled = true;
+      var label = sendBtn.querySelector(".btn-send-label");
+      if (label) label.textContent = "Sending...";
+    }
+    // Snapshot chat answers into the note before the request
+    if (isChat && typeof form._chatCommitMessage === "function") {
+      form._chatCommitMessage();
+    }
     fetch(form.action, {
       method: "POST",
       body: new FormData(form),
       headers: { Accept: "application/json" }
     }).then(function (res) {
       if (res.ok) {
-        status.textContent = "Got it. I'll hit you back.";
-        form.reset();
+        happySeal();
+        spawnPlane(form.querySelector(".plane-stage"));
+        spawnSat(form.querySelector(".sat-stage"));
+        spawnEnv(form.querySelector(".env-fly"));
+        if (isChat && typeof form._chatSuccess === "function") {
+          // One confirmation in the thread; status stays quiet (sr-only)
+          if (status) {
+            status.textContent = "Got it. I will write back.";
+            status.classList.add("is-success", "is-sr-only-status");
+          }
+          form._chatSuccess();
+        } else {
+          if (status) {
+            status.textContent = "Got it. I will write back.";
+            status.classList.add("is-success");
+          }
+          if (sendBtn) {
+            sendBtn.classList.remove("is-sending");
+            sendBtn.classList.add("is-success");
+            var labelOk = sendBtn.querySelector(".btn-send-label");
+            if (labelOk) labelOk.textContent = "Sent";
+          }
+          form.reset();
+        }
+        setTimeout(function () {
+          if (sendBtn) {
+            sendBtn.disabled = false;
+            sendBtn.classList.remove("is-success", "is-sending");
+            var label = sendBtn.querySelector(".btn-send-label");
+            var concept = document.querySelector("[data-concept]");
+            var kind = concept && concept.getAttribute("data-concept");
+            if (label) {
+              if (kind === "chat") label.textContent = "Send";
+              else if (kind === "envelope") label.textContent = "Seal and send";
+              else label.textContent = "Send it";
+            }
+          }
+        }, 2200);
       } else {
-        status.textContent = "That didn't go through. Try LinkedIn for now.";
+        if (status) { status.textContent = "That didn't go through. Try LinkedIn for now."; status.classList.add("is-error"); }
+        if (sendBtn) {
+          sendBtn.disabled = false;
+          sendBtn.classList.remove("is-sending");
+          sendBtn.classList.add("is-error");
+          var label = sendBtn.querySelector(".btn-send-label");
+          if (label) label.textContent = "Try again";
+        }
       }
     }).catch(function () {
-      status.textContent = "Network hiccup. Find me on LinkedIn if you need me fast.";
+      if (status) { status.textContent = "Network hiccup. Find me on LinkedIn if you need me fast."; status.classList.add("is-error"); }
+      if (sendBtn) {
+        sendBtn.disabled = false;
+        sendBtn.classList.remove("is-sending");
+        sendBtn.classList.add("is-error");
+        var label = sendBtn.querySelector(".btn-send-label");
+        if (label) label.textContent = "Try again";
+      }
     });
   });
 
@@ -502,6 +863,148 @@
       if (b) b.click();
     }
   });
+
+
+  /* —— Quiet Classroom whimsy —— */
+  document.body.classList.add("qc-on");
+
+  var progressWrap = document.querySelector(".progress");
+  var brand = document.querySelector(".brand");
+  if (brand && !reduce) {
+    requestAnimationFrame(function () {
+      setTimeout(function () {
+        brand.classList.add("is-tip");
+        setTimeout(function () { brand.classList.remove("is-tip"); }, 700);
+      }, 450);
+    });
+  }
+
+  var _show = show;
+  show = function (n) {
+    _show(n);
+    if (progressWrap) {
+      progressWrap.classList.add("is-tick");
+      if (fill) {
+        fill.classList.add("is-bloom");
+        setTimeout(function () {
+          fill.classList.remove("is-bloom");
+          progressWrap.classList.remove("is-tick");
+        }, 700);
+      }
+    }
+    if (n === 5) qcCountMetrics();
+    qcIdlePortrait(n);
+  };
+
+  // Choice bloom / soft shake
+  document.querySelectorAll("[data-choice]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      if (reduce) return;
+      var which = btn.getAttribute("data-choice");
+      document.querySelectorAll("[data-choice]").forEach(function (b) {
+        b.classList.remove("is-correct-bloom", "is-soft-shake");
+      });
+      if (which === "monday") {
+        btn.classList.add("is-correct-bloom");
+      } else {
+        btn.classList.add("is-soft-shake");
+        setTimeout(function () { btn.classList.remove("is-soft-shake"); }, 140);
+      }
+    });
+  });
+
+  // Workflow ink blot on click
+  document.querySelectorAll(".wf-row").forEach(function (row) {
+    if (!row.style.position) row.style.position = "relative";
+    row.addEventListener("click", function (e) {
+      if (reduce) return;
+      var r = row.getBoundingClientRect();
+      row.style.setProperty("--ink-x", (e.clientX - r.left) + "px");
+      row.style.setProperty("--ink-y", (e.clientY - r.top) + "px");
+      row.classList.remove("is-ink");
+      void row.offsetWidth;
+      row.classList.add("is-ink");
+      setTimeout(function () { row.classList.remove("is-ink"); }, 560);
+    });
+  });
+
+  var metricsDone = false;
+  function qcCountMetrics() {
+    if (metricsDone || reduce) return;
+    var metrics = document.querySelectorAll(".panel[data-step='5'] .metric");
+    if (!metrics.length) return;
+    metricsDone = true;
+    metrics.forEach(function (el) {
+      var original = el.textContent;
+      el.setAttribute("data-original", original);
+      // Only animate leading integers when present; keep original meaning
+      var all = original.match(/\d[\d,]*/g) || [];
+      if (all.length !== 1) {
+        el.classList.add("is-counting");
+        setTimeout(function () { el.classList.remove("is-counting"); }, 700);
+        return;
+      }
+      var m = all[0];
+      var target = parseInt(m.replace(/,/g, ""), 10);
+      if (!isFinite(target) || target > 20000) {
+        el.classList.add("is-counting");
+        setTimeout(function () { el.classList.remove("is-counting"); }, 700);
+        return;
+      }
+      el.classList.add("is-counting");
+      var start = performance.now();
+      var dur = 600;
+      function tick(now) {
+        var t = Math.min(1, (now - start) / dur);
+        var eased = 1 - Math.pow(1 - t, 3);
+        var cur = Math.round(target * eased);
+        el.textContent = original.replace(m, String(cur));
+        if (t < 1) requestAnimationFrame(tick);
+        else {
+          el.textContent = original;
+          setTimeout(function () { el.classList.remove("is-counting"); }, 400);
+        }
+      }
+      requestAnimationFrame(tick);
+    });
+  }
+
+  function qcIdlePortrait(n) {
+    if (reduce) return;
+    document.querySelectorAll(".hero-shot, .portrait, .seal-portrait, .contact-host-shot").forEach(function (el) {
+      el.classList.remove("is-idle");
+    });
+    var sel;
+    if (n === 0) sel = ".panel[data-step='0'] .portrait";
+    else if (n === 6) sel = ".panel[data-step='6'] .contact-host-shot";
+    else sel = null;
+    var el = sel ? document.querySelector(sel) : null;
+    if (!el) return;
+    el.classList.add("is-idle");
+    setTimeout(function () { el.classList.remove("is-idle"); }, 1800);
+  }
+
+  // Triple-click wink on diploma / hero seal
+  (function () {
+    var clicks = 0;
+    var timer = null;
+    function wink(target) {
+      if (reduce || !target) return;
+      target.classList.add("is-wink");
+      setTimeout(function () { target.classList.remove("is-wink"); }, 500);
+    }
+    document.querySelectorAll(".seal-portrait, .panel[data-step='0'] .portrait").forEach(function (el) {
+      el.addEventListener("click", function () {
+        clicks++;
+        clearTimeout(timer);
+        timer = setTimeout(function () { clicks = 0; }, 600);
+        if (clicks >= 3) {
+          clicks = 0;
+          wink(el);
+        }
+      });
+    });
+  })();
 
   show(0);
 })();

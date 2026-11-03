@@ -30,12 +30,17 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="whimsy-classroom.css">
+  <link rel="stylesheet" href="whimsy-glance.css">
+  <link rel="stylesheet" href="whimsy-r2.css">
+  <link rel="stylesheet" href="whimsy-r3.css">
 </head>
-<body>
+<body data-contact-concept="b">
   <a class="skip" href="#lesson">Skip to lesson</a>
   <div class="flash" id="flash" aria-hidden="true"></div>
 
   <div class="stage" aria-hidden="true">
+      <div class="aurora"></div>
     <canvas class="stars-canvas" id="stars" width="1" height="1"></canvas>
     <div class="horizon"></div>
     <div class="sun"></div>
@@ -43,6 +48,15 @@
     <div class="cursor-glow"></div>
     <div class="scan"></div>
     <div class="vignette"></div>
+  </div>
+
+  <div class="margin-doodles" aria-hidden="true">
+    <svg class="doodle doodle-star s1" viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M12 2.2l1.6 5.1H19l-4.2 3.1 1.6 5.1L12 12.4 7.6 15.5l1.6-5.1L5 7.3h5.4L12 2.2z"/></svg>
+    <svg class="doodle doodle-star s2" viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M12 3.5l1.2 3.8H17l-3.1 2.3 1.2 3.8L12 11.1 8.9 13.4l1.2-3.8L7 7.3h3.8L12 3.5z"/></svg>
+    <svg class="doodle doodle-star s3" viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M12 2.2l1.6 5.1H19l-4.2 3.1 1.6 5.1L12 12.4 7.6 15.5l1.6-5.1L5 7.3h5.4L12 2.2z"/></svg>
+    <svg class="doodle doodle-squiggle s4" viewBox="0 0 48 16" width="36" height="12"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M2 10c4-8 8 8 12 0s8 8 12 0 8 8 12 0"/></svg>
+    <svg class="doodle doodle-plane" viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M3.2 11.2 20.1 3.4c.7-.3 1.4.4 1.1 1.1l-7.8 16.9c-.3.7-1.3.6-1.5-.2l-1.7-6.3-6.3-1.7c-.8-.2-.9-1.2-.2-1.5z"/></svg>
+    <svg class="doodle doodle-sat" id="doodle-sat" viewBox="0 0 32 20" width="28" height="16"><rect x="11" y="6" width="10" height="8" rx="2" fill="currentColor" opacity="0.85"/><rect x="2" y="8" width="8" height="4" rx="1" fill="currentColor" opacity="0.55"/><rect x="22" y="8" width="8" height="4" rx="1" fill="currentColor" opacity="0.55"/><circle cx="16" cy="4" r="1.6" fill="currentColor"/></svg>
   </div>
 
   <div class="app">
@@ -54,7 +68,10 @@
       <div class="progress" aria-live="polite">
         <span class="sr-only" id="step-announce"></span>
         <span id="step-label">00 / 06</span>
-        <div class="progress-track" aria-hidden="true"><div class="progress-fill" id="progress-fill"></div></div>
+        <div class="progress-track" aria-hidden="true">
+          <div class="progress-fill" id="progress-fill"></div>
+          <span class="progress-traveler is-rocket" id="progress-traveler" title="lesson rocket" aria-hidden="true"></span>
+        </div>
       </div>
     </header>
 
@@ -62,9 +79,9 @@
       <!-- 0 INTRO -->
       <section class="panel active" data-step="0" aria-labelledby="t0">
         <div class="intro-grid">
-          <div>
-            <p class="eyebrow">A short lesson · about me</p>
-            <h1 id="t0">Learn who I am<br><em>the way I teach.</em></h1>
+          <div class="intro-copy">
+            <p class="eyebrow"><span class="eyebrow-chalk">A short lesson · about me</span></p>
+            <h1 id="t0" class="hero-title">Learn who I am<br><em class="hero-em">the way I teach.<span class="chalk-underline" aria-hidden="true"></span></em></h1>
             <p class="lede">
               I'm Louby Trahan. Instructional Designer II at SpaceX.
               I train people for hard jobs, and I build the tools that make that training stick.
@@ -73,12 +90,16 @@
               <button type="button" class="btn btn-primary" data-next>Start the lesson</button>
               <button type="button" class="btn btn-ghost" data-jump="6">Skip to contact</button>
             </div>
+            <p class="hero-aside" aria-hidden="true">Grab a seat. It only takes a minute.</p>
           </div>
-          <div class="portrait">
+          <div class="portrait is-hero-portrait">
             <div class="ring" aria-hidden="true"></div>
             <div class="frame">
               <img src="assets/headshot.webp" alt="Louby Trahan" width="751" height="770" fetchpriority="high">
             </div>
+            <span class="frame-corner tl" aria-hidden="true"></span>
+            <span class="frame-corner br" aria-hidden="true"></span>
+            <span class="chalk-hi" aria-hidden="true">hi</span>
           </div>
         </div>
       </section>
@@ -265,67 +286,79 @@
 
       <!-- 6 GRADUATION -->
       <section class="panel" data-step="6" aria-labelledby="t6" hidden>
-        <div class="diploma">
-          <div class="seal seal-portrait">
-            <img src="assets/headshot.webp" alt="Louby Trahan" width="120" height="120">
-          </div>
+        <div class="diploma diploma-restored">
           <p class="eyebrow">You made it</p>
           <h2 id="t6">Alright. You get the idea.</h2>
-          <p class="lede" style="margin-left:auto;margin-right:auto">
+          <p class="lede diploma-bio">
             I want to lead a training team that can do the whole job,
             and I want that team full of people who are better than me at what they do.
-            If I'm the smartest person in the room, I hired wrong.
+            If I'm the smartest person in the room, I&nbsp;hired&nbsp;wrong.
           </p>
         </div>
-        <div class="ab contact-box">
-          <div class="ab-inner contact-grid">
-            <div class="contact-copy">
-              <a class="linkedin-mark"
-                 href="https://www.linkedin.com/in/Louby"
-                 target="_blank"
-                 rel="noopener noreferrer"
-                 aria-label="Louby on LinkedIn">
-                <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true" focusable="false">
-                  <path fill="currentColor" d="M20.45 20.45h-3.55v-5.57c0-1.33-.03-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.78C.8 0 0 .77 0 1.73v20.54C0 23.23.8 24 1.78 24h20.44c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z"/>
-                </svg>
+
+        <div class="ab contact-box contact-stage concept-b" data-concept="chat">
+          <div class="ab-inner contact-grid contact-grid-v2">
+            <div class="contact-copy contact-host">
+              <div class="contact-seal contact-host-shot" aria-hidden="true">
+                <img src="assets/headshot.webp" alt="" width="160" height="160">
+                <span class="host-spark" aria-hidden="true">✦</span>
+              </div>
+              <div class="speech-intro" role="note">
+                <p class="speech-text contact-line">Hey. Tell me a little, one thing at a time. No giant form staring you down.</p>
+              </div>
+              <div class="note-preview" id="note-preview" aria-live="polite">
+                <p class="note-label">Your note so far</p>
+                <div class="note-name" id="note-name"><span class="note-empty">name…</span></div>
+                <div class="note-email" id="note-email"><span class="note-empty">email…</span></div>
+                <div class="note-msg" id="note-msg"><span class="note-empty">message…</span></div>
+              </div>
+              <a class="btn btn-li" href="https://www.linkedin.com/in/Louby" target="_blank" rel="noopener noreferrer">
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M20.45 20.45h-3.55v-5.57c0-1.33-.03-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.78C.8 0 0 .77 0 1.73v20.54C0 23.23.8 24 1.78 24h20.44c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z"/></svg>
+                <span>LinkedIn</span>
               </a>
-              <p class="contact-line">
-                If you're thinking about learning teams, enablement, or working together, say hey.
-              </p>
-              <p class="contact-line contact-line-follow">
-                Find me on
-                <a href="https://www.linkedin.com/in/Louby" target="_blank" rel="noopener noreferrer">LinkedIn</a>,
-                or write me here.
-              </p>
             </div>
-            <form class="form" id="contact-form" action="https://formspree.io/f/myyovwbz" method="POST">
-              <div class="field">
-                <label for="name">Name</label>
-                <input id="name" name="sender-name" autocomplete="name" required placeholder="Your name">
+            <form class="form form-whimsy form-chat form-chat-v2" id="contact-form" action="https://formspree.io/f/myyovwbz" method="POST">
+              <div class="chat-thread" id="chat-thread" aria-live="polite">
+                <!-- bubbles filled by JS -->
               </div>
-              <div class="field">
-                <label for="email">Email</label>
-                <input id="email" name="sender-email" type="email" autocomplete="email" required placeholder="you@company.com">
+              <div class="chat-composer">
+                <div class="cq-step" data-step-field="0">
+                  <div class="field">
+                    <label class="sr-only" for="name">Name</label>
+                    <input id="name" name="sender-name" autocomplete="name" required placeholder="Your name">
+                  </div>
+                </div>
+                <div class="cq-step" data-step-field="1" hidden>
+                  <div class="field">
+                    <label class="sr-only" for="email">Email</label>
+                    <input id="email" name="sender-email" type="email" autocomplete="email" required placeholder="you@company.com">
+                  </div>
+                </div>
+                <div class="cq-step" data-step-field="2" hidden>
+                  <div class="field">
+                    <label class="sr-only" for="message">Message</label>
+                    <textarea id="message" name="message" rows="2" required placeholder="What's on your mind?"></textarea>
+                  </div>
+                </div>
+                <div class="chat-actions">
+                  <button type="button" class="btn btn-ghost btn-chat-back" id="chat-back" hidden>Edit</button>
+                  <button type="button" class="btn btn-send" id="chat-next">
+                    <span class="btn-send-label">Next</span>
+                  </button>
+                  <button class="btn btn-send" type="submit" id="send-btn" hidden>
+                    <span class="btn-send-label">Send</span>
+                    <svg class="ico-plane" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M3.2 11.2 20.1 3.4c.7-.3 1.4.4 1.1 1.1l-7.8 16.9c-.3.7-1.3.6-1.5-.2l-1.7-6.3-6.3-1.7c-.8-.2-.9-1.2-.2-1.5z"/></svg>
+                  </button>
+                </div>
               </div>
-              <div class="field">
-                <label for="message">Message</label>
-                <textarea id="message" name="message" rows="3" required placeholder="What's on your mind?"></textarea>
-              </div>
-              <button class="btn btn-primary" type="submit" style="justify-self:start">Send</button>
               <p class="form-status" id="form-status" role="status" aria-live="polite"></p>
+              <div class="sat-stage" aria-hidden="true"></div>
+              <div class="plane-stage" aria-hidden="true"></div>
             </form>
-            <!--
-              Beat 06 keyboard / DOM order (documented):
-              1) contact lede + LinkedIn mark/link
-              2) contact form (name, email, message, send)
-              3) contact-actions: Back, then Open the longer bio
-              Desktop CSS pins these actions to the bottom of the left column;
-              mobile stacks them under the form. No separate nav row below the card.
-            -->
-            <div class="contact-actions nav-lesson" role="navigation" aria-label="Lesson and bio">
-              <button type="button" class="ghost-link" data-back>Back</button>
-              <button type="button" class="btn btn-ghost" id="open-dossier" aria-expanded="false" aria-controls="dossier">Open the longer bio</button>
-            </div>
+              <div class="contact-actions nav-lesson" role="navigation" aria-label="Lesson and bio">
+                <button type="button" class="ghost-link" data-back>Back</button>
+                <button type="button" class="btn btn-ghost" id="open-dossier" aria-expanded="false" aria-controls="dossier">Open the longer bio</button>
+              </div>
           </div>
         </div>
       </section>
@@ -388,7 +421,7 @@
     </div>
 
 <footer>
-      <p>© 2026 Louby Trahan</p>
+      <p><span class="made-with" title="Made with snacks and late commits">© 2026 Louby Trahan</span></p>
     </footer>
   </div>
 
