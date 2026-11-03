@@ -180,7 +180,7 @@ body.stage-paused .sun {
   letter-spacing: 0.12em; text-transform: uppercase;
 }
 .progress {
-  display: flex; align-items: center; gap: 0.65rem;
+  display: flex; align-items: center; gap: 1rem;
   font-size: 0.75rem; color: var(--mute); letter-spacing: 0.04em;
 }
 .progress-track {

@@ -115,11 +115,18 @@
     label.textContent = String(step).padStart(2, "0") + " / " + String(total).padStart(2, "0");
     var traveler = document.getElementById("progress-traveler");
     if (traveler) {
-      var pct = (step / total) * 100;
-      // Keep traveler fully inside the track (half-width inset), never past 100%
-      var half = Math.max(10, Math.round((traveler.offsetWidth || 28) / 2));
-      var nextLeft = "calc(" + pct + "% - " + half + "px)";
-      if (step === total) nextLeft = "calc(100% - " + (half * 2) + "px)";
+      // Clamp rocket inside the track: left = progress * (trackWidth - rocketWidth).
+      // Never hang left over the step counter; still reaches the track end at 06/06.
+      var track = traveler.parentElement;
+      var tw = track ? track.clientWidth : 0;
+      var rw = Math.max(1, traveler.offsetWidth || 36);
+      // Rotate(-10deg) AABB bleeds ~4px past the layout box; pad both ends so
+      // the painted rocket stays inside the track and clear of #step-label.
+      var bleed = 4;
+      var endPad = 2;
+      var travel = Math.max(0, tw - rw - endPad - bleed);
+      var x = bleed + Math.round((step / total) * travel);
+      var nextLeft = x + "px";
       if (!reduce && traveler.style.left && traveler.style.left !== nextLeft) {
         traveler.classList.add("is-moving");
         clearTimeout(traveler._moveTimer);
@@ -873,6 +880,24 @@
     }
   });
 
+
+
+  function placeTraveler() {
+    var traveler = document.getElementById("progress-traveler");
+    var track = traveler && traveler.parentElement;
+    if (!traveler || !track) return;
+    var tw = track.clientWidth;
+    var rw = Math.max(1, traveler.offsetWidth || 36);
+    var bleed = 4;
+    var travel = Math.max(0, tw - rw - 2 - bleed);
+    var x = bleed + Math.round((step / total) * travel);
+    traveler.style.left = x + "px";
+  }
+  var _travelerResizeTimer = null;
+  window.addEventListener("resize", function () {
+    clearTimeout(_travelerResizeTimer);
+    _travelerResizeTimer = setTimeout(placeTraveler, 80);
+  });
 
   /* —— Quiet Classroom whimsy —— */
   document.body.classList.add("qc-on");
