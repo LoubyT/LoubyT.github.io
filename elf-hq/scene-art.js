@@ -15,6 +15,16 @@
     });
   }
 
+  function elfBuddy(x, y, hat) {
+    return '<polygon points="' + x + ',' + y + ' ' + (x - 14) + ',' + (y + 16) + ' ' + (x + 14) + ',' + (y + 16) + '" fill="' + hat + '"/>' +
+      '<rect x="' + (x - 16) + '" y="' + (y + 16) + '" width="32" height="5" rx="2" fill="#f6efe2"/>' +
+      '<circle cx="' + x + '" cy="' + (y + 28) + '" r="9" fill="#f0c7a4"/>' +
+      '<circle cx="' + (x - 3) + '" cy="' + (y + 27) + '" r="1.1" fill="#3a241c"/>' +
+      '<circle cx="' + (x + 3) + '" cy="' + (y + 27) + '" r="1.1" fill="#3a241c"/>' +
+      '<path d="M' + (x - 11) + ' ' + (y + 34) + ' q11 6 22 0 v8 h-22 z" fill="#f4e1c8"/>' +
+      '<rect x="' + (x - 9) + '" y="' + (y + 40) + '" width="18" height="16" rx="6" fill="' + hat + '"/>';
+  }
+
   function propMarkup(motif, swatch, accent) {
     var s = swatch;
     var a = accent;
@@ -85,10 +95,10 @@
       '<defs><radialGradient id="lamp-' + uid + '" cx="' + lampSide + '" cy="0%" r="75%">' +
       '<stop offset="0" stop-color="#ffe1a8" stop-opacity=".95"/>' +
       '<stop offset="1" stop-color="#ffe1a8" stop-opacity="0"/></radialGradient></defs>' +
-      '<rect width="180" height="320" fill="#f4e4cc"/>' +
-      '<rect width="180" height="320" fill="url(#lamp-' + uid + ')"/>' +
-      '<ellipse cx="90" cy="236" rx="74" ry="18" fill="#8a5340"/>' +
-      '<ellipse cx="90" cy="230" rx="74" ry="14" fill="#a86a52"/>' +
+      '<rect width="180" height="320" fill="var(--scene-plate)"/>' +
+      '<ellipse cx="90" cy="268" rx="58" ry="12" fill="#d5e6d0"/>' +
+      (entry.dayId === 'day-01' ? '<ellipse cx="70" cy="252" rx="18" ry="7" fill="#f4e7c8"/><circle cx="112" cy="244" r="8" fill="#e7b48a"/><circle cx="112" cy="244" r="3" fill="var(--scene-plate)"/><rect x="40" y="236" width="24" height="9" rx="2" fill="#8f3140"/><path d="M36 264 q28 -8 48 0 q22 8 44 0" fill="none" stroke="#c4b48a" stroke-width="1.6"/>' : '') +
+      elfBuddy(118, 150, swatch) +
       propMarkup(ph.motif, swatch, accent) +
       '<path d="M' + (30 + (entry.dayId ? entry.dayId.charCodeAt(5) % 20 : 8)) + ' 250 C 50 270, 40 286, 70 278" fill="none" stroke="' + esc(accent) + '" stroke-width="1.4" stroke-dasharray="2 3"/>' +
       '<rect x="14" y="14" width="152" height="292" fill="none" stroke="#7a5344" stroke-width="1.25" stroke-dasharray="3 4"/>' +
@@ -112,10 +122,10 @@
       '<defs><radialGradient id="lamp-feature" cx="50%" cy="0%" r="70%">' +
       '<stop offset="0" stop-color="#ffe1a8" stop-opacity=".9"/>' +
       '<stop offset="1" stop-color="#ffe1a8" stop-opacity="0"/></radialGradient></defs>' +
-      '<rect width="180" height="320" fill="#f4e4cc"/>' +
-      '<rect width="180" height="320" fill="url(#lamp-feature)"/>' +
-      '<ellipse cx="90" cy="250" rx="70" ry="16" fill="#8a5340"/>' +
+      '<rect width="180" height="320" fill="var(--scene-plate)"/>' +
+      '<ellipse cx="90" cy="268" rx="58" ry="12" fill="#d5e6d0"/>' +
       '<rect x="28" y="78" width="124" height="78" rx="8" fill="#fbf6ec" stroke="#7a5344" stroke-dasharray="3 3"/>' +
+      elfBuddy(90, 118, '#8f3140') +
       dots +
       '<rect x="14" y="14" width="152" height="292" fill="none" stroke="#7a5344" stroke-width="1.25" stroke-dasharray="3 4"/>' +
       '</svg>';

@@ -101,11 +101,10 @@
   function paintSave() {
     var node = $('saveState');
     if (!node) return;
-    var text = scratch && !scratch.persistent
-      ? 'This browser will forget the story when you leave.'
-      : saveState === 'failed' ? 'Not saved. Still on screen.'
-      : saveState === 'saving' ? 'Keeping…'
-      : view && view.meta.welcomedAt ? 'Kept on this browser.' : '';
+    var live = window.ElfLive ? ElfLive.open({ endpoint: null }) : null;
+    var remote = live ? live.view().state : 'disconnected';
+    var text = remote !== 'saved' ? 'Not connected' : (saveState === 'saving' ? 'Saving' : 'Saved');
+    if (scratch && !scratch.persistent) text = 'Not connected';
     if (node.textContent !== text) node.textContent = text;
   }
 
@@ -128,15 +127,13 @@
   }
 
   function sceneBlock(day, entry) {
-    var wrap = el('div', { class: 'scene-block' });
-    var fig = el('figure', { class: 'scene-frame' });
-    fig.insertAdjacentHTML('beforeend', ElfScenes.feltDiorama(entry));
-    fig.appendChild(el('figcaption', { text: entry.placeholder.caption }));
-    wrap.appendChild(fig);
-    var scene = day.scene;
-    wrap.appendChild(el('p', { class: 'film-status', text: 'No daily film yet. This cloth is not a rendered scene.' }));
-    if (scene.stale) wrap.appendChild(el('p', { class: 'pill stale', text: 'Chapter changed · picture not caught up' }));
-    else wrap.appendChild(el('p', { class: 'pill', text: 'Open now · not date-locked' }));
+    var fit = window.ElfMediaFit ? ElfMediaFit.describe(entry) : { alpha: false, plate: ElfMediaFit.PLATE };
+    var wrap = el('div', { class: 'cutout' + (fit.alpha ? ' is-alpha' : ' is-opaque'), 'data-alpha': fit.alpha ? 'yes' : 'no' });
+    var stage = el('div', { class: 'cutout-stage' });
+    stage.insertAdjacentHTML('beforeend', ElfScenes.feltDiorama(entry));
+    wrap.appendChild(stage);
+    wrap.appendChild(el('button', { type: 'button', class: 'film', disabled: true, text: 'Film coming soon' }));
+    if (day && day.scene && day.scene.stale) wrap.appendChild(el('p', { class: 'fine', text: 'Picture needs another look' }));
     return wrap;
   }
 
@@ -144,21 +141,13 @@
     var feature = manifest.feature;
     var status = ElfPlan.featureStatus(view.days, feature);
     var card = el('section', { class: 'feature-card', id: 'whole-story', 'aria-labelledby': 'wholeTitle' });
-    var frame = el('figure', { class: 'scene-frame' });
+    var frame = el('div', { class: 'cutout-stage' });
     frame.insertAdjacentHTML('beforeend', ElfScenes.feltFeature());
-    frame.appendChild(el('figcaption', { text: feature.placeholderCaption }));
     var copy = el('div', {});
-    copy.appendChild(el('p', { class: 'kicker', text: 'One film · all 25 chapters' }));
+    copy.appendChild(el('p', { class: 'kicker', text: 'All 25 chapters' }));
     copy.appendChild(el('h2', { id: 'wholeTitle', text: 'Watch the whole story' }));
-    copy.appendChild(el('p', { class: 'lede', text: 'This is a separate seat from the daily pictures. It is not ready. Nothing on this page is a rendered frame, a poster, or a caption file.' }));
-    copy.appendChild(el('p', { text: 'You can open it any day, including before December. It will not play by itself, and this page does not preload it.' }));
-    if (status.stale) copy.appendChild(el('p', { class: 'pill stale', text: 'A chapter changed after the last alignment. The film is still not made.' }));
-    var bar = el('div', { class: 'transport', role: 'group', 'aria-label': 'Whole-story playback' });
-    bar.appendChild(el('button', { type: 'button', class: 'btn', 'data-act': 'feature-play', text: 'Play' }));
-    bar.appendChild(el('span', { id: 'featureTime', text: 'No film loaded' }));
-    bar.appendChild(el('button', { type: 'button', class: 'btn ghost', disabled: true, text: 'Captions' }));
-    copy.appendChild(bar);
-    copy.appendChild(el('p', { class: 'fine', id: 'featureMsg', text: 'Captions would be a separate track. Play asks the private shelf and does not open a public file.' }));
+    copy.appendChild(el('button', { type: 'button', class: 'film', disabled: true, text: 'Film coming soon' }));
+    if (status.stale) copy.appendChild(el('p', { class: 'fine', text: 'Chapters changed since this was planned' }));
     card.appendChild(frame);
     card.appendChild(copy);
     return card;
@@ -195,10 +184,10 @@
     var phase = view.phase;
     var hello = ElfPlan.greeting(phase.zoned.hour, view.meta.displayName);
     var intro = phase.phase === 'before'
-      ? 'Today is ' + phase.zoned.longDate + '. The calendar has not reached the story. That only chooses where the book would open. Every chapter, and the whole-story film seat, can be opened now.'
+      ? 'December opens on chapter 1. Every chapter is already here.'
       : phase.phase === 'after'
-        ? 'Today is ' + phase.zoned.longDate + '. December 25 was the last chapter. The book is still open.'
-        : 'Today is ' + phase.zoned.longDate + '. The book opens on chapter ' + phase.todayNumber + '. The other chapters are open too.';
+        ? 'December 25 was the last chapter. The book is still open.'
+        : 'Today is chapter ' + phase.todayNumber + '. The others are open too.';
     var peek = el('label', { class: 'field' }, 'Open the book at', el('select', { id: 'peek', 'data-act': 'peek' },
       el('option', { value: '', text: 'The real Chicago date', selected: !view.meta.peekDayId })
     ));
@@ -215,14 +204,14 @@
       el('h2', { text: hello }),
       el('p', { class: 'lede', text: intro }),
       shown.mode === 'peek' ? el('p', { class: 'guess', text: 'You are peeking at ' + ElfPlan.formatLong(day.displayDate, 'America/Chicago', true) + '. The Chicago clock is unchanged, and no chapter was moved.' }) : null,
-      el('div', { class: 'hero' },
+      el('article', { class: 'chapter-block' },
         sceneBlock(day, manifest.days[day.number - 1]),
-        el('div', {},
+        el('div', { class: 'chapter-copy' },
           el('p', { class: 'kicker', text: 'Chapter ' + day.number }),
           el('h3', { text: labelOf(day) }),
           el('p', { text: ElfPlan.formatLong(day.displayDate, 'America/Chicago', true) }),
           el('p', { text: day.description || 'This chapter is waiting for your words.' }),
-          el('p', { class: 'row' }, el('a', { class: 'btn', href: '#chapter/' + day.id, text: 'Write this chapter' })),
+          el('p', { class: 'row' }, el('a', { class: 'btn', href: '#chapter/' + day.id, text: 'Open chapter' })),
           peek
         )
       ),

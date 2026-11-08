@@ -57,16 +57,18 @@
         motif: pair[0],
         swatch: swatches[i % swatches.length],
         accent: swatches[(i + 3) % swatches.length],
-        caption: 'Empty stage cloth for chapter ' + n + '. Not a rendered video.'
+        caption: 'Film coming soon'
       }
     };
   });
+  days[0].standInIsFinal = false;
+  days[0].restoring = 'flour, donut, car tracks';
 
   return {
     manifest: {
       direction: {
-        look: 'Handcrafted felt and plush miniature diorama, visible stitching, warm tabletop light.',
-        palette: 'cranberry, pine, cream',
+        look: 'Isolated elf, toy car, and household props. No kitchen backdrop.',
+        palette: 'light green, warm red, a little snow',
         camera: 'Locked portrait, one readable gag, about 5 to 6 seconds.',
         characterChosen: false,
         characterNote: 'Character design is not chosen. Nothing in this app is approved character art.',
@@ -85,6 +87,21 @@
         durationSecMax: 6,
         poster: ['image/webp', 'image/jpeg'],
         optionalSmaller: { width: 480, height: 854, note: 'Optional 480-wide portrait, same picture, still muted.' }
+      },
+      composition: {
+        subject: 'isolated elf, toy car, and real household props',
+        backdrop: 'none',
+        cssRemovesBackground: false,
+        pixelKeying: false,
+        crop: false,
+        safePadding: 'Hats and the car stay fully inside the frame.',
+        place: 'above the chapter words',
+        plate: '#E8F2E5',
+        alphaCandidates: [
+          { container: 'webm', codec: 'vp9', alphaDeclared: true, playsOn: 'chromium' },
+          { container: 'mp4', codec: 'hvc1', alphaDeclared: true, playsOn: 'safari' }
+        ],
+        opaqueFallback: { container: 'mp4', codec: 'avc1', alphaDeclared: false, note: 'An ordinary MP4 stays opaque. The page plate matches it. CSS does not erase its background.' }
       },
       playback: {
         playsinline: true,

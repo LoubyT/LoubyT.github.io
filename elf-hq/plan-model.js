@@ -161,7 +161,8 @@
         displayName: '',
         soundEnabled: false,
         welcomedAt: null,
-        peekDayId: null
+        peekDayId: null,
+        sampleStory: true
       },
       days: {},
       shopping: { patched: {}, added: [], removed: [] }
@@ -173,13 +174,13 @@
     if (typeof raw !== 'object' || raw.schemaVersion !== SCHEMA || raw.kind !== 'rehearsal-scratchpad') {
       return { overrides: raw, mode: 'readonly-unknown-schema', canWrite: false };
     }
-    if (raw.containsPrivate) return { overrides: raw, mode: 'readonly-private', canWrite: false };
+    var privateLocal = !!raw.containsPrivate;
     var meta = raw.meta || {};
     var shopping = raw.shopping || {};
     var overrides = {
       schemaVersion: SCHEMA,
       kind: 'rehearsal-scratchpad',
-      containsPrivate: false,
+      containsPrivate: privateLocal,
       sync: false,
       fixtureRevSeen: raw.fixtureRevSeen || FIXTURE_REV,
       contentRevision: Number(raw.contentRevision) || 0,
@@ -189,7 +190,8 @@
         displayName: meta.displayName ? String(meta.displayName) : '',
         soundEnabled: !!meta.soundEnabled,
         welcomedAt: meta.welcomedAt || null,
-        peekDayId: meta.peekDayId || null
+        peekDayId: meta.peekDayId || null,
+        sampleStory: meta.sampleStory !== false
       },
       days: raw.days && typeof raw.days === 'object' ? raw.days : {},
       shopping: {
@@ -198,7 +200,7 @@
         removed: Array.isArray(shopping.removed) ? shopping.removed : []
       }
     };
-    return { overrides: overrides, mode: 'ok', canWrite: true };
+    return { overrides: overrides, mode: privateLocal ? 'private-local' : 'ok', canWrite: true };
   }
 
   function ensureDay(ov, dayId) {
@@ -633,10 +635,11 @@
       defaultTitle: fixture.defaultTitle,
       meta: {
         title: ov.meta.title || fixture.defaultTitle,
-        displayName: ov.meta.displayName || '',
+        displayName: ov.meta.displayName || (ov.meta.sampleStory !== false && fixture.demoName ? fixture.demoName : ''),
         soundEnabled: !!ov.meta.soundEnabled,
         welcomedAt: ov.meta.welcomedAt,
-        peekDayId: ov.meta.peekDayId || null
+        peekDayId: ov.meta.peekDayId || null,
+        sampleStory: ov.meta.sampleStory !== false
       },
       contentRevision: ov.contentRevision,
       days: days,
@@ -730,12 +733,12 @@
   }
 
   function buildBackup(overrides, photos, mode, exportedAt) {
-    if (!overrides || overrides.containsPrivate) return { ok: false, code: 'private' };
+    if (!overrides) return { ok: false, code: 'invalid' };
     var list = photos || [];
     var base = {
       elfHqBackup: 1,
       kind: 'rehearsal-scratchpad',
-      containsPrivate: false,
+      containsPrivate: !!overrides.containsPrivate,
       exportedAt: exportedAt || null,
       photosIncluded: false,
       photoIdsOmitted: list.map(function (p) { return p.id; }),
@@ -758,7 +761,6 @@
     if (!data || typeof data !== 'object') return { ok: false, code: 'invalid' };
     if (data.elfHqBackup !== 1) return { ok: false, code: 'version' };
     if (data.kind !== 'rehearsal-scratchpad') return { ok: false, code: 'kind' };
-    if (data.containsPrivate || (data.overrides && data.overrides.containsPrivate)) return { ok: false, code: 'private' };
     var norm = normalizeOverrides(data.overrides);
     if (!norm.canWrite) return { ok: false, code: 'schema' };
     return { ok: true, overrides: norm.overrides, photos: data.photosIncluded ? (data.photos || []) : [] };
@@ -1022,6 +1024,8 @@
       fixture: deepFreeze({
         fixtureRev: FIXTURE_REV,
         defaultTitle: raw.defaultTitle || 'Elf HQ',
+        demoName: raw.demoName || '',
+        recipients: raw.recipients || [],
         season: {
           id: SEASON_ID,
           label: 'December 1–25, 2026',
@@ -1033,6 +1037,70 @@
         shopping: raw.shopping || []
       })
     };
+  }
+
+  function hasSecretKey(obj) {
+    if (!obj || typeof obj !== 'object') return false;
+    var keys = Object.keys(obj);
+    for (var i = 0; i < keys.length; i++) {
+      if (/^(pin|password|secret|token|apikey|datakey|pepper)$/i.test(keys[i])) return true;
+      if (hasSecretKey(obj[keys[i]])) return true;
+    }
+    return false;
+  }
+
+  function importSeed(ov, seed, at, hideShoppingIds) {
+    if (!seed || seed.elfHqSeed !== 1 || !Array.isArray(seed.days)) return { ok: false, code: 'invalid' };
+    if (hasSecretKey(seed)) return { ok: false, code: 'secret' };
+    ov.meta.sampleStory = false;
+    ov.containsPrivate = seed.containsPrivate !== false;
+    if (seed.displayName) ov.meta.displayName = String(seed.displayName).slice(0, 40);
+    if (seed.title) ov.meta.title = String(seed.title).slice(0, 40);
+    seed.days.forEach(function (day) {
+      if (!day || !day.number) return;
+      var id = dayId(day.number);
+      var bucket = ensureDay(ov, id);
+      var touched = false;
+      CONTENT_FIELDS.forEach(function (field) {
+        if (day[field] == null) return;
+        var next = String(day[field]);
+        bucket.fields[field] = { value: next, at: at, committed: next };
+        touched = true;
+      });
+      if (day.prepDate) bucket.prepDate = { value: day.prepDate, at: at };
+      if (Array.isArray(day.prep)) {
+        bucket.prep.added = day.prep.map(function (label, i) {
+          return { id: id + '-seed-p-' + (i + 1), label: String(label), at: at };
+        });
+      }
+      if (Array.isArray(day.completion)) {
+        bucket.completion.added = day.completion.map(function (label, i) {
+          return { id: id + '-seed-c-' + (i + 1), label: String(label), at: at };
+        });
+      }
+      if (touched) {
+        bucket.contentRevision = (bucket.contentRevision || 0) + 1;
+        bucket.contentHistory.push({ rev: bucket.contentRevision, at: at, fields: ['imported'] });
+        ov.contentRevision = (Number(ov.contentRevision) || 0) + 1;
+      }
+    });
+    ov.shopping.removed = (hideShoppingIds || []).slice();
+    ov.shopping.patched = {};
+    ov.shopping.added = (seed.shopping || []).map(function (item, i) {
+      return {
+        id: 'seed-shop-' + (i + 1),
+        name: String(item.name || 'Something for the trip'),
+        qtyNote: String(item.qtyNote || ''),
+        dayId: null,
+        needDate: item.needDate || null,
+        needBasis: item.needDate ? 'date' : 'none',
+        suggestionNote: '',
+        state: SHOP_STATES.indexOf(item.state) === -1 ? 'need' : item.state,
+        origin: 'user',
+        at: at
+      };
+    });
+    return { ok: true };
   }
 
   function loosePhotos(overrides, metas) {
@@ -1114,6 +1182,7 @@
     hasPriceLanguage: hasPriceLanguage,
     finalizeFixture: finalizeFixture,
     loosePhotos: loosePhotos,
+    importSeed: importSeed,
     dayId: dayId,
     weekdayHint: weekdayHint
   };

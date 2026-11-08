@@ -217,9 +217,14 @@ function finalized() {
     assert.strictEqual(small.backup.photosIncluded, true);
     const parsed = P.parseBackup(small.backup);
     assert.strictEqual(parsed.ok, true);
-    const priv = P.parseBackup(Object.assign({}, small.backup, { containsPrivate: true }));
-    assert.strictEqual(priv.ok, false);
-    assert.strictEqual(priv.code, 'private');
+    const privateOv = P.blankOverrides();
+    privateOv.containsPrivate = true;
+    const privBuilt = P.buildBackup(privateOv, [], 'text', 't');
+    assert.strictEqual(privBuilt.ok, true);
+    assert.strictEqual(privBuilt.backup.containsPrivate, true);
+    const priv = P.parseBackup(privBuilt.backup);
+    assert.strictEqual(priv.ok, true);
+    assert.strictEqual(priv.overrides.containsPrivate, true);
     assert.strictEqual(P.parseBackup({ elfHqBackup: 9 }).ok, false);
   });
 
@@ -353,7 +358,7 @@ function finalized() {
       assert.strictEqual(d.scene.available, true);
       assert.strictEqual(d.scene.locked, false);
       assert.strictEqual(d.displayDate, '2026-12-' + String(i + 1).padStart(2, '0'));
-      assert.strictEqual(d.note, '');
+      assert.ok(d.title);
     });
     const feature = P.featureStatus(view.days, media.manifest.feature);
     assert.strictEqual(feature.dateLocked, false);
@@ -424,6 +429,33 @@ function finalized() {
     const still = M.runRoutine(new Date('2026-11-08T14:00:00Z'), ready, { implemented: false, fetch: function () { fetches += 1; } });
     assert.strictEqual(still.sent, false);
     assert.strictEqual(fetches, 0);
+  });
+
+  await test('a private seed replaces the sample and stays off the page source', function () {
+    const fx = finalized();
+    const ov = P.blankOverrides();
+    const view = P.buildView(fx, ov, new Date('2026-11-08T18:00:00Z'));
+    assert.strictEqual(view.meta.displayName, 'Nell');
+    assert.strictEqual(view.meta.sampleStory, true);
+    const bad = P.importSeed(ov, { elfHqSeed: 1, days: [{ number: 1, title: 'Nope' }], pin: '0000' }, 't', []);
+    assert.strictEqual(bad.ok, false);
+    assert.strictEqual(ov.meta.sampleStory, true);
+    const seed = {
+      elfHqSeed: 1,
+      containsPrivate: true,
+      displayName: 'Storykeeper',
+      days: [{ number: 1, title: 'Opening night', description: 'A private sentence for this browser only.', note: 'Exact words.' }],
+      shopping: [{ name: 'Oranges', needDate: '2026-12-02', state: 'need' }]
+    };
+    const ok = P.importSeed(ov, seed, 't2', fx.shopping.map(function (item) { return item.id; }));
+    assert.strictEqual(ok.ok, true);
+    const next = P.buildView(fx, ov, new Date('2026-11-08T18:00:00Z'));
+    assert.strictEqual(next.meta.sampleStory, false);
+    assert.strictEqual(next.meta.displayName, 'Storykeeper');
+    assert.strictEqual(next.days[0].title, 'Opening night');
+    assert.ok(!next.shopping.some(function (item) { return item.id === 'shop-felt'; }));
+    assert.ok(next.shopping.some(function (item) { return item.name === 'Oranges'; }));
+    assert.strictEqual(next.days[0].displayDate, '2026-12-01');
   });
 
   await test('rehearsal copy has no prices and no display-date edits', function () {

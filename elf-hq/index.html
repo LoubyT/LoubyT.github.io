@@ -3,11 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
-  <meta name="theme-color" content="#f6efe2">
+  <meta name="theme-color" content="#E8F2E5">
   <meta name="color-scheme" content="light">
   <meta name="robots" content="noindex, nofollow">
   <meta name="referrer" content="no-referrer">
-  <meta name="description" content="Elf HQ is a fictional rehearsal desk for a December plan. It is not shared.">
+  <meta name="description" content="Elf HQ, a sample Christmas storybook. Your own chapters stay off this public site.">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
@@ -20,34 +20,40 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <a class="skip" href="#page">Skip to the desk</a>
+  <a class="skip" href="#page">Skip to the story</a>
   <div class="stage" aria-hidden="true">
     <div class="stars"></div>
     <div class="lamp-pool"></div>
-    <div class="table-edge"></div>
-  </div>
+    <svg class="garland" viewBox="0 0 400 54" preserveAspectRatio="none">
+      <path d="M0 8 Q 40 36 80 10 T 160 12 T 240 8 T 320 14 T 400 8" fill="none" stroke="#1e5a40" stroke-width="3"/>
+      <circle cx="40" cy="22" r="5" fill="#c43b55"/><circle cx="120" cy="20" r="5" fill="#e3b15a"/><circle cx="200" cy="18" r="5" fill="#c43b55"/><circle cx="280" cy="22" r="5" fill="#e3b15a"/><circle cx="360" cy="16" r="5" fill="#c43b55"/>
+    </svg>
+    </div>
+  <div class="snow" aria-hidden="true"></div>
 
   <div class="book" id="book">
     <header class="mast">
       <div class="mast-titles">
-        <p class="eyebrow">Your December story</p>
+        <p class="eyebrow" id="eyebrow">The Holly House</p>
         <h1 id="title">Elf HQ</h1>
       </div>
       <div class="mast-side">
         <p class="clock" id="clock">Chicago time</p>
-        <button type="button" class="sound" id="soundBtn" data-act="sound" aria-pressed="false">Sound off</button>
+        <div class="tools">
+          <button type="button" class="sound" id="soundBtn" data-act="sound" aria-pressed="false">Sound off</button>
+          <a class="settings" href="#settings" data-tab="settings">Settings</a>
+        </div>
       </div>
     </header>
     <p class="ribbon" id="ribbon">
-      <span id="ribbonText">Your words stay as written · no film loaded · scene reading not connected</span>
+      <span class="sample" id="ribbonText">Sample story</span>
       <span class="save-state" id="saveState" role="status"></span>
     </p>
-    <nav class="nav" id="nav" aria-label="Desk">
-      <a href="#today" data-tab="today">Today</a>
-      <a href="#story" data-tab="story">Story</a>
-      <a href="#making" data-tab="making">Making</a>
-      <a href="#supplies" data-tab="supplies">Supplies</a>
-      <a href="#desk" data-tab="desk">Desk</a>
+    <nav class="nav" id="nav" aria-label="Elf HQ">
+      <a href="#today" data-tab="today"><span class="word">Today</span></a>
+      <a href="#story" data-tab="story"><span class="word">Story</span></a>
+      <a href="#crafts" data-tab="crafts"><span class="word">Crafts</span></a>
+      <a href="#shopping" data-tab="shopping"><span class="word">Shopping</span></a>
     </nav>
     <div class="banners" id="banners"></div>
     <main class="page" id="page" tabindex="-1">
@@ -80,6 +86,8 @@
   <script src="plan-model.js"></script>
   <script src="demo-plan.js"></script>
   <script src="media-manifest.js"></script>
+  <script src="media-fit.js"></script>
+  <script src="sync-engine.js"></script>
   <script src="scene-art.js"></script>
   <script src="sync-port.js"></script>
   <script src="monitor-contract.js"></script>

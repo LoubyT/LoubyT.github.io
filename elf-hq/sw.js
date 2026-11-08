@@ -1,7 +1,7 @@
 /* Elf HQ shell only. Network first. Never caches notebooks or pictures.
  * Cache names start with elf-hq- so other apps on this origin keep theirs.
  */
-const VERSION = 'elf-hq-v2';
+const VERSION = 'elf-hq-v4';
 const ASSETS = [
   './',
   './index.html',
@@ -10,6 +10,9 @@ const ASSETS = [
   './plan-model.js',
   './demo-plan.js',
   './media-manifest.js',
+  './media-fit.js',
+  './sync-engine.js',
+  './gifts.js',
   './scene-art.js',
   './sync-port.js',
   './monitor-contract.js',
