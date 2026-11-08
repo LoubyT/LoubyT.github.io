@@ -444,6 +444,7 @@ function finalized() {
       elfHqSeed: 1,
       containsPrivate: true,
       displayName: 'Storykeeper',
+      settings: { houseName: 'The North House' },
       days: [{ number: 1, title: 'Opening night', description: 'A private sentence for this browser only.', note: 'Exact words.' }],
       shopping: [{ name: 'Oranges', needDate: '2026-12-02', state: 'need' }]
     };
@@ -452,6 +453,12 @@ function finalized() {
     const next = P.buildView(fx, ov, new Date('2026-11-08T18:00:00Z'));
     assert.strictEqual(next.meta.sampleStory, false);
     assert.strictEqual(next.meta.displayName, 'Storykeeper');
+    assert.strictEqual(next.meta.houseName, 'The North House');
+    assert.strictEqual(P.houseKicker(next.meta), 'The North House');
+    assert.strictEqual(P.appTitle(next.meta), 'The North House Elf HQ');
+    assert.strictEqual(P.houseKicker({ sampleStory: true, houseName: '' }), 'The Holly House');
+    assert.strictEqual(P.houseKicker({ sampleStory: false, houseName: '' }), '');
+    assert.strictEqual(P.appTitle({ sampleStory: false, houseName: '' }), 'Elf HQ');
     assert.strictEqual(next.days[0].title, 'Opening night');
     assert.ok(!next.shopping.some(function (item) { return item.id === 'shop-felt'; }));
     assert.ok(next.shopping.some(function (item) { return item.name === 'Oranges'; }));

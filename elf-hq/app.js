@@ -143,7 +143,16 @@
     if (!view) return;
     var z = view.phase.zoned;
     $('clock').textContent = z.longDate + ' · ' + z.clock + ' · Chicago';
-    $('title').textContent = view.meta.title || 'Elf HQ';
+    $('title').textContent = 'Elf HQ';
+    var house = ElfPlan.houseKicker(view.meta);
+    var eyebrow = $('eyebrow');
+    if (eyebrow) {
+      eyebrow.textContent = house;
+      eyebrow.hidden = !house;
+    }
+    document.title = ElfPlan.appTitle(view.meta);
+    var apple = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+    if (apple) apple.setAttribute('content', ElfPlan.appTitle(view.meta));
     var sound = $('soundBtn');
     var on = !!view.meta.soundEnabled;
     sound.setAttribute('aria-pressed', on ? 'true' : 'false');
@@ -515,6 +524,7 @@
       paintConnect(),
       el('h2', { text: 'The desk' }),
       el('label', { class: 'field' }, 'Name of the book', el('input', { id: 'bookTitle', type: 'text', maxlength: '40', value: view.meta.title || 'Elf HQ', 'data-field': 'bookTitle' })),
+      el('label', { class: 'field' }, 'House name', el('input', { id: 'houseName', type: 'text', maxlength: '60', value: view.meta.houseName || '', 'data-field': 'houseName', autocomplete: 'off', placeholder: 'Shown above Elf HQ' })),
       el('label', { class: 'field' }, 'What the book calls you', el('input', { id: 'deskName', type: 'text', maxlength: '40', value: view.meta.displayName || '', 'data-field': 'displayName', autocomplete: 'off' })),
       el('div', { class: 'card' },
         el('h3', { text: 'Scene reading' }),
@@ -540,6 +550,8 @@
     );
     var title = $('bookTitle');
     if (title) title.value = view.meta.title || 'Elf HQ';
+    var houseInput = $('houseName');
+    if (houseInput) houseInput.value = view.meta.houseName || '';
     var name = $('deskName');
     if (name) name.value = view.meta.displayName || '';
   }
@@ -689,6 +701,13 @@
     if (target.dataset.field === 'bookTitle') {
       ElfPlan.setMeta(overrides, 'title', target.value.trim());
       scheduleSave();
+      paintClock();
+      return;
+    }
+    if (target.dataset.field === 'houseName') {
+      ElfPlan.setMeta(overrides, 'houseName', target.value.trim());
+      scheduleSave();
+      refresh();
       paintClock();
       return;
     }
@@ -1079,6 +1098,15 @@
       file.text().then(function (text) {
         var data;
         try { data = JSON.parse(text); } catch (e) { announce('That file could not be read. The notebook was not changed.'); return; }
+        if (data && data.elfHqSeed === 1) {
+          var seeded = ElfPlan.importSeed(overrides, data, iso(), (fixture.shopping || []).map(function (item) { return item.id; }));
+          if (!seeded.ok) { announce('That story file was not used. Nothing was replaced.'); return; }
+          refresh();
+          scheduleSave();
+          paint(true);
+          announce('Your story is on this phone.');
+          return;
+        }
         var parsed = ElfPlan.parseBackup(data);
         if (!parsed.ok) {
           announce(parsed.code === 'private' ? 'That file is marked private. Sync is not connected, so it was not stored. Your file is unchanged.' : 'That file is not an Elf HQ rehearsal backup. Nothing was replaced.');

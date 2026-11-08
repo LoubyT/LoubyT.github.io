@@ -162,7 +162,8 @@
         soundEnabled: false,
         welcomedAt: null,
         peekDayId: null,
-        sampleStory: true
+        sampleStory: true,
+        houseName: ''
       },
       days: {},
       shopping: { patched: {}, added: [], removed: [] },
@@ -192,7 +193,8 @@
         soundEnabled: !!meta.soundEnabled,
         welcomedAt: meta.welcomedAt || null,
         peekDayId: meta.peekDayId || null,
-        sampleStory: meta.sampleStory !== false
+        sampleStory: meta.sampleStory !== false,
+        houseName: meta.houseName ? String(meta.houseName).slice(0, 60) : ''
       },
       days: raw.days && typeof raw.days === 'object' ? raw.days : {},
       shopping: {
@@ -570,6 +572,7 @@
     }
     if (key === 'displayName') ov.meta.displayName = String(value || '').slice(0, 40);
     else if (key === 'title') ov.meta.title = value ? String(value).slice(0, 40) : null;
+    else if (key === 'houseName') ov.meta.houseName = String(value || '').slice(0, 60);
     else if (key === 'soundEnabled') ov.meta.soundEnabled = !!value;
     else throw new Error('Unknown meta');
     return ov;
@@ -645,7 +648,8 @@
         soundEnabled: !!ov.meta.soundEnabled,
         welcomedAt: ov.meta.welcomedAt,
         peekDayId: ov.meta.peekDayId || null,
-        sampleStory: ov.meta.sampleStory !== false
+        sampleStory: ov.meta.sampleStory !== false,
+        houseName: ov.meta.houseName || ''
       },
       contentRevision: ov.contentRevision,
       days: days,
@@ -802,6 +806,7 @@
       seasonId: view.season.id,
       contentRevision: view.contentRevision,
       title: view.meta.title,
+      houseName: view.meta.houseName || '',
       displayName: view.meta.displayName,
       soundEnabled: view.meta.soundEnabled,
       days: view.days.map(function (d) {
@@ -1056,6 +1061,20 @@
     return false;
   }
 
+  var SAMPLE_HOUSE = 'The Holly House';
+
+  function houseKicker(meta) {
+    if (!meta) return SAMPLE_HOUSE;
+    if (meta.houseName) return String(meta.houseName);
+    if (meta.sampleStory === false) return '';
+    return SAMPLE_HOUSE;
+  }
+
+  function appTitle(meta) {
+    var house = houseKicker(meta);
+    return house ? house + ' Elf HQ' : 'Elf HQ';
+  }
+
   function importSeed(ov, seed, at, hideShoppingIds) {
     if (!seed || seed.elfHqSeed !== 1 || !Array.isArray(seed.days)) return { ok: false, code: 'invalid' };
     if (hasSecretKey(seed)) return { ok: false, code: 'secret' };
@@ -1063,6 +1082,8 @@
     ov.containsPrivate = seed.containsPrivate !== false;
     if (seed.displayName) ov.meta.displayName = String(seed.displayName).slice(0, 40);
     if (seed.title) ov.meta.title = String(seed.title).slice(0, 40);
+    var house = seed.settings && seed.settings.houseName != null ? seed.settings.houseName : seed.houseName;
+    if (house != null) ov.meta.houseName = String(house).slice(0, 60);
     seed.days.forEach(function (day) {
       if (!day || !day.number) return;
       var id = dayId(day.number);
@@ -1190,6 +1211,9 @@
     finalizeFixture: finalizeFixture,
     loosePhotos: loosePhotos,
     importSeed: importSeed,
+    houseKicker: houseKicker,
+    appTitle: appTitle,
+    SAMPLE_HOUSE: SAMPLE_HOUSE,
     dayId: dayId,
     weekdayHint: weekdayHint
   };
