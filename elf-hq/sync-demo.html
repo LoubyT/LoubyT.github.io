@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Two phones</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    body { overflow: auto; height: auto; background: #E8F2E5; }
+    .pair { display: grid; grid-template-columns: 1fr; gap: 12px; padding: 12px; max-width: 420px; margin: 0 auto; }
+    .phone { background: #fff; border-radius: 28px; min-height: 520px; padding: 18px 14px; box-shadow: 0 12px 28px rgba(110,24,48,.12); }
+    .phone h2 { margin: 0 0 8px; font-size: 1.4rem; }
+    .phone p { min-height: 3.2em; }
+    textarea { width: 100%; min-height: 72px; font-size: 16px; }
+    .note { text-align: center; color: #6d4a46; margin: 12px 16px 0; }
+  </style>
+</head>
+<body>
+  <p class="note">Two phones on a practice link. Not the household server.</p>
+  <div class="pair">
+    <section class="phone" id="left"><h2>Phone A</h2><p id="aView"></p><textarea id="aBox" aria-label="Phone A chapter"></textarea></section>
+    <section class="phone" id="right"><h2>Phone B</h2><p id="bView"></p><textarea id="bBox" aria-label="Phone B chapter"></textarea></section>
+  </div>
+  <script src="sync-engine.js"></script>
+  <script>
+    var server = ElfLive.createSimServer();
+    var a = ElfLive.createSession({ server: server, pollMs: 100 });
+    var b = ElfLive.createSession({ server: server, pollMs: 100 });
+    var path = 'story.day-01.note';
+    function show() {
+      document.getElementById('aView').textContent = a.get(path) || 'Waiting';
+      document.getElementById('bView').textContent = b.get(path) || 'Waiting';
+    }
+    document.getElementById('aBox').addEventListener('change', function (e) {
+      window.__t0 = Date.now();
+      a.commit(path, e.target.value);
+    });
+    document.getElementById('bBox').addEventListener('change', function (e) {
+      window.__t0 = Date.now();
+      b.commit(path, e.target.value);
+    });
+    setInterval(function () {
+      show();
+      if (window.__t0 && a.get(path) && a.get(path) === b.get(path)) {
+        window.__lag = Date.now() - window.__t0;
+      }
+    }, 30);
+    a.start();
+    b.start();
+  </script>
+</body>
+</html>

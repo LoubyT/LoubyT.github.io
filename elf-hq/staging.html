@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+  <meta name="theme-color" content="#E8F2E5">
+  <meta name="color-scheme" content="light">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="no-referrer">
+  <meta name="description" content="Elf HQ staging. The public book stays on this phone until a PIN connects.">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' https://fd-refresh-relay.vercel.app https://elf-hq-room.louby-trahan.workers.dev; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Elf HQ">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="format-detection" content="telephone=no">
+  <title>Elf HQ staging</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip" href="#page">Skip to the story</a>
+  <div class="stage" aria-hidden="true">
+    <div class="stars"></div>
+    <div class="lamp-pool"></div>
+    <svg class="garland" viewBox="0 0 400 54" preserveAspectRatio="none">
+      <path d="M0 8 Q 40 36 80 10 T 160 12 T 240 8 T 320 14 T 400 8" fill="none" stroke="#1e5a40" stroke-width="3"/>
+      <circle cx="40" cy="22" r="5" fill="#c43b55"/><circle cx="120" cy="20" r="5" fill="#e3b15a"/><circle cx="200" cy="18" r="5" fill="#c43b55"/><circle cx="280" cy="22" r="5" fill="#e3b15a"/><circle cx="360" cy="16" r="5" fill="#c43b55"/>
+    </svg>
+    </div>
+  <div class="snow" aria-hidden="true"></div>
+
+  <div class="book" id="book">
+    <p class="fine" id="stagingMark">Staging. The public book does not connect.</p>
+    <header class="mast">
+      <div class="mast-titles">
+        <p class="eyebrow" id="eyebrow">The Holly House</p>
+        <h1 id="title">Elf HQ</h1>
+      </div>
+      <div class="mast-side">
+        <div class="tools">
+          <button type="button" class="sound" id="soundBtn" data-act="sound" aria-pressed="false">Sound off</button>
+          <a class="settings" href="#settings" data-tab="settings">Settings</a>
+        </div>
+      </div>
+    </header>
+    <p class="ribbon" id="ribbon">
+      <span id="ribbonText"></span>
+      <span class="save-state" id="saveState" role="status"></span>
+    </p>
+    <nav class="nav" id="nav" aria-label="Elf HQ">
+      <a href="#today" data-tab="today"><span class="word">Today</span></a>
+      <a href="#story" data-tab="story"><span class="word">Story</span></a>
+      <a href="#crafts" data-tab="crafts"><span class="word">Crafts</span></a>
+      <a href="#shopping" data-tab="shopping"><span class="word">Shopping</span></a>
+      <a href="#gifts" data-tab="gifts"><span class="word">Gifts</span></a>
+    </nav>
+    <div class="banners" id="banners"></div>
+    <main class="page" id="page" tabindex="-1">
+      <p class="boot" id="boot">Lighting the lamp…</p>
+    </main>
+  </div>
+
+  <div class="sheet-layer" id="sheetLayer" hidden>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+      <div class="sheet-bar">
+        <button type="button" class="btn ghost" id="closeSheet" data-act="close-sheet">Close</button>
+        <h2 id="sheetTitle">Page</h2>
+      </div>
+      <div id="conflictSlot"></div>
+      <div class="sheet-body" id="sheetBody"></div>
+    </div>
+  </div>
+
+  <div class="sheet-layer" id="giftLayer" hidden>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="giftTitle">
+      <div class="sheet-bar">
+        <button type="button" class="btn ghost" data-act="gift-close">Close</button>
+        <h2 id="giftTitle">Add gift</h2>
+        <button type="button" class="btn" data-act="gift-save">Save</button>
+      </div>
+      <div class="sheet-body" id="giftBody"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" hidden>
+    <p id="toastText"></p>
+    <div class="toast-actions" id="toastActions"></div>
+  </div>
+  <div class="update" id="updateBar" hidden>
+    <p>A new version of the desk is ready. Your notebook stays on this browser.</p>
+    <button type="button" class="btn" id="updateBtn" data-act="update">Update</button>
+  </div>
+  <div id="live" class="sr" aria-live="polite"></div>
+  <noscript>
+    <p class="boot">Elf HQ needs JavaScript to turn the pages. Nothing is sent anywhere.</p>
+  </noscript>
+  <script src="staging-config.js"></script>
+  <script src="live-config.js"></script>
+  <script src="plan-model.js"></script>
+  <script src="demo-plan.js"></script>
+  <script src="media-manifest.js"></script>
+  <script src="media-fit.js"></script>
+  <script src="sync-engine.js"></script>
+  <script src="scene-art.js"></script>
+  <script src="sync-port.js"></script>
+  <script src="monitor-contract.js"></script>
+  <script src="gifts.js"></script>
+  <script src="media-vault.js"></script>
+  <script src="scratchpad.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
