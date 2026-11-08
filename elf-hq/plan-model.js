@@ -663,7 +663,7 @@
         var sugKey = item.needDate ? weekStartKey(item.needDate, tz) : 'open';
         var sugLabel = sugKey === 'open'
           ? 'Suggested, not a confirmed need date'
-          : 'Suggested around the week of ' + formatLong(sugKey, tz, false) + ' — not a deadline';
+          : 'Suggested around the week of ' + formatLong(sugKey, tz, false) + '. Not a deadline';
         add('suggestion:' + sugKey, sugLabel, 'suggestion', item);
         return;
       }
@@ -686,7 +686,7 @@
   function shoppingPlainText(groups) {
     var lines = [
       'Elf HQ rehearsal list',
-      'Walmart, Bastrop — with the regular weekly grocery money.',
+      'Walmart, Bastrop, with the regular weekly grocery money.',
       'No prices are kept here.',
       ''
     ];
@@ -1026,6 +1026,7 @@
         defaultTitle: raw.defaultTitle || 'Elf HQ',
         demoName: raw.demoName || '',
         recipients: raw.recipients || [],
+        gifts: raw.gifts || [],
         season: {
           id: SEASON_ID,
           label: 'December 1–25, 2026',

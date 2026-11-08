@@ -71,8 +71,29 @@
   function parseHash() {
     var hash = (location.hash || '#today').replace(/^#/, '');
     if (hash.indexOf('chapter/') === 0) return { name: 'chapter', id: decodeURIComponent(hash.slice(8)) };
-    if (['today', 'story', 'making', 'supplies', 'desk'].indexOf(hash) !== -1) return { name: hash };
+    if (hash === 'making') hash = 'crafts';
+    if (hash === 'supplies') hash = 'shopping';
+    if (hash === 'desk') hash = 'settings';
+    if (['today', 'story', 'crafts', 'shopping', 'gifts', 'settings'].indexOf(hash) !== -1) return { name: hash };
     return { name: 'today' };
+  }
+
+  function daysUntilElves() {
+    var n = ElfPlan.diffDays(view.phase.todayKey, view.season.startDate);
+    if (n > 1) return n + ' days until the elves return';
+    if (n === 1) return '1 day until the elves return';
+    if (n === 0) return 'The elves return today';
+    if (view.phase.phase === 'after') return 'The elves have tucked the book away';
+    return 'The elves are here';
+  }
+
+  function hiLine() {
+    if (!view.meta.sampleStory && view.meta.displayName) return 'Hi ' + view.meta.displayName;
+    return 'Hi there';
+  }
+
+  function ornament() {
+    return '<svg viewBox="0 0 160 130" aria-hidden="true"><circle cx="28" cy="24" r="2.2" fill="#fff"/><circle cx="132" cy="18" r="2" fill="#fff"/><circle cx="118" cy="108" r="2" fill="#fff"/><path d="M80 8 v14" stroke="#9c2744" stroke-width="2" stroke-linecap="round"/><circle cx="80" cy="8" r="3" fill="#9c2744"/><circle cx="80" cy="72" r="40" fill="#c43b55"/><circle cx="66" cy="58" r="12" fill="#fff" opacity=".28"/><path d="M80 36 l4 10 h10 l-8 6 3 10 -9 -6 -9 6 3 -10 -8 -6 h10 z" fill="#E8F2E5"/></svg>';
   }
 
   function refresh() {
@@ -103,8 +124,11 @@
     if (!node) return;
     var live = window.ElfLive ? ElfLive.open({ endpoint: null }) : null;
     var remote = live ? live.view().state : 'disconnected';
-    var text = remote !== 'saved' ? 'Not connected' : (saveState === 'saving' ? 'Saving' : 'Saved');
-    if (scratch && !scratch.persistent) text = 'Not connected';
+    var text = remote === 'offline' ? 'Offline'
+      : remote === 'reconnecting' ? 'Reconnecting'
+      : remote === 'saving' ? 'Saving'
+      : remote === 'saved' && live && live.view().deployed ? 'Saved'
+      : 'Only on this phone';
     if (node.textContent !== text) node.textContent = text;
   }
 
@@ -126,30 +150,28 @@
     paintSave();
   }
 
-  function sceneBlock(day, entry) {
-    var fit = window.ElfMediaFit ? ElfMediaFit.describe(entry) : { alpha: false, plate: ElfMediaFit.PLATE };
-    var wrap = el('div', { class: 'cutout' + (fit.alpha ? ' is-alpha' : ' is-opaque'), 'data-alpha': fit.alpha ? 'yes' : 'no' });
-    var stage = el('div', { class: 'cutout-stage' });
-    stage.insertAdjacentHTML('beforeend', ElfScenes.feltDiorama(entry));
-    wrap.appendChild(stage);
-    wrap.appendChild(el('button', { type: 'button', class: 'film', disabled: true, text: 'Film coming soon' }));
-    if (day && day.scene && day.scene.stale) wrap.appendChild(el('p', { class: 'fine', text: 'Picture needs another look' }));
-    return wrap;
+  function posterCard(title, withSoon) {
+    var card = el('div', { class: 'poster' });
+    card.insertAdjacentHTML('beforeend', ornament());
+    if (title) card.appendChild(el('p', { class: 'poster-title', text: title }));
+    if (withSoon) card.appendChild(el('button', { type: 'button', class: 'coming', disabled: true, text: 'Coming soon' }));
+    return card;
   }
 
-  function featureCard() {
-    var feature = manifest.feature;
-    var status = ElfPlan.featureStatus(view.days, feature);
-    var card = el('section', { class: 'feature-card', id: 'whole-story', 'aria-labelledby': 'wholeTitle' });
-    var frame = el('div', { class: 'cutout-stage' });
-    frame.insertAdjacentHTML('beforeend', ElfScenes.feltFeature());
-    var copy = el('div', {});
-    copy.appendChild(el('p', { class: 'kicker', text: 'All 25 chapters' }));
-    copy.appendChild(el('h2', { id: 'wholeTitle', text: 'Watch the whole story' }));
-    copy.appendChild(el('button', { type: 'button', class: 'film', disabled: true, text: 'Film coming soon' }));
-    if (status.stale) copy.appendChild(el('p', { class: 'fine', text: 'Chapters changed since this was planned' }));
-    card.appendChild(frame);
-    card.appendChild(copy);
+  function dayCard(day) {
+    return el('a', { class: 'day-card', href: '#chapter/' + day.id },
+      el('span', { class: 'day-badge', text: String(day.number) }),
+      el('div', {},
+        el('div', { class: 'when', text: ElfPlan.formatLong(day.displayDate, 'America/Chicago', false) }),
+        el('strong', { text: labelOf(day) }),
+        el('p', { text: day.description || 'A quiet page, waiting.' })
+      )
+    );
+  }
+
+  function wholeStoryCard() {
+    var card = posterCard('Watch the whole story', true);
+    card.id = 'whole-story';
     return card;
   }
 
@@ -162,32 +184,21 @@
   }
 
   function paintWelcome() {
-    var page = $('page');
-    var entry = manifest.days[0];
-    page.replaceChildren(el('div', { class: 'welcome-grid' },
-      sceneBlock(view.days[0], entry),
-      el('div', {},
-        el('p', { class: 'kicker', text: 'The lamp is already on' }),
-        el('h2', { text: 'This is your story.' }),
-        el('p', { class: 'lede', text: 'Twenty-five chapters, December 1 through December 25, in that order. The whole book is open now, pictures included, so you can walk any chapter while you are still writing.' }),
-        el('p', { text: 'Making and supplies sit in the back. They help the work. Checking them does not change a chapter, and nothing here rewrites your words.' }),
-        el('p', { text: 'You asked for a quiet reader who looks when a chapter changes, so the pictures can keep up. That person can read. They cannot replace a sentence you wrote. The connection is not on yet. Until it is, the story stays on this browser and nothing is sent.' }),
-        el('label', { class: 'field' }, 'What should the book call you?', el('input', { id: 'helloName', type: 'text', maxlength: '40', autocomplete: 'off', placeholder: 'you', enterkeyhint: 'done' }), el('small', { text: 'Leave it blank and the greeting will simply say you.' })),
-        el('button', { type: 'button', class: 'btn', 'data-act': 'sit', text: 'Open my story' })
-      )
-    ));
+    $('page').replaceChildren(
+      posterCard('', false),
+      el('h2', { text: 'Hi there' }),
+      el('p', { class: 'lede', text: daysUntilElves() }),
+      el('button', { type: 'button', class: 'btn', 'data-act': 'sit', text: 'Come in' })
+    );
   }
 
   function paintToday() {
     var shown = view.shown;
     var day = shown.day;
     var phase = view.phase;
-    var hello = ElfPlan.greeting(phase.zoned.hour, view.meta.displayName);
-    var intro = phase.phase === 'before'
-      ? 'December opens on chapter 1. Every chapter is already here.'
-      : phase.phase === 'after'
-        ? 'December 25 was the last chapter. The book is still open.'
-        : 'Today is chapter ' + phase.todayNumber + '. The others are open too.';
+    var hello = hiLine();
+    var intro = daysUntilElves();
+    void phase;
     var peek = el('label', { class: 'field' }, 'Open the book at', el('select', { id: 'peek', 'data-act': 'peek' },
       el('option', { value: '', text: 'The real Chicago date', selected: !view.meta.peekDayId })
     ));
@@ -198,72 +209,71 @@
         selected: view.meta.peekDayId === item.id
       }));
     });
+    var next = view.days[day.number] || null;
     mount($('page'),
-      featureCard(),
-      el('p', { class: 'kicker', text: shown.mode === 'peek' ? 'Peeking · dates unchanged' : shown.mode === 'today' ? 'Where the calendar opens' : 'Suggested opening' }),
+      wholeStoryCard(),
       el('h2', { text: hello }),
       el('p', { class: 'lede', text: intro }),
-      shown.mode === 'peek' ? el('p', { class: 'guess', text: 'You are peeking at ' + ElfPlan.formatLong(day.displayDate, 'America/Chicago', true) + '. The Chicago clock is unchanged, and no chapter was moved.' }) : null,
-      el('article', { class: 'chapter-block' },
-        sceneBlock(day, manifest.days[day.number - 1]),
-        el('div', { class: 'chapter-copy' },
-          el('p', { class: 'kicker', text: 'Chapter ' + day.number }),
-          el('h3', { text: labelOf(day) }),
-          el('p', { text: ElfPlan.formatLong(day.displayDate, 'America/Chicago', true) }),
-          el('p', { text: day.description || 'This chapter is waiting for your words.' }),
-          el('p', { class: 'row' }, el('a', { class: 'btn', href: '#chapter/' + day.id, text: 'Open chapter' })),
-          peek
-        )
-      ),
-      el('h3', { text: 'Every chapter' }),
-      el('div', { class: 'upcoming' }, view.days.map(chapterLink))
+      dayCard(day),
+      next ? dayCard(next) : null
     );
   }
 
   function paintStory() {
-    var cards = view.days.map(function (day) {
-      var entry = manifest.days[day.number - 1];
-      return el('a', { class: 'card story-card', href: '#chapter/' + day.id },
-        (function () {
-          var fig = el('figure', { class: 'scene-frame' });
-          fig.insertAdjacentHTML('beforeend', ElfScenes.feltDiorama(entry));
-          return fig;
-        })(),
-        el('div', {},
-          el('p', { class: 'kicker', text: ElfPlan.formatLong(day.displayDate, 'America/Chicago', false) }),
-          el('h3', { text: 'Chapter ' + day.number + ' · ' + labelOf(day) }),
-          el('p', { text: day.description || 'Waiting for your words.' }),
-          day.scene.stale ? el('span', { class: 'pill stale', text: 'Picture not caught up' }) : el('span', { class: 'pill', text: 'Open' })
-        )
-      );
-    });
+    var cards = view.days.map(dayCard);
     mount($('page'),
-      featureCard(),
-      el('h2', { text: 'The twenty-five chapters' }),
-      el('p', { class: 'lede', text: 'None of these are locked to the calendar. Today only decides which one the book opens on.' }),
+      el('h2', { text: 'The story' }),
       el('div', { class: 'stack' }, cards)
     );
   }
 
   function paintMaking() {
-    var noted = ElfPlan.craftEntries(view.days).filter(function (day) {
-      return day.craftNote || day.prep.source !== 'none';
-    });
-    var body = noted.length ? noted.map(function (day) {
-      var when = day.prep.source === 'none'
-        ? 'No prep date yet.'
-        : (day.prep.source === 'date' ? 'Prep date you set: ' : 'Lead time you set: ') + ElfPlan.formatLong(day.prep.date, 'America/Chicago', true);
-      return el('a', { class: 'card', href: '#chapter/' + day.id },
-        el('h3', { text: 'Chapter ' + day.number + ' · ' + labelOf(day) }),
-        el('p', { text: 'On the calendar: ' + ElfPlan.formatLong(day.displayDate, 'America/Chicago', true) + '. That day does not move.' }),
-        el('p', { text: when }),
-        day.craftNote ? el('p', { text: day.craftNote }) : null
-      );
-    }) : [el('div', { class: 'card' },
-      el('h3', { text: 'Nothing to make ahead yet' }),
-      el('p', { text: 'When a chapter needs work before its own day, set a prep date on that chapter. It stays a suggestion until you choose it. December 12 and December 19, 2026 are Saturdays. If your words say Sunday, the chapter still stays on its date.' })
-    )];
-    mount($('page'),el('h2', { text: 'Making' }), el('p', { class: 'lede', text: 'The making sits beside the story. It does not rewrite a chapter.' }), el('div', { class: 'stack' }, body));
+    var noted = ElfPlan.craftEntries(view.days).filter(function (day) { return day.craftNote || day.isCraft; });
+    mount($('page'),
+      el('h2', { text: 'Crafts' }),
+      el('p', { class: 'lede', text: 'Make these a little early, if you like.' }),
+      el('div', {}, noted.map(dayCard))
+    );
+  }
+
+  function money(cents) {
+    var n = Math.abs(cents || 0);
+    return (cents < 0 ? '-' : '') + '$' + Math.floor(n / 100) + '.' + (n % 100 < 10 ? '0' : '') + (n % 100);
+  }
+
+  function giftLine(gift) {
+    if (gift.status === 'purchased') {
+      return gift.spentConfirmed && gift.spentCents != null ? 'Bought ' + money(gift.spentCents) : 'Bought';
+    }
+    if (gift.offer && gift.offer.stale && gift.offer.amountCents) return money(gift.offer.amountCents) + ', may be old';
+    if (gift.offer && gift.offer.amountCents) return money(gift.offer.amountCents);
+    return 'Choose the exact item';
+  }
+
+  function paintGifts() {
+    var gifts = (fixture.gifts || []).filter(function (gift) { return !gift.deleted; });
+    var totals = window.ElfGifts ? ElfGifts.totals(gifts) : { spentCents: 0, remainingCents: 0, unknownPriceCount: 0 };
+    var people = fixture.recipients || [];
+    mount($('page'),
+      el('h2', { text: 'Gifts' }),
+      el('div', { class: 'gift-totals' },
+        el('div', {}, el('div', { class: 'when', text: 'Bought' }), el('strong', { text: money(totals.spentCents) })),
+        el('div', {}, el('div', { class: 'when', text: 'Still to buy' }), el('strong', { text: money(totals.remainingCents) })),
+        el('div', {}, el('div', { class: 'when', text: 'No fresh amount' }), el('strong', { text: String(totals.unknownPriceCount) }))
+      ),
+      people.map(function (person) {
+        var mine = gifts.filter(function (gift) { return gift.recipientId === person.id; });
+        return el('section', { class: 'person' },
+          el('h3', { text: person.name }),
+          mine.map(function (gift) {
+            return el('article', { class: 'gift-row' },
+              el('strong', { text: gift.idea }),
+              el('p', { class: gift.offer && gift.offer.stale ? 'stale-note' : '', text: giftLine(gift) })
+            );
+          })
+        );
+      })
+    );
   }
 
   function paintSupplies() {
@@ -286,8 +296,8 @@
       );
     }) : [el('div', { class: 'card' }, el('h3', { text: 'The list is empty' }), el('p', { text: 'Add what the story needs. Nothing here has a price.' }))];
     mount($('page'),
-      el('h2', { text: 'Supplies' }),
-      el('p', { class: 'lede', text: 'Walmart in Bastrop, on the ordinary weekly grocery trip. Elf HQ does not keep prices and does not write to the budget apps.' }),
+      el('h2', { text: 'Shopping' }),
+      el('p', { class: 'lede', text: 'Walmart in Bastrop, with the weekly groceries.' }),
       el('div', { class: 'card' },
         el('label', { class: 'field' }, 'Add something', el('input', { id: 'newShopName', type: 'text', maxlength: '80', placeholder: 'What to pick up' })),
         el('label', { class: 'field' }, 'Need date, if you know it', el('input', { id: 'newShopDate', type: 'date' })),
@@ -344,9 +354,10 @@
 
   function paintTab(name) {
     if (name === 'story') paintStory();
-    else if (name === 'making') paintMaking();
-    else if (name === 'supplies') paintSupplies();
-    else if (name === 'desk') paintDesk();
+    else if (name === 'crafts' || name === 'making') paintMaking();
+    else if (name === 'shopping' || name === 'supplies') paintSupplies();
+    else if (name === 'gifts') paintGifts();
+    else if (name === 'settings' || name === 'desk') paintDesk();
     else paintToday();
   }
 
@@ -378,17 +389,16 @@
     refresh();
     var day = view.days.filter(function (item) { return item.id === sheetDay; })[0];
     if (!day) return;
-    var entry = manifest.days[day.number - 1];
-    $('sheetTitle').textContent = 'Chapter ' + day.number;
+    $('sheetTitle').textContent = labelOf(day);
     var prev = day.number > 1 ? view.days[day.number - 2] : null;
     var next = day.number < 25 ? view.days[day.number] : null;
     var photo = day.photo
       ? el('img', { class: 'photo-preview', alt: 'Inspiration picture for ' + ElfPlan.formatLong(day.displayDate, 'America/Chicago', true) + '. Unnamed.', 'data-photo': day.photo.id })
       : el('p', { class: 'fine', text: 'No inspiration picture yet. A picture stays on this browser until private sync exists. It does not need a name.' });
     mount($('sheetBody'),
-      sceneBlock(day, entry),
-      el('p', { text: ElfPlan.formatLong(day.displayDate, 'America/Chicago', true) + ' stays this chapter’s date.' }),
-      day.hint ? el('div', { class: 'guess' }, el('p', { text: 'Your words say ' + day.hint.mentioned.join(' and ') + '. This chapter is ' + day.hint.displayWeekday + ', ' + ElfPlan.formatLong(day.displayDate, 'America/Chicago', true) + ', and it was not moved. A prep date is separate, and only if you set one.' })) : null,
+      posterCard(labelOf(day), false),
+      el('p', { text: ElfPlan.formatLong(day.displayDate, 'America/Chicago', true) }),
+      day.hint ? el('p', { class: 'guess', text: 'The note says ' + day.hint.mentioned.join(' and ') + '. This page stays on ' + day.hint.displayWeekday + '.' }) : null,
       field(day, 'title', 'Chapter title, if you want one', day.title, false),
       field(day, 'idea', 'What happens', day.description, true),
       field(day, 'note', 'Your exact words', day.note, true),

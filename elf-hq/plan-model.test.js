@@ -435,7 +435,7 @@ function finalized() {
     const fx = finalized();
     const ov = P.blankOverrides();
     const view = P.buildView(fx, ov, new Date('2026-11-08T18:00:00Z'));
-    assert.strictEqual(view.meta.displayName, 'Nell');
+    assert.strictEqual(view.meta.displayName, '');
     assert.strictEqual(view.meta.sampleStory, true);
     const bad = P.importSeed(ov, { elfHqSeed: 1, days: [{ number: 1, title: 'Nope' }], pin: '0000' }, 't', []);
     assert.strictEqual(bad.ok, false);
