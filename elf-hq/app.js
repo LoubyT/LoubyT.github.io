@@ -365,11 +365,12 @@
       ),
       el('p', { class: 'totals-who', text: who }),
       el('div', { class: 'gift-totals' },
-        el('div', {}, el('div', { class: 'when', text: 'Bought' }), el('strong', { text: ElfGifts.moneyLabel(whole.spentCents) })),
-        el('div', {}, el('div', { class: 'when', text: 'Remaining' }), el('strong', { text: ElfGifts.moneyLabel(whole.remainingCents) })),
-        el('div', {}, el('div', { class: 'when', text: 'Total' }), el('strong', { text: ElfGifts.moneyLabel(whole.spentCents + whole.remainingCents) }))
+        el('div', {}, el('div', { class: 'when', text: 'Bought' }), el('strong', { text: ElfGifts.boughtDisplay(whole) })),
+        el('div', {}, el('div', { class: 'when', text: 'Remaining' }), el('strong', { text: ElfGifts.remainingDisplay(whole).text })),
+        el('div', {}, el('div', { class: 'when', text: 'Total' }), el('strong', { text: ElfGifts.totalDisplay(whole).text }))
       ),
-      whole.unknownPriceCount ? el('p', { class: 'when', text: whole.unknownPriceCount + ' without a fresh amount. Those are not counted as zero.' }) : null,
+      ElfGifts.remainingDisplay(whole).note ? el('p', { class: 'when', text: ElfGifts.remainingDisplay(whole).note }) : null,
+      whole.unknownPriceCount ? el('p', { class: 'when', text: whole.unknownPriceCount + (whole.unknownPriceCount === 1 ? ' with no price.' : ' with no price.') }) : null,
       shownPeople.map(function (person) {
         var mine = gifts.filter(function (gift) { return gift.recipientId === person.id; });
         var visible = mine.filter(function (gift) { return ElfGifts.passesFilter(gift, giftFilter); });
@@ -381,7 +382,7 @@
             ring(boughtN, mine.length),
             el('span', {},
               el('strong', { text: person.name }),
-              el('span', { class: 'when', text: 'Bought ' + ElfGifts.moneyLabel(sub.spentCents) + ' · Remaining ' + ElfGifts.moneyLabel(sub.remainingCents) + ' · Total ' + ElfGifts.moneyLabel(sub.spentCents + sub.remainingCents) })
+              el('span', { class: 'when', text: 'Bought ' + ElfGifts.boughtDisplay(sub) + ' \u00b7 Remaining ' + ElfGifts.remainingDisplay(sub).text + (ElfGifts.remainingDisplay(sub).note ? ' (' + ElfGifts.remainingDisplay(sub).note + ')' : '') + ' \u00b7 Total ' + ElfGifts.totalDisplay(sub).text })
             )
           ),
           open ? el('div', { class: 'person-body' },
@@ -392,6 +393,12 @@
         );
       })
     );
+    var selected = document.querySelector('.person-pick[aria-pressed="true"]');
+    var row = selected && selected.parentNode;
+    if (row && selected) {
+      var left = selected.offsetLeft - Math.max(0, (row.clientWidth - selected.offsetWidth) / 2);
+      row.scrollLeft = Math.max(0, left);
+    }
   }
 
   function openGiftSheet(personId, gift) {

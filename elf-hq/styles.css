@@ -124,8 +124,13 @@ a, button { touch-action: manipulation; }
   background: var(--scene-plate);
   padding: 4px 0 8px;
 }
-.person-picks { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 8px; }
+.person-picks {
+  display: flex; flex-wrap: nowrap; gap: 8px; margin: 0 -16px 8px; padding: 0 16px 2px;
+  overflow-x: auto; scrollbar-width: none;
+}
+.person-picks::-webkit-scrollbar { display: none; }
 .person-pick {
+  flex: 0 0 auto; white-space: nowrap;
   min-height: 44px; min-width: 44px; padding: 6px 12px;
   border: 0; border-radius: 999px; background: #fff; font-weight: 750;
 }

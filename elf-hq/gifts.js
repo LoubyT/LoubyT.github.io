@@ -159,7 +159,7 @@
   }
 
   function emptyTotals() {
-    return { spentCents: 0, spentKnownCount: 0, purchasedUnpricedCount: 0, remainingCents: 0, remainingKnownCount: 0, unknownPriceCount: 0, count: 0 };
+    return { spentCents: 0, spentKnownCount: 0, purchasedUnpricedCount: 0, remainingCents: 0, remainingKnownCount: 0, staleCents: 0, staleCount: 0, unknownPriceCount: 0, count: 0 };
   }
 
   function addOne(bucket, gift) {
@@ -172,10 +172,39 @@
       } else bucket.purchasedUnpricedCount += 1;
       return;
     }
-    if (gift.offer && gift.offer.stale !== true && gift.offer.amountCents > 0 && gift.offer.basis === 'exact-variant') {
-      bucket.remainingCents += gift.offer.amountCents * qty;
-      bucket.remainingKnownCount += 1;
+    if (gift.offer && gift.offer.amountCents > 0 && gift.offer.basis === 'exact-variant') {
+      if (gift.offer.stale === true) {
+        bucket.staleCents += gift.offer.amountCents * qty;
+        bucket.staleCount += 1;
+      } else {
+        bucket.remainingCents += gift.offer.amountCents * qty;
+        bucket.remainingKnownCount += 1;
+      }
     } else bucket.unknownPriceCount += 1;
+  }
+
+  function remainingDisplay(totals) {
+    var fresh = totals && totals.remainingCents || 0;
+    var stale = totals && totals.staleCents || 0;
+    if (stale) return { text: '~' + moneyLabel(fresh + stale), note: 'may be old' };
+    if (fresh) return { text: moneyLabel(fresh), note: '' };
+    if (totals && totals.unknownPriceCount) return { text: '\u2014', note: '' };
+    return { text: moneyLabel(0), note: '' };
+  }
+
+  function totalDisplay(totals) {
+    var fresh = totals && totals.remainingCents || 0;
+    var stale = totals && totals.staleCents || 0;
+    var spent = totals && totals.spentCents || 0;
+    if (stale) return { text: '~' + moneyLabel(spent + fresh + stale), note: '' };
+    if (!fresh && !spent && totals && totals.unknownPriceCount && !totals.spentKnownCount) return { text: '\u2014', note: '' };
+    return { text: moneyLabel(spent + fresh), note: '' };
+  }
+
+  function boughtDisplay(totals) {
+    if (totals && (totals.spentKnownCount || totals.spentCents)) return moneyLabel(totals.spentCents);
+    if (totals && totals.purchasedUnpricedCount) return '\u2014';
+    return moneyLabel(0);
   }
 
   function emptyGiftBook() {
@@ -315,6 +344,9 @@
     keepPerson: keepPerson,
     passesFilter: passesFilter,
     moneyLabel: moneyLabel,
+    remainingDisplay: remainingDisplay,
+    totalDisplay: totalDisplay,
+    boughtDisplay: boughtDisplay,
     chipFor: chipFor,
     checkedLine: checkedLine,
     runPriceRoutine: runPriceRoutine

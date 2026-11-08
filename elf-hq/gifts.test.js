@@ -31,7 +31,9 @@ test('vague ideas are not priced as zero', function () {
   const t = G.totals([gift]);
   assert.strictEqual(t.unknownPriceCount, 1);
   assert.strictEqual(t.remainingCents, 0);
+  assert.strictEqual(t.staleCents, 0);
   assert.strictEqual(t.spentCents, 0);
+  assert.strictEqual(G.remainingDisplay(t).text, '\u2014');
 });
 
 test('exact offer, history, quantity, and spent stay apart', function () {
@@ -172,6 +174,17 @@ test('person chips count what is still to buy and narrow the totals', function (
   const shown = mine.filter(function (gift) { return G.passesFilter(gift, 'remaining'); });
   assert.strictEqual(shown.length, 1);
   assert.strictEqual(G.giftsForPerson(gifts, 'sample-1').filter(function (gift) { return G.passesFilter(gift, 'remaining'); }).length, 0);
+  const stale = G.totals(G.giftsForPerson(gifts, 'sample-4'));
+  assert.strictEqual(stale.remainingCents, 0);
+  assert.strictEqual(stale.staleCents, 2400);
+  assert.strictEqual(stale.unknownPriceCount, 0);
+  const shownStale = G.remainingDisplay(stale);
+  assert.strictEqual(shownStale.text, '~$24.00');
+  assert.strictEqual(shownStale.note, 'may be old');
+  assert.strictEqual(G.totalDisplay(stale).text, '~$24.00');
+  const mixed = G.totals(gifts);
+  assert.strictEqual(G.remainingDisplay(mixed).text, '~$36.99');
+  assert.strictEqual(mixed.unknownPriceCount, 0);
 });
 
 console.log('ok ' + n + ' gift tests');
