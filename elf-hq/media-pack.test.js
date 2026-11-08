@@ -8,7 +8,7 @@ const root = __dirname;
 const shape = JSON.parse(fs.readFileSync(path.join(root, 'manifest.public-shape.json'), 'utf8'));
 const wrap = JSON.parse(fs.readFileSync(path.join(root, 'manifest.enc.json'), 'utf8'));
 
-assert.strictEqual(shape.version, 3);
+assert.strictEqual(shape.version, 4);
 assert.strictEqual(wrap.scheme, 'aes-256-gcm-iv12');
 assert.strictEqual(typeof wrap.data, 'string');
 assert.ok(wrap.data.length > 100);
@@ -17,6 +17,7 @@ assert.ok(packed.length > 28);
 assert.throws(function () { JSON.parse(packed.toString('utf8')); });
 assert.strictEqual(JSON.stringify(shape).includes('"final":true'), false);
 assert.strictEqual(shape.bonus, undefined);
+assert.ok(shape.bonusFilm == null);
 
 const gone = [
   'day-07.p1.77a6f3041da9.bin', 'day-07.v1.5820da046eb0.bin',
@@ -34,15 +35,12 @@ shape.days.forEach(function (day) {
   assert.ok(day.day >= 1 && day.day <= 25);
   assert.notStrictEqual(day.status, 'final');
   assert.notStrictEqual(day.final, true);
-  if (day.day === 17) assert.strictEqual(day.status, 'rough');
-  else if (day.day <= 21) assert.strictEqual(day.status, 'current');
-  else assert.strictEqual(day.status, null);
+  if (day.day === 9 || day.day === 16) assert.strictEqual(day.status, 'being-revised');
+  else if (day.day === 17) assert.strictEqual(day.status, 'rough');
+  else assert.strictEqual(day.status, 'current');
   ['video', 'poster'].forEach(function (kind) {
     const node = day[kind];
-    if (!node) {
-      assert.ok(day.day >= 22);
-      return;
-    }
+    if (!node) assert.fail('day ' + day.day + ' has no ' + kind);
     if (kind === 'video') clips += 1;
     assert.match(node.file, /^media\/[A-Za-z0-9._-]+\.bin$/);
     assert.notStrictEqual(node.final, true);
@@ -55,10 +53,11 @@ shape.days.forEach(function (day) {
     assert.notStrictEqual(bytes[0], 0xff);
   });
 });
-assert.strictEqual(clips, 21);
+assert.strictEqual(clips, 25);
 const onDisk = new Set(fs.readdirSync(path.join(root, 'media')).filter(function (name) { return name.endsWith('.bin'); }));
 assert.deepStrictEqual(onDisk, referenced);
-assert.strictEqual(onDisk.size, 42);
+assert.strictEqual(onDisk.size, 50);
+onDisk.forEach(function (name) { assert.strictEqual(name.toLowerCase().includes('bonus'), false); });
 const pub = fs.readFileSync(path.join(root, 'manifest.public-shape.json'), 'utf8');
 assert.strictEqual(pub.includes('caption'), false);
 console.log('ok media pack');

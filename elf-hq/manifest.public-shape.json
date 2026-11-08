@@ -1,5 +1,5 @@
 {
- "version": 3,
+ "version": 4,
  "days": [
   {
    "day": 1,
@@ -115,7 +115,7 @@
   },
   {
    "day": 9,
-   "status": "current",
+   "status": "being-revised",
    "video": {
     "file": "media/day-09.v2.d0a371a85cc8.bin",
     "size": 1087879,
@@ -213,7 +213,7 @@
   },
   {
    "day": 16,
-   "status": "current",
+   "status": "being-revised",
    "video": {
     "file": "media/day-16.v2.c49a6da6e9d1.bin",
     "size": 1046992,
@@ -297,19 +297,59 @@
   },
   {
    "day": 22,
-   "status": null
+   "status": "current",
+   "video": {
+    "file": "media/day-22.v1.e3eda08bb82e.bin",
+    "size": 984693,
+    "sha256": "e3eda08bb82eb2716bb781c1d78ef86c324662cddd8a1cf2a3f0ce28af2a1138"
+   },
+   "poster": {
+    "file": "media/day-22.p1.e5b95e1d2ae8.bin",
+    "size": 67436,
+    "sha256": "e5b95e1d2ae8dde0699fdc4f793c143e954701f8d870b75b761ee20599598b0d"
+   }
   },
   {
    "day": 23,
-   "status": null
+   "status": "current",
+   "video": {
+    "file": "media/day-23.v1.d3b18f530367.bin",
+    "size": 1061019,
+    "sha256": "d3b18f5303679eee68eab2fa52de7bed3c1f4875e773df9016b19002fb850a8d"
+   },
+   "poster": {
+    "file": "media/day-23.p1.7696b91d9af2.bin",
+    "size": 46969,
+    "sha256": "7696b91d9af2ad984bf86eb6b3ce562ac4c81653195dc95034d64df466a5cca9"
+   }
   },
   {
    "day": 24,
-   "status": null
+   "status": "current",
+   "video": {
+    "file": "media/day-24.v1.c65d82e85bd3.bin",
+    "size": 1164432,
+    "sha256": "c65d82e85bd3ae900601a23cfbcaef9dfb139d706e9b77a7da82e156a5072592"
+   },
+   "poster": {
+    "file": "media/day-24.p1.d372baf2576f.bin",
+    "size": 62644,
+    "sha256": "d372baf2576fb33ecd1a75daf641aedf1ae5c96aa25ab17f85412e2451242b57"
+   }
   },
   {
    "day": 25,
-   "status": null
+   "status": "current",
+   "video": {
+    "file": "media/day-25.v1.796e9a69ee6e.bin",
+    "size": 1255730,
+    "sha256": "796e9a69ee6e6e3bb861852f674683d557efc179fb8fd3c03f8dd121f00cdad0"
+   },
+   "poster": {
+    "file": "media/day-25.p1.a6a97f74e68f.bin",
+    "size": 72808,
+    "sha256": "a6a97f74e68fc381f9a95806a1c16e9aff8e81e6c998d5d7d8f2397063182a34"
+   }
   }
  ]
 }
