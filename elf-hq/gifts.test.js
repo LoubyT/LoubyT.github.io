@@ -151,4 +151,27 @@ test('gift book keeps edits, filters, and a down chip', function () {
   assert.ok(G.checkedLine({ offer: { stale: true, sellerCount: 2 } }, 'Oct 20').indexOf('may be old') !== -1);
 });
 
+test('person chips count what is still to buy and narrow the totals', function () {
+  n += 1;
+  const gifts = [
+    { id: 'a', recipientId: 'sample-1', status: 'purchased', deleted: false, spentCents: 1800, spentConfirmed: true },
+    { id: 'b', recipientId: 'sample-2', status: 'planned', deleted: false, quantity: 1, offer: { amountCents: 1299, stale: false, basis: 'exact-variant' } },
+    { id: 'c', recipientId: 'sample-4', status: 'planned', deleted: false, offer: { amountCents: 2400, stale: true, basis: 'exact-variant' } }
+  ];
+  const people = [{ id: 'sample-1' }, { id: 'sample-2' }, { id: 'sample-4' }];
+  assert.strictEqual(G.remainingCount(gifts), 2);
+  assert.strictEqual(G.remainingCount(G.giftsForPerson(gifts, 'sample-1')), 0);
+  assert.strictEqual(G.remainingCount(G.giftsForPerson(gifts, 'sample-4')), 1);
+  assert.strictEqual(G.keepPerson('sample-4', people), 'sample-4');
+  assert.strictEqual(G.keepPerson('missing', people), 'all');
+  assert.strictEqual(G.keepPerson('all', people), 'all');
+  const mine = G.giftsForPerson(gifts, 'sample-2');
+  const totals = G.totals(mine);
+  assert.strictEqual(totals.remainingCents, 1299);
+  assert.strictEqual(totals.spentCents, 0);
+  const shown = mine.filter(function (gift) { return G.passesFilter(gift, 'remaining'); });
+  assert.strictEqual(shown.length, 1);
+  assert.strictEqual(G.giftsForPerson(gifts, 'sample-1').filter(function (gift) { return G.passesFilter(gift, 'remaining'); }).length, 0);
+});
+
 console.log('ok ' + n + ' gift tests');

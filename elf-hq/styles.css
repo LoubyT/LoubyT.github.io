@@ -119,7 +119,24 @@ a, button { touch-action: manipulation; }
 .gift-totals { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0 0 8px; }
 .gift-totals div { background: #fff; border-radius: 16px; padding: 10px 8px; min-height: 72px; text-align: center; }
 .gift-totals strong { display: block; font-size: 1.05rem; }
-.filters { display: flex; gap: 8px; margin: 0 0 12px; }
+.gift-bar {
+  position: sticky; top: 0; z-index: 3;
+  background: var(--scene-plate);
+  padding: 4px 0 8px;
+}
+.person-picks { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 8px; }
+.person-pick {
+  min-height: 44px; min-width: 44px; padding: 6px 12px;
+  border: 0; border-radius: 999px; background: #fff; font-weight: 750;
+}
+.person-pick[aria-pressed="true"] { background: var(--cranberry); color: #fff; }
+.pick-count {
+  display: inline-grid; place-items: center; min-width: 1.5em; margin-left: 6px;
+  padding: 0 6px; border-radius: 999px; background: var(--scene-plate); font-size: .8rem;
+}
+.person-pick[aria-pressed="true"] .pick-count { background: rgba(255,255,255,.28); color: #fff; }
+.totals-who { margin: 0 0 6px; font-weight: 750; color: var(--cranberry); }
+.filters { display: flex; gap: 8px; margin: 0; }
 .filters button { flex: 1; min-height: 44px; border-radius: 999px; border: 0; background: #fff; font-weight: 750; }
 .filters button[aria-pressed="true"] { background: var(--cranberry); color: #fff; }
 .person { margin: 0 0 12px; background: transparent; }
@@ -349,6 +366,7 @@ textarea { min-height: 88px; resize: vertical; }
   .page { overflow: visible; flex: none; padding-left: 16px; padding-right: 16px; }
   .mast { padding-left: 16px; padding-right: 16px; }
   .nav { position: sticky; top: 0; z-index: 4; background: var(--scene-plate); padding: 6px 8px; }
+  .gift-bar { top: 64px; }
   .nav a { font-size: .78rem; padding: 0 4px; }
   body.sheet-open { overflow: hidden; }
 }

@@ -16,6 +16,7 @@
   var urls = {};
   var audioCtx = null;
   var giftFilter = 'all';
+  var giftPerson = null;
   var giftOpen = {};
   var liveSession = null;
 
@@ -315,25 +316,61 @@
     return card;
   }
 
+  function chosenPerson(people) {
+    if (giftPerson == null) {
+      try { giftPerson = localStorage.getItem('elf-hq-gift-person') || 'all'; }
+      catch (e) { giftPerson = 'all'; }
+    }
+    giftPerson = ElfGifts.keepPerson(giftPerson, people);
+    return giftPerson;
+  }
+
+  function personChip(id, label, count, pressed) {
+    var button = el('button', {
+      type: 'button',
+      class: 'person-pick',
+      'data-act': 'gift-person',
+      'data-id': id,
+      'aria-pressed': pressed ? 'true' : 'false',
+      'aria-label': label + ', ' + count + ' still to buy'
+    });
+    button.appendChild(document.createTextNode(label));
+    button.appendChild(el('span', { class: 'pick-count', text: String(count) }));
+    return button;
+  }
+
   function paintGifts() {
     var gifts = allGifts();
-    var whole = ElfGifts.totals(gifts);
     var people = fixture.recipients || [];
+    var picked = chosenPerson(people);
+    var scoped = ElfGifts.giftsForPerson(gifts, picked);
+    var whole = ElfGifts.totals(scoped);
+    var who = picked === 'all' ? 'Everyone' : (people.filter(function (person) { return person.id === picked; })[0] || {}).name || 'Everyone';
+    var shownPeople = picked === 'all' ? people : people.filter(function (person) { return person.id === picked; });
     mount($('page'),
       el('h2', { text: 'Gifts' }),
-      el('div', { class: 'filters', role: 'group', 'aria-label': 'Which gifts' },
-        ['remaining', 'bought', 'all'].map(function (name) {
-          var labels = { remaining: 'Remaining', bought: 'Bought', all: 'All' };
-          return el('button', { type: 'button', 'data-act': 'gift-filter', 'data-filter': name, 'aria-pressed': giftFilter === name ? 'true' : 'false', text: labels[name] });
-        })
+      el('div', { class: 'gift-bar' },
+        el('div', { class: 'person-picks', role: 'group', 'aria-label': 'Whose gifts' },
+          [personChip('all', 'All', ElfGifts.remainingCount(gifts), picked === 'all')].concat(people.map(function (person) {
+            var mine = ElfGifts.giftsForPerson(gifts, person.id);
+            return personChip(person.id, person.name, ElfGifts.remainingCount(mine), picked === person.id);
+          }))
+        ),
+        el('div', { class: 'filters', role: 'group', 'aria-label': 'Which gifts' },
+          ['remaining', 'bought', 'all'].map(function (name) {
+            var labels = { remaining: 'Remaining', bought: 'Bought', all: 'All' };
+            return el('button', { type: 'button', 'data-act': 'gift-filter', 'data-filter': name, 'aria-pressed': giftFilter === name ? 'true' : 'false', text: labels[name] });
+          })
+        )
       ),
+      el('p', { class: 'totals-who', text: who }),
       el('div', { class: 'gift-totals' },
         el('div', {}, el('div', { class: 'when', text: 'Bought' }), el('strong', { text: ElfGifts.moneyLabel(whole.spentCents) })),
         el('div', {}, el('div', { class: 'when', text: 'Remaining' }), el('strong', { text: ElfGifts.moneyLabel(whole.remainingCents) })),
         el('div', {}, el('div', { class: 'when', text: 'Total' }), el('strong', { text: ElfGifts.moneyLabel(whole.spentCents + whole.remainingCents) }))
       ),
       whole.unknownPriceCount ? el('p', { class: 'when', text: whole.unknownPriceCount + ' without a fresh amount. Those are not counted as zero.' }) : null,
-      people.map(function (person) {
+      shownPeople.map(function (person) {
         var mine = gifts.filter(function (gift) { return gift.recipientId === person.id; });
         var visible = mine.filter(function (gift) { return ElfGifts.passesFilter(gift, giftFilter); });
         var sub = ElfGifts.totals(mine);
@@ -908,6 +945,11 @@
       location.hash = '#' + lastTab;
     } else if (act === 'feature-play') askForFeature();
     else if (act === 'gift-filter') { giftFilter = button.dataset.filter || 'all'; paint(true); }
+    else if (act === 'gift-person') {
+      giftPerson = ElfGifts.keepPerson(button.dataset.id, (fixture && fixture.recipients) || []);
+      try { localStorage.setItem('elf-hq-gift-person', giftPerson); } catch (e) {}
+      paint(true);
+    }
     else if (act === 'gift-toggle') {
       giftOpen[button.dataset.id] = giftOpen[button.dataset.id] === false;
       paint(true);

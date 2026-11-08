@@ -236,6 +236,26 @@
     return b;
   }
 
+  function remainingCount(gifts) {
+    var n = 0;
+    (gifts || []).forEach(function (gift) {
+      if (gift && !gift.deleted && gift.status !== 'purchased') n += 1;
+    });
+    return n;
+  }
+
+  function giftsForPerson(gifts, personId) {
+    if (!personId || personId === 'all') return (gifts || []).filter(function (gift) { return gift && !gift.deleted; });
+    return (gifts || []).filter(function (gift) { return gift && !gift.deleted && gift.recipientId === personId; });
+  }
+
+  function keepPerson(personId, people) {
+    if (!personId || personId === 'all') return 'all';
+    var known = false;
+    (people || []).forEach(function (person) { if (person && person.id === personId) known = true; });
+    return known ? personId : 'all';
+  }
+
   function passesFilter(gift, filter) {
     if (!gift || gift.deleted) return false;
     if (filter === 'bought') return gift.status === 'purchased';
@@ -290,6 +310,9 @@
     listGifts: listGifts,
     saveGift: saveGift,
     deleteGift: deleteGift,
+    remainingCount: remainingCount,
+    giftsForPerson: giftsForPerson,
+    keepPerson: keepPerson,
     passesFilter: passesFilter,
     moneyLabel: moneyLabel,
     chipFor: chipFor,
