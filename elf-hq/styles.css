@@ -372,6 +372,25 @@ textarea { min-height: 88px; resize: vertical; }
   .nav a, .sound, .settings { min-height: 36px; }
 }
 
+.film-host { margin: 0 0 12px; }
+.chapter-film {
+  display: block; width: 100%; max-height: 52vh; object-fit: contain;
+  background: var(--scene-plate); border-radius: 28px;
+}
+.cut-badge {
+  display: inline-flex; align-items: center; min-height: 28px; margin: 8px 0 0;
+  padding: 0 10px; border-radius: 999px; background: #fff; color: var(--ink);
+  font-size: .82rem; font-weight: 700;
+}
+#conflictSlot:empty { display: none; }
+#conflictSlot { padding: 8px 14px 0; }
+.conflict {
+  background: #fff; border-radius: 18px; padding: 12px; margin: 0 0 10px;
+  box-shadow: 0 6px 16px rgba(110, 24, 48, .06);
+  position: relative; z-index: 45;
+}
+.conflict p { margin: 0 0 6px; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }

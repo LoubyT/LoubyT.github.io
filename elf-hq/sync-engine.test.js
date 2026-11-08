@@ -159,6 +159,56 @@ function waitFor(fn, ms) {
   assert.strictEqual(JSON.stringify(first), JSON.stringify(second));
 
   a.stop(); b.stop(); a2.stop(); b2.stop(); stale.stop();
+
+  const off = Live.resolveLive({ enabled: false, worker: 'https://elf.example', session: 'https://session.example/api/elf-session' });
+  assert.strictEqual(off.worker, null);
+  assert.strictEqual(off.session, null);
+  const disabled = Live.open({ enabled: false, worker: 'https://elf.example', token: 'tok' });
+  await disabled.commit('story.day-01.note', 'stays here');
+  assert.strictEqual(disabled.view().connected, false);
+  assert.strictEqual(Live.statusLabel(disabled.view()), 'Only on this phone');
+  const on = Live.resolveLive({ enabled: true, worker: 'https://elf.example', session: 'https://session.example/api/elf-session' });
+  assert.strictEqual(on.worker, 'https://elf.example');
+  assert.strictEqual(on.session, 'https://session.example/api/elf-session');
+
+  function MockSocket(url) {
+    this.url = url;
+    this.readyState = 0;
+    this.sent = [];
+    const self = this;
+    setTimeout(function () { self.readyState = 1; if (self.onopen) self.onopen(); }, 0);
+  }
+  MockSocket.prototype.send = function (raw) {
+    const msg = JSON.parse(raw);
+    this.sent.push(msg);
+    const self = this;
+    if (msg.type === 'hello') {
+      setTimeout(function () { self.onmessage({ data: JSON.stringify({ type: 'hello', ok: true, revision: 0 }) }); }, 0);
+    } else if (msg.type === 'pull') {
+      setTimeout(function () {
+        self.onmessage({ data: JSON.stringify({ type: 'pull', id: msg.id, revision: 3, changes: [{ path: 'story.day-01.note', value: 'from the other phone', rev: 3, deleted: false }] }) });
+      }, 0);
+    } else if (msg.type === 'push') {
+      setTimeout(function () {
+        self.onmessage({ data: JSON.stringify({ type: 'push', id: msg.id, body: { result: { revision: 4, applied: [{ path: msg.op.changes[0].path, rev: 4 }], conflicts: [] } } }) });
+      }, 0);
+    } else if (msg.type === 'media-key') {
+      setTimeout(function () { self.onmessage({ data: JSON.stringify({ type: 'media-key', id: msg.id, mediaKey: 'c3ludGhldGlj' }) }); }, 0);
+    }
+  };
+  MockSocket.prototype.close = function () { this.readyState = 3; if (this.onclose) this.onclose(); };
+  const room = Live.open({ worker: 'http://127.0.0.1:9', token: 'session-token', pollMs: 0, WebSocket: MockSocket });
+  let remote = null;
+  room.onRemote(function (ch) { remote = ch; });
+  await room.start();
+  assert.strictEqual(Live.statusLabel(room.view()), 'Synced');
+  assert.strictEqual(room.get('story.day-01.note'), 'from the other phone');
+  assert.strictEqual(remote.value, 'from the other phone');
+  await room.commit('story.day-02.note', 'sent across');
+  assert.strictEqual(room.get('story.day-02.note'), 'sent across');
+  assert.strictEqual(await room.mediaKey(), 'c3ludGhldGlj');
+  room.stop();
+
   console.log('ok sync engine tests');
 })().catch(function (err) {
   console.error(err);

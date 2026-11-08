@@ -1,13 +1,15 @@
-/* Public switch for the private relay. endpoint stays null until a wake
- * channel exists that is not the PIN Blob store. fast must stay false:
- * a 2 second poll of that store would pass the Hobby read cap and can
- * freeze PIN unlock for every app on the project.
+/* One-line switch. Leave enabled false until Louby says Publish.
+ * endpoint stays null so the old notebook poll never runs.
+ * Flip enabled to true only after the worker is the one you checked.
  */
 (function (root) {
   if (root.ElfLiveConfig) return;
   root.ElfLiveConfig = {
+    enabled: false,
+    worker: 'https://elf-hq-room.louby-trahan.workers.dev',
+    session: 'https://fd-refresh-relay.vercel.app/api/elf-session',
     endpoint: null,
     fast: false,
-    pollMs: 2000
+    pollMs: 0
   };
 })(typeof window !== 'undefined' ? window : globalThis);

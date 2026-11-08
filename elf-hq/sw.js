@@ -1,7 +1,7 @@
 /* Elf HQ shell only. Network first. Never caches notebooks or pictures.
  * Cache names start with elf-hq- so other apps on this origin keep theirs.
  */
-const VERSION = 'elf-hq-v6';
+const VERSION = 'elf-hq-v7';
 const ASSETS = [
   './',
   './index.html',
@@ -13,6 +13,7 @@ const ASSETS = [
   './media-fit.js',
   './sync-engine.js',
   './gifts.js',
+  './media-vault.js',
   './live-config.js',
   './scene-art.js',
   './sync-port.js',
@@ -40,6 +41,7 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
   if (!url.pathname.includes('/elf-hq/')) return;
+  if (url.pathname.includes('/media/') || url.pathname.endsWith('/manifest.enc.json')) return;
   event.respondWith(
     fetch(req).then((res) => {
       if (res.ok) {

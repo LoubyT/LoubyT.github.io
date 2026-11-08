@@ -19,6 +19,8 @@
   var giftPerson = null;
   var giftOpen = {};
   var liveSession = null;
+  var mediaVault = null;
+  var filmAsked = false;
 
   function $(id) { return document.getElementById(id); }
   function iso() { return new Date().toISOString(); }
@@ -560,7 +562,7 @@
       el('div', { class: 'card' },
         el('h3', { text: 'Scene reading' }),
         el('p', { text: nextText }),
-        el('p', { class: 'fine', text: (window.ElfLiveConfig && ElfLiveConfig.endpoint) ? 'A reader can look. They cannot rewrite a chapter.' : 'Nothing is sent.' })
+        el('p', { class: 'fine', text: liveParts().worker ? 'A reader can look. They cannot rewrite a chapter.' : 'Nothing is sent.' })
       ),
       el('div', { class: 'card' },
         el('h3', { text: 'A copy on purpose' }),
@@ -631,7 +633,7 @@
       ? el('img', { class: 'photo-preview', alt: 'Inspiration picture for ' + ElfPlan.formatLong(day.displayDate, 'America/Chicago', true) + '. Unnamed.', 'data-photo': day.photo.id })
       : el('p', { class: 'fine', text: 'No inspiration picture yet. A picture stays on this browser until private sync exists. It does not need a name.' });
     mount($('sheetBody'),
-      posterCard(labelOf(day), false),
+      mountFilm(day),
       el('p', { text: ElfPlan.formatLong(day.displayDate, 'America/Chicago', true) }),
       day.hint ? el('p', { class: 'guess', text: 'The note says ' + day.hint.mentioned.join(' and ') + '. This page stays on ' + day.hint.displayWeekday + '.' }) : null,
       field(day, 'title', 'Chapter title, if you want one', day.title, false),
@@ -659,6 +661,7 @@
       )
     );
     hydrate($('sheetBody'));
+    paintConflicts();
   }
 
   function hydrate(root) {
@@ -701,7 +704,133 @@
     document.body.classList.remove('sheet-open');
     $('book').removeAttribute('aria-hidden');
     sheetDay = null;
-    document.querySelectorAll('video').forEach(function (video) { video.pause(); video.removeAttribute('src'); video.remove(); });
+    releaseFilm();
+  }
+
+  function releaseFilm() {
+    document.querySelectorAll('video').forEach(function (video) {
+      video.pause();
+      video.removeAttribute('src');
+      video.load();
+      video.remove();
+    });
+    if (mediaVault) mediaVault.close();
+    filmAsked = false;
+  }
+
+  function liveParts() {
+    if (!window.ElfLive || typeof ElfLive.resolveLive !== 'function') return { worker: null, session: null };
+    return ElfLive.resolveLive(window.ElfLiveConfig || {});
+  }
+
+  function conflictText(value) {
+    if (value == null) return 'Removed';
+    var text = typeof value === 'string' ? value : (value.idea || value.note || value.title || '');
+    text = String(text).replace(/\s+/g, ' ').trim();
+    if (!text) return 'A different edit';
+    return text.length > 80 ? text.slice(0, 77) + '...' : text;
+  }
+
+  function conflictCard(c) {
+    return el('div', { class: 'conflict', role: 'status' },
+      el('p', { text: 'Two phones changed the same line.' }),
+      el('p', { text: 'This phone: ' + conflictText(c.local) }),
+      el('p', { text: 'The other phone: ' + conflictText(c.server) }),
+      el('p', { class: 'row' },
+        el('button', { type: 'button', class: 'btn', 'data-act': 'keep-local', 'data-path': c.path, text: 'Keep this phone' }),
+        el('button', { type: 'button', class: 'btn ghost', 'data-act': 'keep-server', 'data-path': c.path, text: 'Keep the other phone' })
+      )
+    );
+  }
+
+  function paintConflicts() {
+    var list = liveSession ? liveSession.view().conflicts : [];
+    var host = $('banners');
+    if (host) mount(host, list.map(conflictCard));
+    var slot = $('conflictSlot');
+    if (slot) mount(slot, $('sheetLayer').hidden ? [] : list.map(conflictCard));
+  }
+
+  function applyLiveValue(ch) {
+    if (!ch || !overrides || typeof ch.path !== 'string') return;
+    if (ch.path.indexOf('gifts/') === 0) {
+      var id = ch.path.slice('gifts/'.length);
+      if (ch.deleted || (ch.value && ch.value.deleted)) overrides.gifts = ElfGifts.deleteGift(overrides.gifts, id);
+      else if (ch.value) overrides.gifts = ElfGifts.saveGift(overrides.gifts, (fixture && fixture.gifts) || [], ch.value);
+      scheduleSave();
+      refresh();
+      if (parseHash().name === 'gifts') paint(true);
+      return;
+    }
+    var note = /^story\.([A-Za-z0-9_-]+)\.note$/.exec(ch.path);
+    if (!note) return;
+    var focused = document.activeElement;
+    if (focused && focused.dataset && focused.dataset.field === 'note' && focused.dataset.day === note[1]) return;
+    ElfPlan.setField(overrides, note[1], 'note', ch.deleted ? '' : String(ch.value == null ? '' : ch.value), iso());
+    scheduleSave();
+    refresh();
+    if (sheetDay === note[1]) {
+      var box = document.getElementById('note-' + note[1]);
+      if (box && document.activeElement !== box) box.value = ch.deleted ? '' : String(ch.value == null ? '' : ch.value);
+    }
+  }
+
+  function armMedia() {
+    if (!liveParts().worker || !window.ElfVault || !liveSession || typeof liveSession.mediaKey !== 'function') return;
+    mediaVault = ElfVault.createVault({ base: '' });
+    liveSession.mediaKey().then(function (text) {
+      mediaVault.setKey(ElfVault.decodeKey(text));
+      return mediaVault.loadManifest();
+    }).then(function () {
+      if (sheetDay) paintSheet();
+    }, function () {
+      if (mediaVault) mediaVault.close();
+      mediaVault = null;
+    });
+  }
+
+  function mountFilm(day) {
+    var host = el('div', { id: 'filmHost', class: 'film-host' });
+    host.appendChild(posterCard(labelOf(day), false));
+    if (!mediaVault || !mediaVault.ready()) return host;
+    var entry = mediaVault.peek(day.number);
+    if (!entry || !entry.video) return host;
+    var asked = filmAsked;
+    mediaVault.openDay(day.number, { play: asked, reduced: reduced(), saveData: dataSaver() }).then(function (slot) {
+      if (!slot || sheetDay !== day.id) {
+        if (slot && mediaVault) mediaVault.close();
+        return;
+      }
+      var node = document.getElementById('filmHost');
+      if (!node) return;
+      var bits = [];
+      if (slot.badge) bits.push(el('p', { class: 'cut-badge', text: slot.badge }));
+      if (slot.videoUrl && slot.play) {
+        var video = document.createElement('video');
+        video.className = 'chapter-film';
+        video.muted = true;
+        video.defaultMuted = true;
+        video.loop = true;
+        video.playsInline = true;
+        video.setAttribute('playsinline', '');
+        video.setAttribute('webkit-playsinline', '');
+        video.setAttribute('muted', '');
+        video.setAttribute('loop', '');
+        video.autoplay = true;
+        video.preload = 'metadata';
+        if (slot.posterUrl) video.poster = slot.posterUrl;
+        video.src = slot.videoUrl;
+        var started = video.play();
+        if (started && started.catch) started.catch(function () {});
+        bits.push(video);
+      } else if (slot.posterUrl) {
+        bits.push(el('img', { class: 'chapter-film', alt: '', src: slot.posterUrl }));
+        bits.push(el('button', { type: 'button', class: 'btn', 'data-act': 'film-play', text: 'Play' }));
+      } else bits.push(posterCard(labelOf(day), false));
+      if (slot.caption) bits.push(el('p', { class: 'fine', text: slot.caption }));
+      mount(node, bits);
+    }, function () {});
+    return host;
   }
 
   function paint(force) {
@@ -764,6 +893,7 @@
     if (!target || !target.dataset || !map[target.dataset.field]) return;
     ElfPlan.setField(overrides, target.dataset.day, map[target.dataset.field], target.value, iso());
     scheduleSave();
+    if (target.dataset.field === 'note') pushLive('story.' + target.dataset.day + '.note', target.value);
   }
 
   function sit() {
@@ -865,27 +995,34 @@
   }
 
   function bootLive() {
-    var cfg = window.ElfLiveConfig || {};
+    var live = liveParts();
     var token = '';
     var exp = 0;
     try { token = sessionStorage.getItem('elf-hq-session') || ''; exp = Number(sessionStorage.getItem('elf-hq-session-exp') || 0); } catch (e) {}
-    if (!cfg.endpoint || !token || !(exp > Date.now())) {
-      liveSession = window.ElfLive ? ElfLive.open({}) : null;
+    if (!live.worker || !token || !(exp > Date.now())) {
+      liveSession = window.ElfLive ? ElfLive.open({ enabled: false }) : null;
+      mediaVault = null;
       paintSave();
       return;
     }
-    liveSession = ElfLive.open({ endpoint: cfg.endpoint, token: token, pollMs: cfg.fast ? (cfg.pollMs || 2000) : 0 });
-    liveSession.start().then(function () { paintSave(); paintClock(); }, function () { paintSave(); });
+    liveSession = ElfLive.open({ worker: live.worker, token: token, pollMs: 0, enabled: true });
+    if (liveSession.on) liveSession.on(function () { paintSave(); paintConflicts(); });
+    if (liveSession.onRemote) liveSession.onRemote(applyLiveValue);
+    liveSession.start().then(function () {
+      paintSave();
+      paintClock();
+      armMedia();
+    }, function () { paintSave(); });
   }
 
   function connectPhones() {
-    var cfg = window.ElfLiveConfig || {};
+    var live = liveParts();
     var input = $('elfPin');
-    if (!cfg.endpoint || !input) { announce('Only on this phone.'); return; }
+    if (!live.worker || !live.session || !input) { announce('Only on this phone.'); return; }
     var pin = input.value;
     input.value = '';
     if (!/^\d{4}$/.test(pin)) { announce('Enter the 4 digit PIN. Nothing was sent.'); return; }
-    fetch(String(cfg.endpoint).replace(/\/$/, '') + '/api/elf-session', {
+    fetch(live.session, {
       method: 'POST',
       mode: 'cors',
       credentials: 'omit',
@@ -900,13 +1037,17 @@
         sessionStorage.setItem('elf-hq-session', res.body.session);
         sessionStorage.setItem('elf-hq-session-exp', String(Date.parse(res.body.exp) || 0));
       } catch (e) {}
-      var cfgNow = window.ElfLiveConfig || {};
+      var liveNow = liveParts();
       var token = '';
       var exp = 0;
       try { token = sessionStorage.getItem('elf-hq-session') || ''; exp = Number(sessionStorage.getItem('elf-hq-session-exp') || 0); } catch (e) {}
-      liveSession = ElfLive.open({ endpoint: cfgNow.endpoint, token: token, pollMs: cfgNow.fast ? (cfgNow.pollMs || 2000) : 0 });
+      if (!liveNow.worker || !token) { announce('The phones did not connect.'); return; }
+      liveSession = ElfLive.open({ worker: liveNow.worker, token: token, pollMs: 0, enabled: true });
+      if (liveSession.on) liveSession.on(function () { paintSave(); paintConflicts(); });
+      if (liveSession.onRemote) liveSession.onRemote(applyLiveValue);
       liveSession.start().then(function () {
         paintSave();
+        armMedia();
         if (parseHash().name === 'settings') paintDesk();
         announce(ElfLive.statusLabel(liveSession.view()));
       }, function () { announce('The phones did not connect.'); });
@@ -914,9 +1055,9 @@
   }
 
   function paintConnect() {
-    var cfg = window.ElfLiveConfig || {};
+    var live = liveParts();
     var label = window.ElfLive ? ElfLive.statusLabel(liveSession ? liveSession.view() : { state: 'disconnected', deployed: false, connected: false }) : 'Only on this phone';
-    if (!cfg.endpoint) return el('div', { class: 'card' }, el('h3', { text: 'Phones' }), el('p', { text: 'Only on this phone.' }));
+    if (!live.worker) return el('div', { class: 'card' }, el('h3', { text: 'Phones' }), el('p', { text: 'Only on this phone.' }));
     return el('div', { class: 'card' },
       el('h3', { text: 'Phones' }),
       el('p', { text: label }),
@@ -1025,6 +1166,17 @@
     else if (act === 'gift-save') saveGiftForm();
     else if (act === 'gift-close') closeGiftSheet();
     else if (act === 'elf-connect') connectPhones();
+    else if (act === 'film-play') { filmAsked = true; if (sheetDay) paintSheet(); }
+    else if (act === 'keep-local' || act === 'keep-server') {
+      if (!liveSession) return;
+      var path = button.dataset.path;
+      liveSession.resolve(path, act === 'keep-server' ? 'server' : 'local').then(function () {
+        var value = liveSession.get(path);
+        applyLiveValue({ path: path, value: value, deleted: value == null });
+        paintConflicts();
+        paintSave();
+      });
+    }
     else if (act === 'shop-add') addShop();
     else if (act === 'shop-state') {
       ElfPlan.setShoppingState(overrides, button.dataset.id, button.dataset.state, iso());
@@ -1220,6 +1372,9 @@
     }
   });
   window.addEventListener('pageshow', catchUp);
+  window.addEventListener('online', function () {
+    if (liveSession && liveSession.resume) liveSession.resume().then(function () { paintSave(); paintConflicts(); });
+  });
   window.addEventListener('beforeunload', function (event) {
     if ((scratch && !scratch.persistent && overrides && overrides.meta.welcomedAt) || saveState === 'failed') {
       event.preventDefault();

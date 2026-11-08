@@ -8,7 +8,7 @@
   <meta name="robots" content="noindex, nofollow">
   <meta name="referrer" content="no-referrer">
   <meta name="description" content="Elf HQ, a sample Christmas storybook. Your own chapters stay off this public site.">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' https://fd-refresh-relay.vercel.app; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' https://fd-refresh-relay.vercel.app https://elf-hq-room.louby-trahan.workers.dev; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Elf HQ">
@@ -67,6 +67,7 @@
         <button type="button" class="btn ghost" id="closeSheet" data-act="close-sheet">Close</button>
         <h2 id="sheetTitle">Page</h2>
       </div>
+      <div id="conflictSlot"></div>
       <div class="sheet-body" id="sheetBody"></div>
     </div>
   </div>
@@ -104,6 +105,7 @@
   <script src="sync-port.js"></script>
   <script src="monitor-contract.js"></script>
   <script src="gifts.js"></script>
+  <script src="media-vault.js"></script>
   <script src="scratchpad.js"></script>
   <script src="app.js"></script>
 </body>

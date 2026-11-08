@@ -76,7 +76,20 @@
     var seq = 0;
     var sessionId = Math.random().toString(36).slice(2, 10);
     var listeners = [];
+    var remoteListeners = [];
     var fetches = 0;
+    if (server && typeof server.subscribe === 'function') {
+      server.subscribe(function (msg) {
+        (msg && msg.changes || []).forEach(function (ch) {
+          if (conflicts.some(function (c) { return c.path === ch.path; })) return;
+          if (queue.some(function (op) { return op.changes.some(function (c) { return c.path === ch.path; }); })) return;
+          applyRemote(ch);
+        });
+        if (msg && msg.revision > since) since = msg.revision;
+        if (!queue.length && !conflicts.length) status = 'saved';
+        emit();
+      });
+    }
 
     function emit() { listeners.forEach(function (fn) { fn(view()); }); }
 
@@ -109,6 +122,7 @@
       if (ch.deleted) fields[ch.path] = { value: ch.value, rev: ch.rev, deleted: true };
       else fields[ch.path] = { value: clone(ch.value), rev: ch.rev, deleted: false };
       if (ch.rev > since) since = ch.rev;
+      remoteListeners.forEach(function (fn) { fn(ch); });
     }
 
     function pull() {
@@ -224,7 +238,13 @@
       start: function () { hidden = false; if (!server) { status = 'disconnected'; emit(); return Promise.resolve(view()); } return pump().then(function () { loop(); return view(); }); },
       suspend: function () { hidden = true; clearTimeout(timer); timer = null; emit(); },
       resume: function () { hidden = false; if (!server) { status = 'disconnected'; emit(); return Promise.resolve(view()); } return pump().then(function () { loop(); return view(); }); },
-      stop: function () { stopped = true; clearTimeout(timer); timer = null; }
+      stop: function () { stopped = true; clearTimeout(timer); timer = null; if (server && server.close) server.close(); },
+      on: function (fn) { listeners.push(fn); },
+      onRemote: function (fn) { remoteListeners.push(fn); },
+      mediaKey: function () {
+        if (!server || typeof server.mediaKey !== 'function') return Promise.reject(new Error('not-configured'));
+        return server.mediaKey();
+      }
     };
   }
 
@@ -268,6 +288,159 @@
     };
   }
 
+  function roomUrl(worker) {
+    var base = String(worker || '').replace(/\/$/, '');
+    if (base.indexOf('http://') === 0) return 'ws://' + base.slice('http://'.length) + '/room';
+    if (base.indexOf('https://') === 0) return 'wss://' + base.slice('https://'.length) + '/room';
+    if (base.indexOf('ws://') === 0 || base.indexOf('wss://') === 0) return base + '/room';
+    return 'wss://' + base + '/room';
+  }
+
+  function tainted(msg) {
+    if (!msg || typeof msg !== 'object') return false;
+    if (msg.kid || Object.prototype.hasOwnProperty.call(msg, 'key')) return true;
+    if (msg.body && (msg.body.key || msg.body.kid)) return true;
+    return false;
+  }
+
+  function createRoomServer(opts) {
+    opts = opts || {};
+    var worker = opts.worker || '';
+    var token = opts.token || '';
+    var WS = opts.WebSocket || (typeof WebSocket !== 'undefined' ? WebSocket : null);
+    var ws = null;
+    var helloOk = false;
+    var opened = false;
+    var pending = {};
+    var seq = 0;
+    var listeners = [];
+    var connecting = null;
+    var api = {
+      kind: 'elf-room',
+      fail: false,
+      get deployed() { return opened; },
+      subscribe: function (fn) { listeners.push(fn); },
+      close: function () {
+        try { if (ws) ws.close(); } catch (e) {}
+        ws = null;
+        helloOk = false;
+      }
+    };
+
+    function rejectPending(err) {
+      Object.keys(pending).forEach(function (id) {
+        pending[id].reject(err);
+        delete pending[id];
+      });
+    }
+
+    function connect() {
+      if (helloOk && ws && ws.readyState === 1) return Promise.resolve();
+      if (connecting) return connecting;
+      connecting = new Promise(function (resolve, reject) {
+        if (!WS || !worker || !token) {
+          connecting = null;
+          reject(new Error('not-configured'));
+          return;
+        }
+        var sock;
+        try { sock = new WS(roomUrl(worker)); }
+        catch (err) { connecting = null; reject(err); return; }
+        ws = sock;
+        var timer = setTimeout(function () {
+          connecting = null;
+          try { sock.close(); } catch (e) {}
+          reject(new Error('timeout'));
+        }, 8000);
+        sock.onopen = function () {
+          try { sock.send(JSON.stringify({ type: 'hello', session: token })); }
+          catch (err) { clearTimeout(timer); connecting = null; reject(err); }
+        };
+        sock.onmessage = function (ev) {
+          var msg;
+          try { msg = JSON.parse(typeof ev.data === 'string' ? ev.data : ''); }
+          catch (e) { return; }
+          if (tainted(msg)) {
+            api.close();
+            clearTimeout(timer);
+            connecting = null;
+            rejectPending(Object.assign(new Error('budget-key'), { code: 'budget-key' }));
+            return;
+          }
+          if (msg.type === 'hello' && msg.ok) {
+            helloOk = true;
+            opened = true;
+            clearTimeout(timer);
+            connecting = null;
+            resolve();
+            return;
+          }
+          if (msg.type === 'remote') {
+            listeners.forEach(function (fn) { fn(msg); });
+            return;
+          }
+          if (msg.id && pending[msg.id]) {
+            pending[msg.id].resolve(msg);
+            delete pending[msg.id];
+          }
+        };
+        sock.onerror = function () {};
+        sock.onclose = function () {
+          helloOk = false;
+          ws = null;
+          clearTimeout(timer);
+          if (connecting) {
+            var fail = connecting;
+            connecting = null;
+            reject(new Error('closed'));
+            void fail;
+          }
+          rejectPending(new Error('closed'));
+        };
+      }).then(function (value) { connecting = null; return value; }, function (err) { connecting = null; throw err; });
+      return connecting;
+    }
+
+    function rpc(type, extra) {
+      if (api.fail) return Promise.reject(new Error('offline'));
+      return connect().then(function () {
+        if (!ws || ws.readyState !== 1) return Promise.reject(new Error('offline'));
+        var id = 'c' + (++seq);
+        return new Promise(function (resolve, reject) {
+          pending[id] = { resolve: resolve, reject: reject };
+          try { ws.send(JSON.stringify(Object.assign({ type: type, id: id }, extra || {}))); }
+          catch (err) { delete pending[id]; reject(err); }
+        });
+      });
+    }
+
+    api.pull = function (since) {
+      return rpc('pull', { since: since }).then(function (msg) {
+        return { revision: msg.revision, changes: msg.changes || [] };
+      });
+    };
+    api.push = function (op) {
+      return rpc('push', { op: op }).then(function (msg) {
+        var body = msg.body || {};
+        var result = body.result || {};
+        return { revision: result.revision, applied: result.applied || [], conflicts: result.conflicts || [] };
+      });
+    };
+    api.mediaKey = function () {
+      return rpc('media-key', {}).then(function (msg) {
+        if (!msg || !msg.mediaKey || msg.error) return Promise.reject(new Error('media'));
+        return msg.mediaKey;
+      });
+    };
+    return api;
+  }
+
+  function resolveLive(cfg) {
+    cfg = cfg || {};
+    if (cfg.enabled !== true) return { worker: null, session: null };
+    return { worker: cfg.worker || null, session: cfg.session || null };
+  }
+
   function statusLabel(view) {
     view = view || {};
     if (view.state === 'offline' && view.connected) return 'Offline';
@@ -280,6 +453,10 @@
 
   function open(opts) {
     opts = opts || {};
+    if (opts.enabled === false) return createSession({ server: null, pollMs: opts.pollMs });
+    if (opts.worker && opts.token) {
+      return createSession({ server: createRoomServer(opts), pollMs: opts.pollMs == null ? 0 : opts.pollMs });
+    }
     if (opts.endpoint && opts.token) {
       return createSession({ server: createHttpServer(opts), pollMs: opts.pollMs || 0, fetch: opts.fetch });
     }
@@ -287,5 +464,5 @@
     return createSession(opts);
   }
 
-  return { createSimServer: createSimServer, createSession: createSession, createHttpServer: createHttpServer, statusLabel: statusLabel, open: open };
+  return { createSimServer: createSimServer, createSession: createSession, createHttpServer: createHttpServer, createRoomServer: createRoomServer, resolveLive: resolveLive, statusLabel: statusLabel, open: open };
 });
