@@ -119,6 +119,39 @@ function waitFor(fn, ms) {
   assert.strictEqual(lone.view().connected, false);
   assert.strictEqual(lone.fetches(), 0);
   assert.notStrictEqual(a.get('story.day-01.note'), 'only here');
+  assert.strictEqual(Live.statusLabel(lone.view()), 'Only on this phone');
+  assert.strictEqual(Live.statusLabel({ state: 'saved', deployed: true, connected: true }), 'Synced');
+
+  const http = Live.open({
+    endpoint: 'https://relay.test',
+    token: 'tok',
+    pollMs: 0,
+    fetch: function () {
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: async function () {
+          return { revision: 2, changes: [{ path: 'gifts/hat', value: { idea: 'Hat' }, rev: 2, deleted: false }] };
+        }
+      });
+    }
+  });
+  await http.start();
+  assert.strictEqual(Live.statusLabel(http.view()), 'Synced');
+  assert.strictEqual(http.get('gifts/hat').idea, 'Hat');
+  http.stop();
+
+  const leaked = Live.open({
+    endpoint: 'https://relay.test',
+    token: 'tok',
+    pollMs: 0,
+    fetch: function () {
+      return Promise.resolve({ ok: true, status: 200, json: async function () { return { key: 'nope', revision: 1, changes: [] }; } });
+    }
+  });
+  await leaked.start().catch(function (err) { assert.strictEqual(err.code, 'budget-key'); });
+  assert.strictEqual(Live.statusLabel(leaked.view()), 'Only on this phone');
+  leaked.stop();
 
   const op = { id: 'same-op', changes: [{ path: 'story.day-09.note', value: 'once', baseRev: 0, deleted: false }] };
   const first = await server.push(op);

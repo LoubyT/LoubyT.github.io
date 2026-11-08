@@ -178,6 +178,89 @@
     } else bucket.unknownPriceCount += 1;
   }
 
+  function emptyGiftBook() {
+    return { patched: {}, added: [], removed: [] };
+  }
+
+  function giftBook(raw) {
+    var src = raw || {};
+    return {
+      patched: src.patched && typeof src.patched === 'object' ? src.patched : {},
+      added: Array.isArray(src.added) ? src.added.slice() : [],
+      removed: Array.isArray(src.removed) ? src.removed.slice() : []
+    };
+  }
+
+  function listGifts(fixtureGifts, book) {
+    var b = giftBook(book);
+    var removed = {};
+    b.removed.forEach(function (id) { removed[id] = true; });
+    var map = {};
+    (fixtureGifts || []).forEach(function (gift) {
+      if (!removed[gift.id]) map[gift.id] = clone(gift);
+    });
+    Object.keys(b.patched).forEach(function (id) {
+      if (!removed[id]) map[id] = clone(b.patched[id]);
+    });
+    b.added.forEach(function (gift) {
+      if (gift && !removed[gift.id]) map[gift.id] = clone(gift);
+    });
+    return Object.keys(map).map(function (id) { return map[id]; }).filter(function (gift) { return gift && !gift.deleted; });
+  }
+
+  function fixtureIdMap(fixtureGifts) {
+    var map = {};
+    (fixtureGifts || []).forEach(function (gift) { map[gift.id] = true; });
+    return map;
+  }
+
+  function saveGift(book, fixtureGifts, gift) {
+    var b = giftBook(book);
+    var known = fixtureIdMap(fixtureGifts);
+    var next = clone(gift);
+    if (known[next.id]) b.patched[next.id] = next;
+    else {
+      var idx = -1;
+      b.added.forEach(function (item, i) { if (item.id === next.id) idx = i; });
+      if (idx >= 0) b.added[idx] = next;
+      else b.added.push(next);
+    }
+    return b;
+  }
+
+  function deleteGift(book, id) {
+    var b = giftBook(book);
+    if (b.removed.indexOf(id) < 0) b.removed.push(id);
+    delete b.patched[id];
+    b.added = b.added.filter(function (item) { return item.id !== id; });
+    return b;
+  }
+
+  function passesFilter(gift, filter) {
+    if (!gift || gift.deleted) return false;
+    if (filter === 'bought') return gift.status === 'purchased';
+    if (filter === 'remaining') return gift.status !== 'purchased';
+    return true;
+  }
+
+  function moneyLabel(cents) {
+    var n = Math.abs(cents || 0);
+    return (cents < 0 ? '-' : '') + '$' + Math.floor(n / 100) + '.' + (n % 100 < 10 ? '0' : '') + (n % 100);
+  }
+
+  function chipFor(gift) {
+    if (!gift || !gift.offer || gift.offer.stale || !gift.offer.change) return null;
+    var delta = gift.offer.change.deltaCents;
+    if (!delta) return null;
+    return { dir: delta > 0 ? 'up' : 'down', text: (delta > 0 ? 'Up ' : 'Down ') + moneyLabel(Math.abs(delta)) };
+  }
+
+  function checkedLine(gift, whenLabel) {
+    if (!gift || !gift.offer || !(gift.offer.sellerCount > 0)) return '';
+    var fresh = gift.offer.stale ? 'Last look may be old. ' : '';
+    return fresh + 'Lowest of ' + gift.offer.sellerCount + ' checked, updated ' + (whenLabel || 'earlier');
+  }
+
   function runPriceRoutine(config, gifts, transport) {
     var list = gifts || [];
     var before = JSON.stringify(list);
@@ -202,6 +285,15 @@
     setStatus: setStatus,
     confirmSpent: confirmSpent,
     totals: totals,
+    emptyGiftBook: emptyGiftBook,
+    giftBook: giftBook,
+    listGifts: listGifts,
+    saveGift: saveGift,
+    deleteGift: deleteGift,
+    passesFilter: passesFilter,
+    moneyLabel: moneyLabel,
+    chipFor: chipFor,
+    checkedLine: checkedLine,
     runPriceRoutine: runPriceRoutine
   };
 });

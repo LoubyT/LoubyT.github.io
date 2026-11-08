@@ -8,7 +8,7 @@
   <meta name="robots" content="noindex, nofollow">
   <meta name="referrer" content="no-referrer">
   <meta name="description" content="Elf HQ, a sample Christmas storybook. Your own chapters stay off this public site.">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' https://fd-refresh-relay.vercel.app; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Elf HQ">
@@ -72,6 +72,17 @@
     </div>
   </div>
 
+  <div class="sheet-layer" id="giftLayer" hidden>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="giftTitle">
+      <div class="sheet-bar">
+        <button type="button" class="btn ghost" data-act="gift-close">Close</button>
+        <h2 id="giftTitle">Add gift</h2>
+        <button type="button" class="btn" data-act="gift-save">Save</button>
+      </div>
+      <div class="sheet-body" id="giftBody"></div>
+    </div>
+  </div>
+
   <div class="toast" id="toast" hidden>
     <p id="toastText"></p>
     <div class="toast-actions" id="toastActions"></div>
@@ -84,6 +95,7 @@
   <noscript>
     <p class="boot">Elf HQ needs JavaScript to turn the pages. Nothing is sent anywhere.</p>
   </noscript>
+  <script src="live-config.js"></script>
   <script src="plan-model.js"></script>
   <script src="demo-plan.js"></script>
   <script src="media-manifest.js"></script>

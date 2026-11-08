@@ -132,4 +132,23 @@ test('morning price run is a no-op without items or a connection', function () {
   assert.strictEqual(fetches, 0);
 });
 
+test('gift book keeps edits, filters, and a down chip', function () {
+  n += 1;
+  const book = G.saveGift(G.emptyGiftBook(), [{ id: 'sample-gift-2' }], {
+    id: 'sample-gift-2', idea: 'Picture book', status: 'planned', deleted: false,
+    offer: { stale: false, change: { deltaCents: -300 }, sellerCount: 3, amountCents: 1299 }
+  });
+  const added = G.saveGift(book, [{ id: 'sample-gift-2' }], { id: 'new-1', idea: 'Scarf', status: 'idea', deleted: false, offer: null });
+  const list = G.listGifts([{ id: 'sample-gift-2', idea: 'Old' }, { id: 'sample-gift-1', idea: 'Mittens', status: 'purchased' }], added);
+  assert.strictEqual(list.find((g) => g.id === 'sample-gift-2').idea, 'Picture book');
+  assert.ok(list.some((g) => g.id === 'new-1'));
+  const gone = G.deleteGift(added, 'new-1');
+  assert.ok(!G.listGifts([], gone).some((g) => g.id === 'new-1'));
+  assert.strictEqual(G.passesFilter({ status: 'purchased', deleted: false }, 'remaining'), false);
+  assert.strictEqual(G.passesFilter({ status: 'planned', deleted: false }, 'remaining'), true);
+  assert.strictEqual(G.chipFor({ offer: { stale: false, change: { deltaCents: -300 } } }).dir, 'down');
+  assert.strictEqual(G.chipFor({ offer: { stale: true, change: { deltaCents: -300 } } }), null);
+  assert.ok(G.checkedLine({ offer: { stale: true, sellerCount: 2 } }, 'Oct 20').indexOf('may be old') !== -1);
+});
+
 console.log('ok ' + n + ' gift tests');

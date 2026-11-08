@@ -61,7 +61,7 @@
   function createSession(opts) {
     opts = opts || {};
     var server = opts.server || null;
-    var pollMs = opts.pollMs || 2000;
+    var pollMs = opts.pollMs == null ? 2000 : opts.pollMs;
     var fields = {};
     var drafts = {};
     var held = {};
@@ -71,6 +71,7 @@
     var status = server ? 'saved' : 'disconnected';
     var hidden = false;
     var timer = null;
+    var stopped = false;
     var pushing = false;
     var seq = 0;
     var sessionId = Math.random().toString(36).slice(2, 10);
@@ -115,6 +116,11 @@
       if (server.fail) { status = hidden ? 'disconnected' : 'reconnecting'; emit(); return Promise.reject(new Error('offline')); }
       fetches += 1;
       return server.pull(since).then(function (res) {
+        if (res && res.unchanged) {
+          if (!queue.length && !conflicts.length) status = 'saved';
+          emit();
+          return view();
+        }
         (res.changes || []).forEach(function (ch) {
           if (conflicts.some(function (c) { return c.path === ch.path; })) return;
           if (queue.some(function (op) { return op.changes.some(function (c) { return c.path === ch.path; }); })) return;
@@ -168,11 +174,11 @@
     }
 
     function loop() {
-      if (hidden || !server) return;
-      pump().then(function () { if (!hidden && server) timer = setTimeout(loop, pollMs); }, function () {
+      if (stopped || hidden || !server || !pollMs) return;
+      pump().then(function () { if (!stopped && !hidden && server) timer = setTimeout(loop, pollMs); }, function () {
         status = 'reconnecting';
         emit();
-        if (!hidden && server) timer = setTimeout(loop, pollMs);
+        if (!stopped && !hidden && server) timer = setTimeout(loop, pollMs);
       });
     }
 
@@ -218,15 +224,68 @@
       start: function () { hidden = false; if (!server) { status = 'disconnected'; emit(); return Promise.resolve(view()); } return pump().then(function () { loop(); return view(); }); },
       suspend: function () { hidden = true; clearTimeout(timer); timer = null; emit(); },
       resume: function () { hidden = false; if (!server) { status = 'disconnected'; emit(); return Promise.resolve(view()); } return pump().then(function () { loop(); return view(); }); },
-      stop: function () { clearTimeout(timer); timer = null; }
+      stop: function () { stopped = true; clearTimeout(timer); timer = null; }
     };
+  }
+
+  function createHttpServer(opts) {
+    opts = opts || {};
+    var fetchImpl = opts.fetch || (typeof fetch !== 'undefined' ? fetch : null);
+    var base = String(opts.endpoint || '').replace(/\/$/, '');
+    var token = opts.token || '';
+    var deployed = false;
+    function headers() {
+      return { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' };
+    }
+    function read(res) {
+      if (res.status === 204) { deployed = true; return Promise.resolve({ unchanged: true, revision: null, changes: [] }); }
+      return res.json().then(function (body) {
+        if (body && (body.key || body.kid)) {
+          var err = new Error('budget-key');
+          err.code = 'budget-key';
+          throw err;
+        }
+        if (!res.ok) {
+          var fail = new Error('relay');
+          fail.code = 'relay';
+          throw fail;
+        }
+        deployed = true;
+        return body;
+      });
+    }
+    return {
+      kind: 'elf-relay',
+      get deployed() { return deployed; },
+      pull: function (since) {
+        if (!fetchImpl || !base || !token) return Promise.reject(new Error('not-configured'));
+        return fetchImpl(base + '/api/elf-doc?since=' + encodeURIComponent(since), { headers: headers(), cache: 'no-store' }).then(read);
+      },
+      push: function (op) {
+        if (!fetchImpl || !base || !token) return Promise.reject(new Error('not-configured'));
+        return fetchImpl(base + '/api/elf-doc', { method: 'POST', headers: headers(), body: JSON.stringify(op), cache: 'no-store' }).then(read);
+      }
+    };
+  }
+
+  function statusLabel(view) {
+    view = view || {};
+    if (view.state === 'offline' && view.connected) return 'Offline';
+    if (view.state === 'reconnecting' && view.connected) return 'Reconnecting';
+    if (view.state === 'saving' && view.connected && view.deployed) return 'Saving';
+    if (view.state === 'conflict' && view.connected && view.deployed) return 'Needs a look';
+    if (view.state === 'saved' && view.connected && view.deployed) return 'Synced';
+    return 'Only on this phone';
   }
 
   function open(opts) {
     opts = opts || {};
-    if (!opts.server && !opts.endpoint) return createSession({ server: null, pollMs: opts.pollMs });
+    if (opts.endpoint && opts.token) {
+      return createSession({ server: createHttpServer(opts), pollMs: opts.pollMs || 0, fetch: opts.fetch });
+    }
+    if (!opts.server) return createSession({ server: null, pollMs: opts.pollMs });
     return createSession(opts);
   }
 
-  return { createSimServer: createSimServer, createSession: createSession, open: open };
+  return { createSimServer: createSimServer, createSession: createSession, createHttpServer: createHttpServer, statusLabel: statusLabel, open: open };
 });

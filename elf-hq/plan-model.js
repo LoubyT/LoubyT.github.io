@@ -165,7 +165,8 @@
         sampleStory: true
       },
       days: {},
-      shopping: { patched: {}, added: [], removed: [] }
+      shopping: { patched: {}, added: [], removed: [] },
+      gifts: { patched: {}, added: [], removed: [] }
     };
   }
 
@@ -198,6 +199,11 @@
         patched: shopping.patched || {},
         added: Array.isArray(shopping.added) ? shopping.added : [],
         removed: Array.isArray(shopping.removed) ? shopping.removed : []
+      },
+      gifts: {
+        patched: raw.gifts && raw.gifts.patched && typeof raw.gifts.patched === 'object' ? raw.gifts.patched : {},
+        added: raw.gifts && Array.isArray(raw.gifts.added) ? raw.gifts.added : [],
+        removed: raw.gifts && Array.isArray(raw.gifts.removed) ? raw.gifts.removed : []
       }
     };
     return { overrides: overrides, mode: privateLocal ? 'private-local' : 'ok', canWrite: true };
