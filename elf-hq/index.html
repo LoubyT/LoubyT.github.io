@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+  <meta name="theme-color" content="#f6efe2">
+  <meta name="color-scheme" content="light">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="no-referrer">
+  <meta name="description" content="Elf HQ is a fictional rehearsal desk for a December plan. It is not shared.">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Elf HQ">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="format-detection" content="telephone=no">
+  <title>Elf HQ</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip" href="#page">Skip to the desk</a>
+  <div class="stage" aria-hidden="true">
+    <div class="stars"></div>
+    <div class="lamp-pool"></div>
+    <div class="table-edge"></div>
+  </div>
+
+  <div class="book" id="book">
+    <header class="mast">
+      <div class="mast-titles">
+        <p class="eyebrow">Your December story</p>
+        <h1 id="title">Elf HQ</h1>
+      </div>
+      <div class="mast-side">
+        <p class="clock" id="clock">Chicago time</p>
+        <button type="button" class="sound" id="soundBtn" data-act="sound" aria-pressed="false">Sound off</button>
+      </div>
+    </header>
+    <p class="ribbon" id="ribbon">
+      <span id="ribbonText">Your words stay as written · no film loaded · scene reading not connected</span>
+      <span class="save-state" id="saveState" role="status"></span>
+    </p>
+    <nav class="nav" id="nav" aria-label="Desk">
+      <a href="#today" data-tab="today">Today</a>
+      <a href="#story" data-tab="story">Story</a>
+      <a href="#making" data-tab="making">Making</a>
+      <a href="#supplies" data-tab="supplies">Supplies</a>
+      <a href="#desk" data-tab="desk">Desk</a>
+    </nav>
+    <div class="banners" id="banners"></div>
+    <main class="page" id="page" tabindex="-1">
+      <p class="boot" id="boot">Lighting the lamp…</p>
+    </main>
+  </div>
+
+  <div class="sheet-layer" id="sheetLayer" hidden>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+      <div class="sheet-bar">
+        <button type="button" class="btn ghost" id="closeSheet" data-act="close-sheet">Close</button>
+        <h2 id="sheetTitle">Page</h2>
+      </div>
+      <div class="sheet-body" id="sheetBody"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" hidden>
+    <p id="toastText"></p>
+    <div class="toast-actions" id="toastActions"></div>
+  </div>
+  <div class="update" id="updateBar" hidden>
+    <p>A new version of the desk is ready. Your notebook stays on this browser.</p>
+    <button type="button" class="btn" id="updateBtn" data-act="update">Update</button>
+  </div>
+  <div id="live" class="sr" aria-live="polite"></div>
+  <noscript>
+    <p class="boot">Elf HQ needs JavaScript to turn the pages. Nothing is sent anywhere.</p>
+  </noscript>
+  <script src="plan-model.js"></script>
+  <script src="demo-plan.js"></script>
+  <script src="media-manifest.js"></script>
+  <script src="scene-art.js"></script>
+  <script src="sync-port.js"></script>
+  <script src="monitor-contract.js"></script>
+  <script src="scratchpad.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

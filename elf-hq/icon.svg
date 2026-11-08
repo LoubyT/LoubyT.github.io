@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Elf HQ">
+  <rect width="64" height="64" rx="16" fill="#f6efe2"/>
+  <rect x="6" y="6" width="52" height="52" rx="12" fill="none" stroke="#7a5344" stroke-width="1.5" stroke-dasharray="3 2"/>
+  <ellipse cx="32" cy="44" rx="18" ry="6" fill="#8a5340"/>
+  <polygon points="32,14 35,24 46,24 37,30 40,40 32,34 24,40 27,30 18,24 29,24" fill="#8f3140"/>
+  <circle cx="32" cy="28" r="2" fill="#f6efe2"/>
+</svg>

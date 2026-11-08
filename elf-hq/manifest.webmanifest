@@ -1,0 +1,14 @@
+{
+  "name": "Elf HQ",
+  "short_name": "Elf HQ",
+  "description": "A fictional rehearsal desk for a 25-day December plan. Not shared.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#1a1214",
+  "theme_color": "#f6efe2",
+  "lang": "en",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
