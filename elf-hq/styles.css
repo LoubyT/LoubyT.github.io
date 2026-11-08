@@ -180,13 +180,26 @@ a, button { touch-action: manipulation; }
 .mast-titles { flex: 1 1 100%; min-width: 0; }
 .eyebrow { margin: 0 0 2px; max-width: 100%; font-size: .72rem; letter-spacing: .12em; line-height: 1.3; text-transform: uppercase; font-weight: 750; color: var(--cranberry); overflow-wrap: break-word; }
 .mast-side { order: -1; flex: 1 1 100%; flex-direction: row; justify-content: flex-end; align-items: center; }
-.clock { margin-right: auto; }
 h1, h2, h3 { font-family: var(--serif); font-weight: 560; letter-spacing: -.03em; }
 h1 { margin: 0; font-size: clamp(2rem, 4vw, 3.2rem); line-height: .9; }
 h2 { margin: 0 0 .25em; font-size: clamp(1.7rem, 3vw, 2.5rem); line-height: 1.02; }
 h3 { margin: 0 0 .15em; font-size: 1.28rem; }
 .mast-side { display: flex; flex-direction: row; align-items: center; gap: 8px; }
-.clock { margin: 0; color: var(--soft); font-size: .92rem; }
+.day-card.is-today { box-shadow: 0 0 0 2px var(--cranberry); }
+.day-card.is-eve { box-shadow: inset 4px 0 0 var(--gold); }
+.day-card.is-christmas { box-shadow: inset 4px 0 0 var(--cranberry); }
+.day-card.is-today.is-eve,
+.day-card.is-today.is-christmas { box-shadow: 0 0 0 2px var(--cranberry), inset 4px 0 0 var(--gold); }
+body[data-mood="morning"] .lamp-pool { opacity: .32; }
+body[data-mood="morning"] .book { background: linear-gradient(180deg, rgba(255, 244, 220, .7), var(--scene-plate) 34%); }
+body[data-mood="afternoon"] .lamp-pool { opacity: .48; }
+body[data-mood="evening"] .lamp-pool { opacity: .72; }
+body[data-mood="evening"] .book { background: linear-gradient(180deg, rgba(255, 214, 160, .28), var(--scene-plate) 40%); }
+body[data-mood="night"] .lamp-pool { opacity: .92; background: radial-gradient(ellipse at 50% 30%, rgba(255, 186, 110, .55), transparent 68%); }
+body[data-mood="night"] .snow { opacity: .55; animation-duration: 40s; }
+body[data-mood="night"] .book { background: linear-gradient(180deg, rgba(46, 28, 20, .16), var(--scene-plate) 46%); }
+body[data-feast="day"] .stars { opacity: 1; }
+body[data-feast="eve"] .garland { opacity: .95; }
 .tools { display: flex; gap: 8px; }
 .sound, .settings, .btn, .nav a, .states button {
   min-height: 44px; border-radius: 999px; border: 1px solid var(--line); background: rgba(255,255,255,.55); padding: 0 14px;

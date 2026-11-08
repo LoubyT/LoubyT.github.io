@@ -99,9 +99,39 @@
     return 'The elves are here';
   }
 
-  function hiLine() {
-    if (!view.meta.sampleStory && view.meta.displayName) return 'Hi ' + view.meta.displayName;
-    return 'Hi there';
+  function helloLine() {
+    var now = new Date();
+    var mood = ElfPlan.mood(now);
+    var name = (!view.meta.sampleStory && view.meta.displayName) ? view.meta.displayName : '';
+    if (mood.feast === 'day') return name ? 'Merry Christmas, ' + name : 'Merry Christmas';
+    if (mood.feast === 'eve') return name ? 'Christmas Eve, ' + name : 'Christmas Eve';
+    return ElfPlan.greeting(mood.hour, name).replace(/\.$/, '');
+  }
+
+  function seasonLine() {
+    var mood = ElfPlan.mood(new Date());
+    if (mood.feast === 'eve') return 'One quiet chapter left tonight.';
+    if (mood.feast === 'day') return 'The last chapter is open.';
+    return daysUntilElves();
+  }
+
+  function applyMood() {
+    var mood = ElfPlan.mood(new Date());
+    document.body.setAttribute('data-mood', mood.part);
+    if (mood.feast) document.body.setAttribute('data-feast', mood.feast);
+    else document.body.removeAttribute('data-feast');
+  }
+
+  function catchUp() {
+    if (!fixture || !overrides || !view) return;
+    var prevKey = view.phase.todayKey;
+    var prevMood = document.body.getAttribute('data-mood') || '';
+    var prevFeast = document.body.getAttribute('data-feast') || '';
+    refresh();
+    applyMood();
+    var mood = ElfPlan.mood(new Date());
+    if (prevKey !== view.phase.todayKey || prevMood !== mood.part || prevFeast !== (mood.feast || '')) paint(true);
+    else paintClock();
   }
 
   function ornament() {
@@ -141,8 +171,7 @@
 
   function paintClock() {
     if (!view) return;
-    var z = view.phase.zoned;
-    $('clock').textContent = z.longDate + ' · ' + z.clock + ' · Chicago';
+    applyMood();
     $('title').textContent = 'Elf HQ';
     var house = ElfPlan.houseKicker(view.meta);
     var eyebrow = $('eyebrow');
@@ -175,7 +204,9 @@
   }
 
   function dayCard(day) {
-    return el('a', { class: 'day-card', href: '#chapter/' + day.id },
+    var today = view.phase.phase === 'during' && day.number === view.phase.todayNumber && !view.meta.peekDayId;
+    var mark = day.displayDate === '2026-12-24' ? ' is-eve' : day.displayDate === '2026-12-25' ? ' is-christmas' : '';
+    return el('a', { class: 'day-card' + (today ? ' is-today' : '') + mark, href: '#chapter/' + day.id, 'aria-current': today ? 'date' : null },
       el('span', { class: 'day-badge', text: String(day.number) }),
       el('div', {},
         el('div', { class: 'when', text: ElfPlan.formatLong(day.displayDate, 'America/Chicago', false) }),
@@ -202,8 +233,8 @@
   function paintWelcome() {
     $('page').replaceChildren(
       posterCard('', false),
-      el('h2', { text: 'Hi there' }),
-      el('p', { class: 'lede', text: daysUntilElves() }),
+      el('h2', { text: helloLine() }),
+      el('p', { class: 'lede', text: seasonLine() }),
       el('button', { type: 'button', class: 'btn', 'data-act': 'sit', text: 'Come in' })
     );
   }
@@ -212,8 +243,8 @@
     var shown = view.shown;
     var day = shown.day;
     var phase = view.phase;
-    var hello = hiLine();
-    var intro = daysUntilElves();
+    var hello = helloLine();
+    var intro = seasonLine();
     void phase;
     var peek = el('label', { class: 'field' }, 'Open the book at', el('select', { id: 'peek', 'data-act': 'peek' },
       el('option', { value: '', text: 'The real Chicago date', selected: !view.meta.peekDayId })
@@ -1183,8 +1214,12 @@
 
   document.addEventListener('visibilitychange', function () {
     if (document.hidden) flush();
-    else if (liveSession && liveSession.resume) liveSession.resume().then(function () { paintSave(); });
+    else {
+      catchUp();
+      if (liveSession && liveSession.resume) liveSession.resume().then(function () { paintSave(); });
+    }
   });
+  window.addEventListener('pageshow', catchUp);
   window.addEventListener('beforeunload', function (event) {
     if ((scratch && !scratch.persistent && overrides && overrides.meta.welcomedAt) || saveState === 'failed') {
       event.preventDefault();
@@ -1222,11 +1257,15 @@
       if (scratch.failed) announce('This browser cannot keep the story after you leave. Export a backup if you need one.');
       $('boot').remove();
       paint(true);
-      setInterval(function () {
-        var key = ElfPlan.dateKeyInZone(new Date(), 'America/Chicago');
-        if (view && key !== view.phase.todayKey) paint(true);
-        else paintClock();
-      }, 30000);
+      setInterval(catchUp, 30000);
+      (function armMidnight() {
+        var z = ElfPlan.zonedParts(new Date());
+        var minute = Number(z.minute) || 0;
+        var second = new Date().getSeconds();
+        var wait = (((23 - z.hour) * 60 + (59 - minute)) * 60 + (60 - second)) * 1000 + 500;
+        if (wait < 1000) wait = 1000;
+        setTimeout(function () { catchUp(); armMidnight(); }, wait);
+      })();
       if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(function () {});
     }).catch(function () {
       $('boot').textContent = 'Elf HQ hit a snag while opening. Your notebook was not cleared. Reload the page.';

@@ -65,6 +65,31 @@ function finalized() {
     assert.strictEqual(nov.zoned.weekday, 'Sunday');
     assert.strictEqual(P.greeting(nov.zoned.hour, ''), 'Good afternoon.');
     assert.strictEqual(P.greeting(21, 'Ada'), 'Good night, Ada.');
+    const beforeMidnight = P.mood(new Date('2026-12-01T05:59:00Z'));
+    assert.strictEqual(beforeMidnight.dateKey, '2026-11-30');
+    assert.strictEqual(beforeMidnight.part, 'night');
+    assert.strictEqual(beforeMidnight.feast, '');
+    const midnight = P.mood(new Date('2026-12-01T06:00:00Z'));
+    assert.strictEqual(midnight.dateKey, '2026-12-01');
+    assert.strictEqual(midnight.part, 'night');
+    const opened = P.buildView(fx, P.blankOverrides(), new Date('2026-12-01T06:00:00Z'));
+    assert.strictEqual(opened.phase.todayNumber, 1);
+    assert.strictEqual(opened.shown.day.number, 1);
+    const morning = P.mood(new Date('2026-12-01T15:00:00Z'));
+    assert.strictEqual(morning.part, 'morning');
+    assert.strictEqual(morning.hour, 9);
+    const eve = P.mood(new Date('2026-12-25T02:00:00Z'));
+    assert.strictEqual(eve.dateKey, '2026-12-24');
+    assert.strictEqual(eve.feast, 'eve');
+    assert.strictEqual(eve.part, 'evening');
+    const christmas = P.mood(new Date('2026-12-25T15:00:00Z'));
+    assert.strictEqual(christmas.dateKey, '2026-12-25');
+    assert.strictEqual(christmas.feast, 'day');
+    assert.strictEqual(christmas.part, 'morning');
+    const afterChristmas = P.buildView(fx, P.blankOverrides(), new Date('2026-12-26T18:00:00Z'));
+    assert.strictEqual(afterChristmas.phase.phase, 'after');
+    assert.strictEqual(afterChristmas.shown.day.number, 25);
+    assert.strictEqual(P.mood(new Date('2026-12-26T18:00:00Z')).feast, '');
   });
 
   await test('date rollover does not rewrite edits', function () {

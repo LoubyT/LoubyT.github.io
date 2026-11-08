@@ -127,11 +127,26 @@
     };
   }
 
+  function dayPart(hour) {
+    if (hour < 5 || hour >= 21) return 'night';
+    if (hour < 12) return 'morning';
+    if (hour < 17) return 'afternoon';
+    return 'evening';
+  }
+
   function greeting(hour, name) {
-    var part = hour < 5 || hour >= 21 ? 'night' : hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening';
+    var part = dayPart(hour);
     var hello = part === 'night' ? 'Good night' : 'Good ' + part;
     var who = String(name || '').trim();
     return who ? hello + ', ' + who + '.' : hello + '.';
+  }
+
+  function mood(date, timeZone) {
+    var z = zonedParts(date, timeZone || TIME_ZONE);
+    var feast = '';
+    if (z.dateKey === '2026-12-24') feast = 'eve';
+    else if (z.dateKey === '2026-12-25') feast = 'day';
+    return { part: dayPart(z.hour), hour: z.hour, dateKey: z.dateKey, feast: feast };
   }
 
   function mentionedWeekdays(text) {
@@ -1164,6 +1179,8 @@
     displayDateForNumber: displayDateForNumber,
     seasonPhase: seasonPhase,
     greeting: greeting,
+    dayPart: dayPart,
+    mood: mood,
     mentionedWeekdays: mentionedWeekdays,
     blankOverrides: blankOverrides,
     normalizeOverrides: normalizeOverrides,
