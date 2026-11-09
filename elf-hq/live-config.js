@@ -5,7 +5,7 @@
 (function (root) {
   if (root.ElfLiveConfig) return;
   root.ElfLiveConfig = {
-    enabled: false,
+    enabled: true,
     worker: 'https://elf-hq-room.louby-trahan.workers.dev',
     session: 'https://fd-refresh-relay.vercel.app/api/elf-session',
     endpoint: null,
