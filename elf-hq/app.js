@@ -775,9 +775,16 @@
     }
   }
 
+  function mediaBase() {
+    var path = window.location.pathname || '/';
+    var at = path.indexOf('/elf-hq/');
+    var dir = at >= 0 ? path.slice(0, at + '/elf-hq/'.length) : '/elf-hq/';
+    return window.location.origin + dir;
+  }
+
   function armMedia() {
     if (!liveParts().worker || !window.ElfVault || !liveSession || typeof liveSession.mediaKey !== 'function') return;
-    mediaVault = ElfVault.createVault({ base: '' });
+    mediaVault = ElfVault.createVault({ base: mediaBase() });
     liveSession.mediaKey().then(function (text) {
       mediaVault.setKey(ElfVault.decodeKey(text));
       return mediaVault.loadManifest();
@@ -805,7 +812,7 @@
       if (!node) return;
       var bits = [];
       if (slot.badge) bits.push(el('p', { class: 'cut-badge', text: slot.badge }));
-      if (slot.videoUrl && slot.play) {
+      if (slot.videoUrl) {
         var video = document.createElement('video');
         video.className = 'chapter-film';
         video.muted = true;
@@ -816,19 +823,24 @@
         video.setAttribute('webkit-playsinline', '');
         video.setAttribute('muted', '');
         video.setAttribute('loop', '');
-        video.autoplay = true;
-        video.preload = 'metadata';
+        video.preload = 'auto';
+        video.controls = false;
         if (slot.posterUrl) video.poster = slot.posterUrl;
         video.src = slot.videoUrl;
-        var started = video.play();
-        if (started && started.catch) started.catch(function () {});
         bits.push(video);
+        if (slot.play) video.autoplay = true;
+        else bits.push(el('button', { type: 'button', class: 'btn', 'data-act': 'film-play', text: 'Play' }));
       } else if (slot.posterUrl) {
         bits.push(el('img', { class: 'chapter-film', alt: '', src: slot.posterUrl }));
         bits.push(el('button', { type: 'button', class: 'btn', 'data-act': 'film-play', text: 'Play' }));
       } else bits.push(posterCard(labelOf(day), false));
       if (slot.caption) bits.push(el('p', { class: 'fine', text: slot.caption }));
       mount(node, bits);
+      var playing = node.querySelector('video');
+      if (playing && slot.play) {
+        var started = playing.play();
+        if (started && started.catch) started.catch(function () {});
+      }
     }, function () {});
     return host;
   }
@@ -1012,7 +1024,7 @@
       paintSave();
       paintClock();
       armMedia();
-    }, function () { paintSave(); });
+    }, function () { paintSave(); armMedia(); });
   }
 
   function connectPhones() {
@@ -1050,7 +1062,11 @@
         armMedia();
         if (parseHash().name === 'settings') paintDesk();
         announce(ElfLive.statusLabel(liveSession.view()));
-      }, function () { announce('The phones did not connect.'); });
+      }, function () {
+        paintSave();
+        armMedia();
+        announce('The phones did not connect.');
+      });
     }, function () { announce('The phones did not connect.'); });
   }
 

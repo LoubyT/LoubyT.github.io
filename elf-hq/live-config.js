@@ -1,6 +1,5 @@
-/* One-line switch. Leave enabled false until Louby says Publish.
+/* enabled turns the book on. session is the PIN route. worker is the room.
  * endpoint stays null so the old notebook poll never runs.
- * Flip enabled to true only after the worker is the one you checked.
  */
 (function (root) {
   if (root.ElfLiveConfig) return;

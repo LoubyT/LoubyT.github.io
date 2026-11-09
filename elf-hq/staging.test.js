@@ -10,8 +10,10 @@ const index = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const staging = fs.readFileSync(path.join(root, 'staging.html'), 'utf8');
 const app = fs.readFileSync(path.join(root, 'app.js'), 'utf8');
 
-assert.match(live, /enabled:\s*false/);
-assert.doesNotMatch(live, /enabled:\s*true/);
+assert.match(live, /enabled:\s*true/);
+assert.match(live, /endpoint:\s*null/);
+assert.match(live, /fd-refresh-relay\.vercel\.app\/api\/elf-session/);
+assert.match(live, /elf-hq-room\.louby-trahan\.workers\.dev/);
 assert.match(stagingCfg, /enabled:\s*true/);
 assert.match(stagingCfg, /endpoint:\s*null/);
 assert.doesNotMatch(index, /staging-config\.js/);

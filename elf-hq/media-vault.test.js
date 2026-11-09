@@ -73,6 +73,7 @@ function seal(key, plain) {
   assert.strictEqual(vault.peek(1).badge, 'Being revised');
   const slot = await vault.openDay(1, { reduced: true });
   assert.strictEqual(slot.play, false);
+  assert.strictEqual(Vault.sniff(videoPlain), 'video/mp4');
   assert.strictEqual(slot.badge, 'Being revised');
   assert.strictEqual(slot.caption, 'A sample clip');
   assert.ok(slot.posterUrl);

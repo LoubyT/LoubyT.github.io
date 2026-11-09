@@ -374,8 +374,8 @@ textarea { min-height: 88px; resize: vertical; }
 
 .film-host { margin: 0 0 12px; }
 .chapter-film {
-  display: block; width: 100%; max-height: 52vh; object-fit: contain;
-  background: var(--scene-plate); border-radius: 28px;
+  display: block; width: 100%; aspect-ratio: 9 / 16; max-height: 70vh; min-height: 240px;
+  object-fit: contain; background: var(--scene-plate); border-radius: 28px;
 }
 .cut-badge {
   display: inline-flex; align-items: center; min-height: 28px; margin: 8px 0 0;

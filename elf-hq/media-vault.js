@@ -100,6 +100,20 @@
     return days;
   }
 
+  function copyBytes(bytes) {
+    return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+  }
+
+  function videoType() {
+    return 'video/mp4';
+  }
+
+  function imageType(file) {
+    var mime = String(file.mime || sniff(file.bytes) || '');
+    if (mime.indexOf('image/') === 0) return mime.split(';')[0];
+    return 'image/jpeg';
+  }
+
   function decodeBytes(text) {
     var clean = String(text || '').trim().replace(/-/g, '+').replace(/_/g, '/');
     var pad = clean.length % 4 === 0 ? '' : '='.repeat(4 - (clean.length % 4));
@@ -166,7 +180,7 @@
         var entry = days[Number(day)];
         if (!entry || !entry.video) return null;
         if (current && current.day === entry.day && current.videoUrl) {
-          current.play = mode.play === true || (!mode.reduced && !mode.saveData);
+          current.play = mode.play === true || !mode.reduced;
           return current;
         }
         drop();
@@ -175,11 +189,11 @@
         if (entry.poster) {
           try { poster = await decryptFile(entry.poster); } catch (e) { poster = null; }
         }
-        var videoUrl = URL.createObjectURL(new Blob([video.bytes], { type: video.mime || 'video/mp4' }));
+        var videoUrl = URL.createObjectURL(new Blob([copyBytes(video.bytes)], { type: videoType() }));
         urls.push(videoUrl);
         var posterUrl = '';
         if (poster) {
-          posterUrl = URL.createObjectURL(new Blob([poster.bytes], { type: poster.mime || 'image/jpeg' }));
+          posterUrl = URL.createObjectURL(new Blob([copyBytes(poster.bytes)], { type: imageType(poster) }));
           urls.push(posterUrl);
         }
         video.bytes = null;
@@ -190,7 +204,7 @@
           caption: entry.caption,
           videoUrl: videoUrl,
           posterUrl: posterUrl,
-          play: mode.play === true || (!mode.reduced && !mode.saveData)
+          play: mode.play === true || !mode.reduced
         };
         return current;
       }
