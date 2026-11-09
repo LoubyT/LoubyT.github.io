@@ -8,41 +8,44 @@ const root = __dirname;
 const shape = JSON.parse(fs.readFileSync(path.join(root, 'manifest.public-shape.json'), 'utf8'));
 const wrap = JSON.parse(fs.readFileSync(path.join(root, 'manifest.enc.json'), 'utf8'));
 
-assert.strictEqual(shape.version, 2);
+assert.strictEqual(shape.version, 4);
 assert.strictEqual(wrap.scheme, 'aes-256-gcm-iv12');
 assert.strictEqual(typeof wrap.data, 'string');
 assert.ok(wrap.data.length > 100);
 const packed = Buffer.from(wrap.data, 'base64');
 assert.ok(packed.length > 28);
-assert.notStrictEqual(packed[0], 0x7b);
+assert.throws(function () { JSON.parse(packed.toString('utf8')); });
+assert.strictEqual(JSON.stringify(shape).includes('"final":true'), false);
+assert.strictEqual(shape.bonus, undefined);
+assert.ok(shape.bonusFilm == null);
 
-const expect = { 11: 'being-revised', 17: 'rough' };
 const gone = [
-  'day-06.v1.1253fc5afe24.bin', 'day-06.p1.d254c2993baf.bin',
-  'day-10.v1.f87f618a70f6.bin', 'day-10.p1.efce1facd55d.bin',
-  'day-11.v1.6401f0a3156d.bin', 'day-11.p1.9c2d9aa58110.bin',
-  'day-14.v1.2eb904c786c2.bin', 'day-14.p1.c1520fb615c7.bin',
-  'day-15.v1.d0b8e7ee49f5.bin', 'day-15.p1.31bd39630bbd.bin',
-  'day-16.v1.8e2d113f87f6.bin', 'day-16.p1.a42f3c12b105.bin'
+  'day-07.p1.77a6f3041da9.bin', 'day-07.v1.5820da046eb0.bin',
+  'day-09.p1.1984e498e37e.bin', 'day-09.v1.2eaee28102ff.bin',
+  'day-11.p2.bef4843691d9.bin', 'day-11.v2.2f120951f7a6.bin',
+  'day-12.p1.5c9b528474ca.bin', 'day-12.v1.0bc9dffa4e79.bin',
+  'day-13.p1.5e0f631b1f45.bin', 'day-13.v1.bab14ddd7cba.bin'
 ];
 gone.forEach(function (name) {
   assert.strictEqual(fs.existsSync(path.join(root, 'media', name)), false);
 });
+const referenced = new Set();
 let clips = 0;
 shape.days.forEach(function (day) {
   assert.ok(day.day >= 1 && day.day <= 25);
   assert.notStrictEqual(day.status, 'final');
-  if (expect[day.day]) assert.strictEqual(day.status, expect[day.day]);
-  else if (day.day <= 17) assert.strictEqual(day.status, 'current');
-  else assert.strictEqual(day.status, null);
+  assert.notStrictEqual(day.final, true);
+  if (day.day === 9 || day.day === 16) assert.strictEqual(day.status, 'being-revised');
+  else if (day.day === 17) assert.strictEqual(day.status, 'rough');
+  else assert.strictEqual(day.status, 'current');
   ['video', 'poster'].forEach(function (kind) {
     const node = day[kind];
-    if (!node) {
-      assert.ok(day.day >= 18);
-      return;
-    }
+    if (!node) assert.fail('day ' + day.day + ' has no ' + kind);
     if (kind === 'video') clips += 1;
     assert.match(node.file, /^media\/[A-Za-z0-9._-]+\.bin$/);
+    assert.notStrictEqual(node.final, true);
+    const name = path.basename(node.file);
+    referenced.add(name);
     const bytes = fs.readFileSync(path.join(root, node.file));
     assert.strictEqual(bytes.length, node.size);
     assert.strictEqual(crypto.createHash('sha256').update(bytes).digest('hex'), node.sha256);
@@ -50,7 +53,11 @@ shape.days.forEach(function (day) {
     assert.notStrictEqual(bytes[0], 0xff);
   });
 });
-assert.strictEqual(clips, 17);
+assert.strictEqual(clips, 25);
+const onDisk = new Set(fs.readdirSync(path.join(root, 'media')).filter(function (name) { return name.endsWith('.bin'); }));
+assert.deepStrictEqual(onDisk, referenced);
+assert.strictEqual(onDisk.size, 50);
+onDisk.forEach(function (name) { assert.strictEqual(name.toLowerCase().includes('bonus'), false); });
 const pub = fs.readFileSync(path.join(root, 'manifest.public-shape.json'), 'utf8');
 assert.strictEqual(pub.includes('caption'), false);
 console.log('ok media pack');
