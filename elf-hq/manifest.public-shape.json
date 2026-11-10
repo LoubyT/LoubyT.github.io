@@ -1,5 +1,5 @@
 {
- "version": 6,
+ "version": 7,
  "days": [
   {
    "day": 1,
@@ -355,14 +355,14 @@
  "bonusFilm": {
   "status": "rough",
   "video": {
-   "file": "media/bonus.v3.c5d2a9f01529.bin",
-   "size": 22896442,
-   "sha256": "c5d2a9f01529839042c16a70acd3a853e767b074e84a09ef64478b4a34d8fef1"
+   "file": "media/bonus.v4.1dbfa268f016.bin",
+   "size": 13911053,
+   "sha256": "1dbfa268f01654f9fafc4783b217b975b133336fd25c620d08298c56940c45b5"
   },
   "poster": {
-   "file": "media/bonus.p3.90fe7d2d1215.bin",
-   "size": 62012,
-   "sha256": "90fe7d2d12150494e53ca17f71a2491afac8a66b9e2c846531b562351cb24f40"
+   "file": "media/bonus.p4.8264e57acfd5.bin",
+   "size": 67154,
+   "sha256": "8264e57acfd5d09429c53c653685b317fd9365f431179f0295abc4024ff10cef"
   }
  }
 }
