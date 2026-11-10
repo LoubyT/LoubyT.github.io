@@ -228,9 +228,64 @@
   }
 
   function wholeStoryCard() {
-    var card = posterCard('Watch the whole story', true);
-    card.id = 'whole-story';
-    return card;
+    return mountBonus();
+  }
+
+  function mountBonus() {
+    var wash = el('div', { class: 'film-wash' });
+    var host = el('div', { class: 'film-host' });
+    var token = {};
+    wash.id = 'whole-story';
+    host._bonusToken = token;
+    wash.appendChild(host);
+    var entry = mediaVault && mediaVault.bonus ? mediaVault.bonus() : null;
+    if (!entry || !entry.video) {
+      host.appendChild(posterCard('Whole story', true));
+      return wash;
+    }
+    host.appendChild(posterCard('', false));
+    wash.appendChild(el('h2', { text: 'Whole story' }));
+    if (entry.badge) wash.appendChild(el('p', { class: 'cut-badge', text: entry.badge }));
+    wash.appendChild(el('p', { class: 'row' }, el('button', { type: 'button', class: 'btn', 'data-act': 'bonus-play', text: 'Play' })));
+    if (mediaVault.bonusPoster) {
+      mediaVault.bonusPoster().then(function (url) {
+        if (!url || host._bonusToken !== token || !host.isConnected || host.querySelector('video')) return;
+        var img = document.createElement('img');
+        img.className = 'chapter-film';
+        img.alt = 'Whole story';
+        img.src = url;
+        host.replaceChildren(img);
+      }, function () {});
+    }
+    return wash;
+  }
+
+  function playBonus(button) {
+    if (!mediaVault || !mediaVault.openBonus) return;
+    var wash = document.getElementById('whole-story');
+    var host = wash && wash.querySelector('.film-host');
+    if (!host || host.querySelector('video')) return;
+    if (button) button.disabled = true;
+    mediaVault.openBonus().then(function (slot) {
+      if (!slot || !slot.videoUrl || !host.isConnected) return;
+      var video = document.createElement('video');
+      video.className = 'chapter-film';
+      video.muted = true;
+      video.defaultMuted = true;
+      video.playsInline = true;
+      video.controls = true;
+      video.preload = 'auto';
+      video.setAttribute('playsinline', '');
+      video.setAttribute('webkit-playsinline', '');
+      video.setAttribute('muted', '');
+      video.src = slot.videoUrl;
+      video.addEventListener('loadeddata', function () { blendFilm(host, video); });
+      host.replaceChildren(video);
+      var started = video.play();
+      if (started && started.catch) started.catch(function () {});
+    }, function () {
+      if (button) button.disabled = false;
+    });
   }
 
   function chapterLink(day) {
@@ -1302,6 +1357,7 @@
       if (document.activeElement) commitBlur(document.activeElement);
       location.hash = '#' + lastTab;
     } else if (act === 'feature-play') askForFeature();
+    else if (act === 'bonus-play') playBonus(button);
     else if (act === 'gift-filter') { giftFilter = button.dataset.filter || 'all'; paint(true); }
     else if (act === 'gift-person') {
       giftPerson = ElfGifts.keepPerson(button.dataset.id, (fixture && fixture.recipients) || []);

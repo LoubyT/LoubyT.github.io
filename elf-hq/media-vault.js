@@ -95,6 +95,20 @@
     return match ? Number(match[1]) : 0;
   }
 
+  function bonusOf(doc) {
+    var extra = doc && (doc.bonusFilm || doc.bonus || doc.feature);
+    if (!extra || typeof extra !== 'object' || Array.isArray(extra)) return null;
+    var video = fileRef(extra.video || extra.videoFile, typeof extra.sha256 === 'string' ? extra.sha256 : '');
+    if (!video) return null;
+    return {
+      status: extra.status || '',
+      caption: typeof extra.caption === 'string' ? extra.caption : '',
+      badge: badge(extra.status),
+      video: video,
+      poster: fileRef(extra.poster || extra.posterFile, '')
+    };
+  }
+
   function normalize(doc) {
     var days = {};
     var list = doc && Array.isArray(doc.days) ? doc.days : (doc && Array.isArray(doc.clips) ? doc.clips : []);
@@ -144,15 +158,28 @@
     var base = String(opts.base || '');
     var key = null;
     var days = null;
+    var bonusEntry = null;
     var current = null;
+    var bonusCurrent = null;
     var urls = [];
+    var bonusUrls = [];
 
-    function drop() {
-      urls.forEach(function (url) {
+    function revokeAll(list) {
+      list.forEach(function (url) {
         try { URL.revokeObjectURL(url); } catch (e) {}
       });
+    }
+
+    function drop() {
+      revokeAll(urls);
       urls = [];
       current = null;
+    }
+
+    function dropBonus() {
+      revokeAll(bonusUrls);
+      bonusUrls = [];
+      bonusCurrent = null;
     }
 
     async function decryptFile(ref) {
@@ -174,8 +201,9 @@
     return {
       ready: function () { return !!days; },
       peek: function (day) { return days ? days[Number(day)] || null : null; },
+      bonus: function () { return bonusEntry; },
       badge: badge,
-      close: drop,
+      close: function () { drop(); dropBonus(); },
       setKey: function (raw) { key = raw; },
       loadManifest: async function () {
         if (!key || !fetchImpl) throw new Error('not-configured');
@@ -186,9 +214,40 @@
         var wrap = JSON.parse(text);
         if (!wrap || wrap.scheme !== 'aes-256-gcm-iv12' || typeof wrap.data !== 'string') throw new Error('manifest');
         var plain = await decryptRaw(cryptoKey, decodeBytes(wrap.data));
-        days = normalize(JSON.parse(new TextDecoder().decode(plain)));
+        var parsed = JSON.parse(new TextDecoder().decode(plain));
+        days = normalize(parsed);
+        bonusEntry = bonusOf(parsed);
         key = cryptoKey;
         return days;
+      },
+      bonusPoster: async function () {
+        if (!bonusEntry || !bonusEntry.poster || !key) return '';
+        if (bonusCurrent && bonusCurrent.posterUrl) return bonusCurrent.posterUrl;
+        var poster = await decryptFile(bonusEntry.poster);
+        var posterUrl = URL.createObjectURL(new Blob([copyBytes(poster.bytes)], { type: imageType(poster) }));
+        bonusUrls.push(posterUrl);
+        poster.bytes = null;
+        bonusCurrent = bonusCurrent || { badge: bonusEntry.badge, caption: bonusEntry.caption, videoUrl: '', posterUrl: posterUrl, note: '', play: false };
+        bonusCurrent.posterUrl = posterUrl;
+        return posterUrl;
+      },
+      openBonus: async function () {
+        if (!bonusEntry || !bonusEntry.video || !key) throw new Error('not-ready');
+        if (bonusCurrent && bonusCurrent.videoUrl) return bonusCurrent;
+        var video = await decryptFile(bonusEntry.video);
+        var videoUrl = URL.createObjectURL(new Blob([copyBytes(video.bytes)], { type: videoType() }));
+        bonusUrls.push(videoUrl);
+        var posterUrl = bonusCurrent && bonusCurrent.posterUrl || '';
+        video.bytes = null;
+        bonusCurrent = {
+          badge: bonusEntry.badge,
+          caption: bonusEntry.caption,
+          videoUrl: videoUrl,
+          posterUrl: posterUrl,
+          note: video.note || '',
+          play: true
+        };
+        return bonusCurrent;
       },
       openDay: async function (day, mode) {
         mode = mode || {};
@@ -228,5 +287,5 @@
     };
   }
 
-  return { decodeKey: decodeKey, badge: badge, normalize: normalize, createVault: createVault, sniff: sniff };
+  return { decodeKey: decodeKey, badge: badge, normalize: normalize, bonusOf: bonusOf, createVault: createVault, sniff: sniff };
 });

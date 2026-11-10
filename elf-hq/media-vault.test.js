@@ -101,6 +101,13 @@ function seal(key, plain) {
     days: [{ day: 'day-01', video: 'https://www.louby.net/elf-hq/media/day-01.v1.abc.bin' }]
   });
   assert.strictEqual(aliased[1].video.file, 'media/day-01.v1.abc.bin');
+  const feature = Vault.bonusOf({
+    bonusFilm: { status: 'rough', video: 'media/bonus.v3.abc.bin', poster: { file: 'media/bonus.p3.abc.bin' } }
+  });
+  assert.strictEqual(feature.badge, 'Rough cut');
+  assert.strictEqual(feature.video.file, 'media/bonus.v3.abc.bin');
+  assert.strictEqual(feature.poster.file, 'media/bonus.p3.abc.bin');
+  assert.strictEqual(Vault.bonusOf({ days: [] }), null);
 
   const loose = Vault.createVault({
     base: '',
