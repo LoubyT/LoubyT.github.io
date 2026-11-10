@@ -279,6 +279,7 @@
     video.setAttribute('playsinline', '');
     video.setAttribute('webkit-playsinline', '');
     video.setAttribute('muted', '');
+    video.setAttribute('data-film', 'bonus');
     video.src = slot.videoUrl;
     video.addEventListener('loadeddata', function () {
       var host = video.parentNode;
@@ -319,6 +320,7 @@
             el('button', { type: 'button', class: 'btn ghost', 'data-act': 'bonus-close', text: 'Close' })
           ));
         }
+        tile.hidden = true;
         showPlayer(main);
       } else {
         var wash = el('div', { class: 'film-wash' });
@@ -355,8 +357,12 @@
         cap.replaceChildren.apply(cap, cap._dayKids);
         cap._dayKids = null;
       }
-      var play = document.querySelector('#whole-story [data-act="bonus-play"]');
-      if (play) play.disabled = false;
+      var tile = document.getElementById('whole-story');
+      if (tile) {
+        tile.hidden = false;
+        var play = tile.querySelector('[data-act="bonus-play"]');
+        if (play) play.disabled = false;
+      }
       return;
     }
     var tile = document.getElementById('whole-story');
@@ -1085,6 +1091,7 @@
         video.setAttribute('webkit-playsinline', '');
         video.setAttribute('muted', '');
         video.setAttribute('loop', '');
+        video.setAttribute('data-film', 'day-' + (day.number < 10 ? '0' : '') + day.number);
         video.preload = 'auto';
         video.controls = false;
         if (slot.posterUrl) video.poster = slot.posterUrl;
