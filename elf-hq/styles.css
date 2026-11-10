@@ -395,19 +395,23 @@ textarea { min-height: 88px; resize: vertical; }
 
 .film-block { margin: 0 0 12px; background: transparent; }
 .film-wash {
-  margin: 0;
+  width: min(100%, calc(62vh * 9 / 16));
+  aspect-ratio: 9 / 16;
+  margin: 0 auto;
   padding: 0;
   border: 0;
   box-shadow: none;
-  background: var(--film-plate, transparent);
+  background: transparent;
 }
 .film-host {
   position: relative;
+  width: 100%;
+  height: 100%;
   margin: 0;
   padding: 0;
   border: 0;
   box-shadow: none;
-  background: var(--film-plate, transparent);
+  background: transparent;
 }
 .film-host .poster {
   background: transparent;
@@ -417,14 +421,45 @@ textarea { min-height: 88px; resize: vertical; }
   padding: 12px 0;
 }
 .chapter-film {
-  display: block; width: 100%; aspect-ratio: 9 / 16; max-height: 70vh; min-height: 240px;
-  object-fit: contain; background: var(--film-plate, transparent); border: 0; box-shadow: none; border-radius: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  border-radius: 0;
+  -webkit-mask-image:
+    linear-gradient(to right, transparent 0%, #000 12%, #000 88%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, #000 12%, #000 88%, transparent 100%);
+  -webkit-mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(to right, transparent 0%, #000 12%, #000 88%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, #000 12%, #000 88%, transparent 100%);
+  mask-size: 100% 100%;
+  mask-repeat: no-repeat;
+  mask-composite: intersect;
+  transform: translateZ(0);
 }
 .film-caption {
   margin: 14px 0 0;
   color: var(--ink);
   background: transparent;
   font-weight: 650;
+}
+.today-layout { display: block; }
+.today-copy { min-width: 0; }
+@media (min-width: 801px) {
+  .today-layout {
+    display: grid;
+    grid-template-columns: min(calc(62vh * 9 / 16), 42%) minmax(0, 1fr);
+    gap: 28px;
+    align-items: start;
+  }
+  .today-layout .film-wash { width: 100%; margin: 0; }
+  .today-layout .story-tile.is-playing { grid-column: 1 / -1; }
 }
 .story-tile {
   display: grid;
@@ -436,6 +471,10 @@ textarea { min-height: 88px; resize: vertical; }
   border: 0;
   box-shadow: none;
   background: transparent;
+}
+.story-tile.is-playing {
+  display: block;
+  margin-top: 8px;
 }
 .story-tile h2 { margin: 0 0 4px; font-size: 1.45rem; }
 .story-thumb { width: 88px; height: 112px; border-radius: 14px; overflow: hidden; background: transparent; }
@@ -470,6 +509,7 @@ textarea { min-height: 88px; resize: vertical; }
   .book, .door, .card, .sheet, .btn, .nav a { border: 1px solid ButtonText; }
   .stage { display: none; }
   .film-caption { color: CanvasText; }
+  .chapter-film { -webkit-mask-image: none; mask-image: none; }
 }
 
 @media (max-width: 500px),

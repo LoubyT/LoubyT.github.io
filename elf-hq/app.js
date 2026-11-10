@@ -286,12 +286,30 @@
       video.addEventListener('loadeddata', function () { blendFilm(host, video); });
       host.appendChild(video);
       wash.appendChild(host);
-      tile.replaceChildren(wash);
+      tile.classList.add('is-playing');
+      tile._bonusHome = { parent: tile.parentNode, next: tile.nextSibling };
+      var layout = tile.closest('.today-layout');
+      if (layout && tile.parentNode !== layout) layout.appendChild(tile);
+      var bar = el('p', { class: 'row' }, el('button', { type: 'button', class: 'btn ghost', 'data-act': 'bonus-close', text: 'Close the film' }));
+      tile.replaceChildren(bar, wash);
       var started = video.play();
       if (started && started.catch) started.catch(function () {});
     }, function () {
       if (button) button.disabled = false;
     });
+  }
+
+  function closeBonus() {
+    var tile = document.getElementById('whole-story');
+    if (!tile) return;
+    var home = tile._bonusHome;
+    var fresh = mountBonus();
+    if (home && home.parent && home.parent.isConnected) {
+      home.parent.insertBefore(fresh, home.next && home.next.parentNode === home.parent ? home.next : null);
+      tile.remove();
+      return;
+    }
+    tile.replaceWith(fresh);
   }
 
   function chapterLink(day) {
@@ -329,14 +347,16 @@
       }));
     });
     var next = view.days[day.number] || null;
-    mount($('page'),
-      mountFilm(day),
-      wholeStoryCard(),
-      el('h2', { text: hello }),
-      el('p', { class: 'lede', text: intro }),
-      dayCard(day),
-      next ? dayCard(next) : null
-    );
+    var film = mountFilm(day);
+    var capSlot = film.querySelector('.film-caption-slot');
+    var copy = el('div', { class: 'today-copy' });
+    if (capSlot) copy.appendChild(capSlot);
+    add(copy, wholeStoryCard());
+    add(copy, el('h2', { text: hello }));
+    add(copy, el('p', { class: 'lede', text: intro }));
+    add(copy, dayCard(day));
+    if (next) add(copy, dayCard(next));
+    mount($('page'), el('div', { class: 'today-layout' }, film, copy));
   }
 
   function paintStory() {
@@ -1368,6 +1388,7 @@
       location.hash = '#' + lastTab;
     } else if (act === 'feature-play') askForFeature();
     else if (act === 'bonus-play') playBonus(button);
+    else if (act === 'bonus-close') closeBonus();
     else if (act === 'gift-filter') { giftFilter = button.dataset.filter || 'all'; paint(true); }
     else if (act === 'gift-person') {
       giftPerson = ElfGifts.keepPerson(button.dataset.id, (fixture && fixture.recipients) || []);
