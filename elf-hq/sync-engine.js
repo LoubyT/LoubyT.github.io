@@ -375,6 +375,14 @@
       socketState: function () {
         if (server && server.socketState) return server.socketState();
         return { ready: -1, close: 0, reason: '' };
+      },
+      photoPut: function (photoId, contentType, data) {
+        if (!server || typeof server.photoPut !== 'function') return Promise.reject(new Error('not-configured'));
+        return server.photoPut(photoId, contentType, data);
+      },
+      photoGet: function (photoId) {
+        if (!server || typeof server.photoGet !== 'function') return Promise.reject(new Error('not-configured'));
+        return server.photoGet(photoId);
       }
     };
   }
@@ -626,6 +634,26 @@
       return rpc('media-key', {}).then(function (msg) {
         if (!msg || !msg.mediaKey || msg.error) return Promise.reject(new Error('media'));
         return msg.mediaKey;
+      });
+    };
+    api.photoPut = function (photoId, contentType, data) {
+      return rpc('photo-put', { photoId: photoId, contentType: contentType, data: data }, 20000).then(function (msg) {
+        if (!msg || msg.status !== 200) {
+          var err = new Error('photo');
+          err.status = msg && msg.status;
+          throw err;
+        }
+        return msg;
+      });
+    };
+    api.photoGet = function (photoId) {
+      return rpc('photo-get', { photoId: photoId }, 20000).then(function (msg) {
+        if (!msg || msg.status !== 200 || typeof msg.data !== 'string') {
+          var err = new Error('photo');
+          err.status = msg && msg.status;
+          throw err;
+        }
+        return msg;
       });
     };
     api.ping = function () {

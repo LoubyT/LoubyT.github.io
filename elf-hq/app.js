@@ -22,6 +22,10 @@
   var mediaVault = null;
   var filmAsked = false;
   var browseDay = null;
+  var slotJob = {};
+  var photoPick = null;
+  var photoView = null;
+  var photoViewSlot = null;
 
   function $(id) { return document.getElementById(id); }
   function iso() { return new Date().toISOString(); }
@@ -826,9 +830,6 @@
     if (nextBtn) nextBtn.disabled = day.number >= 25;
     var prev = day.number > 1 ? view.days[day.number - 2] : null;
     var next = day.number < 25 ? view.days[day.number] : null;
-    var photo = day.photo
-      ? el('img', { class: 'photo-preview', alt: 'Inspiration picture for ' + ElfPlan.formatLong(day.displayDate, 'America/Chicago', true) + '. Unnamed.', 'data-photo': day.photo.id })
-      : el('p', { class: 'fine', text: 'No picture yet.' });
     var notes = field(day, 'note', 'Notes', day.note, true);
     var notesBox = notes.querySelector('textarea');
     if (notesBox) notesBox.classList.add('notes-grow');
@@ -837,24 +838,168 @@
       el('p', { class: 'sheet-date', text: ElfPlan.formatLong(day.displayDate, 'America/Chicago', true) }),
       field(day, 'title', 'Title', day.title, false),
       notes,
+      photoSlots(day),
       el('section', { class: 'sheet-quiet' },
         checks(day, 'prep', 'Before the day'),
         checks(day, 'completion', 'On the day'),
-        el('label', { class: 'check' }, el('input', { type: 'checkbox', 'data-act': 'done', 'data-day': day.id, checked: day.done ? 'checked' : null }), 'This chapter is told'),
-        el('h3', { text: 'Picture' }),
-        photo,
-        el('label', { class: 'field' }, 'Add a picture', el('input', { type: 'file', accept: 'image/jpeg,image/png,image/webp', 'data-act': 'photo', 'data-day': day.id })),
-        day.photo ? el('button', { type: 'button', class: 'btn ghost', 'data-act': 'photo-remove', 'data-day': day.id, text: 'Take the picture off' }) : null
+        el('label', { class: 'check' }, el('input', { type: 'checkbox', 'data-act': 'done', 'data-day': day.id, checked: day.done ? 'checked' : null }), 'This chapter is told')
       ),
       el('p', { class: 'row' },
         prev ? el('a', { class: 'btn ghost', href: '#chapter/' + prev.id, text: 'Previous chapter' }) : null,
         next ? el('a', { class: 'btn ghost', href: '#chapter/' + next.id, text: 'Next chapter' }) : null
       )
     );
+    ensurePhotoPicker();
     hydrate($('sheetBody'));
     var grown = $('sheetBody') && $('sheetBody').querySelector('textarea.notes-grow');
     if (grown) growNote(grown);
     paintConflicts();
+  }
+
+  function photoKey(dayId, slot) { return dayId + ':' + slot; }
+
+  function photoSlots(day) {
+    return el('div', { class: 'photo-slots' },
+      photoSlotCard(day, 'inspo', 'Inspo'),
+      photoSlotCard(day, 'result', 'End Result')
+    );
+  }
+
+  function photoSlotCard(day, slot, label) {
+    var photo = day.photos && day.photos[slot];
+    var job = slotJob[photoKey(day.id, slot)];
+    var card = el('button', {
+      type: 'button',
+      class: 'photo-slot' + (photo ? ' is-filled' : ''),
+      'data-act': photo ? 'photo-open' : 'photo-pick',
+      'data-slot': slot,
+      'data-day': day.id,
+      'aria-label': label
+    });
+    if (photo) {
+      card.appendChild(el('img', { alt: '', 'data-photo': photo.id }));
+    } else {
+      card.insertAdjacentHTML('beforeend', '<svg class="photo-slot-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M9 4.2 10.3 6H16a2 2 0 0 1 2 2v9.2a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h.7L9 4.2z"/><circle cx="12" cy="12.2" r="2.7" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M18.2 6.2h2.2M19.3 5.1v2.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>');
+    }
+    card.appendChild(el('span', { class: 'photo-slot-label', text: label }));
+    if (job && job.phase === 'uploading') {
+      var bar = el('progress', { class: 'photo-progress', max: '100', value: String(job.progress || 0) });
+      bar.setAttribute('aria-label', 'Uploading ' + label);
+      card.appendChild(bar);
+    }
+    var wrap = el('div', { class: 'photo-slot-wrap' }, card);
+    if (job && job.phase === 'error') {
+      wrap.appendChild(el('p', { class: 'photo-error', text: 'Could not send this photo.' }));
+      wrap.appendChild(el('button', { type: 'button', class: 'btn ghost', 'data-act': 'photo-retry', 'data-slot': slot, 'data-day': day.id, text: 'Retry' }));
+    }
+    return wrap;
+  }
+
+  function ensurePhotoPicker() {
+    var input = $('chapterPhoto');
+    if (input) return input;
+    input = el('input', { type: 'file', id: 'chapterPhoto', accept: 'image/*', class: 'photo-picker' });
+    input.addEventListener('change', function () { onPhotoFile(input); });
+    document.body.appendChild(input);
+    return input;
+  }
+
+  function openPhotoPicker(dayId, slot) {
+    photoPick = { dayId: dayId, slot: slot };
+    var input = ensurePhotoPicker();
+    input.value = '';
+    input.click();
+  }
+
+  function ensurePhotoView() {
+    if (photoView) return photoView;
+    var img = el('img', { id: 'photoViewImg', alt: '' });
+    var replace = el('button', { type: 'button', class: 'btn', 'data-act': 'photo-replace', text: 'Replace' });
+    var ask = el('button', { type: 'button', class: 'btn ghost', 'data-act': 'photo-remove-ask', text: 'Remove' });
+    var close = el('button', { type: 'button', class: 'btn ghost', 'data-act': 'photo-close', text: 'Close' });
+    var confirm = el('p', { id: 'photoConfirm', class: 'photo-confirm', hidden: true, text: 'Remove this photo?' });
+    var yes = el('button', { type: 'button', class: 'btn danger', 'data-act': 'photo-remove-yes', hidden: true, text: 'Remove' });
+    var no = el('button', { type: 'button', class: 'btn ghost', 'data-act': 'photo-remove-no', hidden: true, text: 'Cancel' });
+    photoView = el('div', { id: 'photoView', class: 'photo-view', hidden: true, role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Photo' },
+      img,
+      confirm,
+      el('div', { class: 'row' }, replace, ask, yes, no, close)
+    );
+    document.body.appendChild(photoView);
+    return photoView;
+  }
+
+  function openPhotoView(dayId, slot) {
+    var day = view.days.filter(function (item) { return item.id === dayId; })[0];
+    var photo = day && day.photos && day.photos[slot];
+    if (!photo) return;
+    var layer = ensurePhotoView();
+    photoViewSlot = { dayId: dayId, slot: slot, id: photo.id };
+    var img = $('photoViewImg');
+    img.alt = slot === 'result' ? 'End Result' : 'Inspo';
+    img.removeAttribute('src');
+    if (urls[photo.id]) img.src = urls[photo.id];
+    $('photoConfirm').hidden = true;
+    layer.querySelector('[data-act="photo-remove-yes"]').hidden = true;
+    layer.querySelector('[data-act="photo-remove-no"]').hidden = true;
+    layer.querySelector('[data-act="photo-remove-ask"]').hidden = false;
+    layer.hidden = false;
+  }
+
+  function closePhotoView() {
+    if (!photoView) return;
+    photoView.hidden = true;
+    photoViewSlot = null;
+  }
+
+  function blobToBase64(blob) {
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function () {
+        var text = String(reader.result || '');
+        var cut = text.indexOf(',');
+        resolve(cut >= 0 ? text.slice(cut + 1) : text);
+      };
+      reader.onerror = function () { reject(reader.error || new Error('read')); };
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  function setSlotJob(dayId, slot, job) {
+    var key = photoKey(dayId, slot);
+    if (!job) delete slotJob[key];
+    else slotJob[key] = job;
+  }
+
+  function sendPhotoBytes(dayId, slot, id, blob) {
+    if (!liveSession || typeof liveSession.photoPut !== 'function' || !liveSession.view().connected) {
+      setSlotJob(dayId, slot, null);
+      return Promise.resolve();
+    }
+    setSlotJob(dayId, slot, { phase: 'uploading', progress: 70 });
+    return blobToBase64(blob).then(function (data) {
+      setSlotJob(dayId, slot, { phase: 'uploading', progress: 90 });
+      return liveSession.photoPut(id, blob.type || 'image/jpeg', data);
+    }).then(function () {
+      setSlotJob(dayId, slot, null);
+    }, function () {
+      setSlotJob(dayId, slot, { phase: 'error', id: id });
+    });
+  }
+
+  function pullPhoto(meta, dayId) {
+    if (!meta || !meta.id || !scratch) return Promise.resolve();
+    return scratch.getPhoto(meta.id).then(function (blob) {
+      if (blob) return;
+      if (!liveSession || typeof liveSession.photoGet !== 'function') return;
+      return liveSession.photoGet(meta.id).then(function (msg) {
+        var binary = atob(msg.data);
+        var bytes = new Uint8Array(binary.length);
+        for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        var next = new Blob([bytes], { type: msg.contentType || meta.type || 'image/jpeg' });
+        return scratch.putPhoto({ id: meta.id, dayId: dayId, blob: next, bytes: next.size, type: next.type, createdAt: meta.at || iso() });
+      });
+    }).catch(function () {});
   }
 
   function growNote(box) {
@@ -965,6 +1110,24 @@
       if (parseHash().name === 'gifts') paint(true);
       return;
     }
+    var photoPath = /^story\.(day-\d{2})\.photo(Inspo|Result)$/.exec(ch.path);
+    if (photoPath) {
+      var slotName = photoPath[2] === 'Result' ? 'result' : 'inspo';
+      var meta = ch.deleted || (ch.value && ch.value.removed) ? null : ch.value;
+      ElfPlan.setPhotoSlot(overrides, photoPath[1], slotName, meta && meta.id ? meta : null, iso());
+      scheduleSave();
+      refresh();
+      pullPhoto(meta && meta.id ? meta : null, photoPath[1]).then(function () {
+        if (sheetDay === photoPath[1]) paintSheet();
+      });
+      return;
+    }
+    var slotRev = /^story\.(day-\d{2})\.photoSlotRev$/.exec(ch.path);
+    if (slotRev) {
+      if (ElfPlan.setPhotoSlotRev) ElfPlan.setPhotoSlotRev(overrides, slotRev[1], Number(ch.value) || 0);
+      scheduleSave();
+      return;
+    }
     var folded = /^story\.(day-\d{2})\.notesFoldRev$/.exec(ch.path);
     if (folded) {
       if (ElfPlan.setNotesFoldRev) ElfPlan.setNotesFoldRev(overrides, folded[1], Number(ch.value) || 0);
@@ -1040,6 +1203,19 @@
     });
     refresh();
     maybeMigrateNoteSeeds();
+    maybeMigratePhotoSlots();
+  }
+
+  function maybeMigratePhotoSlots() {
+    if (!overrides || !ElfPlan.migratePhotoSlots) return;
+    var result = ElfPlan.migratePhotoSlots(overrides);
+    if (!result || !result.ok || !result.changes || !result.changes.length) return;
+    scheduleSave();
+    result.changes.forEach(function (ch) {
+      if (ch.field === 'photoInspo' || ch.field === 'photoResult') pushLive('story.' + ch.id + '.' + ch.field, ch.value);
+      else if (ch.field === 'photoSlotRev') pushLive('story.' + ch.id + '.photoSlotRev', ch.value);
+    });
+    refresh();
   }
 
   function maybeMigrateNoteSeeds() {
@@ -1629,6 +1805,77 @@
     return { blob: blob, bytes: blob.size, type: 'image/jpeg' };
   }
 
+  async function onPhotoFile(input) {
+    var file = input.files && input.files[0];
+    var pick = photoPick;
+    input.value = '';
+    if (!file || !pick) return;
+    var dayId = pick.dayId;
+    var slot = pick.slot;
+    setSlotJob(dayId, slot, { phase: 'uploading', progress: 20 });
+    if (sheetDay === dayId) paintSheet();
+    var shrunk = await shrink(file);
+    if (shrunk.error) {
+      setSlotJob(dayId, slot, { phase: 'error' });
+      if (sheetDay === dayId) paintSheet();
+      announce(ElfPlan.photoError(shrunk.error));
+      return;
+    }
+    setSlotJob(dayId, slot, { phase: 'uploading', progress: 50 });
+    var metas = await scratch.listPhotoMeta();
+    var check = ElfPlan.checkPhotoAdd(metas, { dayId: dayId, bytes: shrunk.bytes, type: shrunk.type });
+    if (!check.ok) {
+      setSlotJob(dayId, slot, { phase: 'error' });
+      if (sheetDay === dayId) paintSheet();
+      announce(ElfPlan.photoError(check.code));
+      return;
+    }
+    var id = 'pic-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    var put = await scratch.putPhoto({ id: id, dayId: dayId, slot: slot, blob: shrunk.blob, bytes: shrunk.bytes, type: shrunk.type, createdAt: iso() });
+    if (!put.ok) {
+      setSlotJob(dayId, slot, { phase: 'error', id: id });
+      if (sheetDay === dayId) paintSheet();
+      announce(ElfPlan.photoError(put.code || 'quota'));
+      return;
+    }
+    ElfPlan.setPhotoSlot(overrides, dayId, slot, { id: id, bytes: shrunk.bytes, type: shrunk.type }, iso());
+    scheduleSave();
+    pushLive('story.' + dayId + '.photo' + (slot === 'result' ? 'Result' : 'Inspo'), { id: id, bytes: shrunk.bytes, type: shrunk.type, at: iso() });
+    if (sheetDay === dayId) paintSheet();
+    await sendPhotoBytes(dayId, slot, id, shrunk.blob);
+    if (sheetDay === dayId) paintSheet();
+    closePhotoView();
+  }
+
+  async function retryPhoto(dayId, slot) {
+    var day = view && view.days.filter(function (item) { return item.id === dayId; })[0];
+    var photo = day && day.photos && day.photos[slot];
+    var job = slotJob[photoKey(dayId, slot)];
+    var id = (photo && photo.id) || (job && job.id);
+    if (!id || !scratch) return;
+    var blob = await scratch.getPhoto(id);
+    if (!blob) {
+      setSlotJob(dayId, slot, { phase: 'error', id: id });
+      if (sheetDay === dayId) paintSheet();
+      return;
+    }
+    await sendPhotoBytes(dayId, slot, id, blob);
+    if (sheetDay === dayId) paintSheet();
+  }
+
+  function removePhotoSlot(dayId, slot) {
+    var existing = view && view.days.filter(function (item) { return item.id === dayId; })[0];
+    var id = existing && existing.photos && existing.photos[slot] && existing.photos[slot].id;
+    ElfPlan.setPhotoSlot(overrides, dayId, slot, null, iso());
+    if (id && urls[id]) { URL.revokeObjectURL(urls[id]); delete urls[id]; }
+    if (id && scratch && scratch.deletePhoto) scratch.deletePhoto(id);
+    scheduleSave();
+    pushLive('story.' + dayId + '.photo' + (slot === 'result' ? 'Result' : 'Inspo'), { removed: true });
+    setSlotJob(dayId, slot, null);
+    closePhotoView();
+    if (sheetDay === dayId) paintSheet();
+  }
+
   async function onPhoto(input) {
     var file = input.files && input.files[0];
     input.value = '';
@@ -1742,7 +1989,25 @@
       ElfPlan.setLeadDays(overrides, button.dataset.day, '', iso());
       scheduleSave();
       paintSheet();
-    } else if (act === 'photo-remove') {
+    } else if (act === 'photo-pick' || act === 'photo-replace') {
+      if (act === 'photo-replace' && photoViewSlot) openPhotoPicker(photoViewSlot.dayId, photoViewSlot.slot);
+      else openPhotoPicker(button.dataset.day, button.dataset.slot);
+    } else if (act === 'photo-open') openPhotoView(button.dataset.day, button.dataset.slot);
+    else if (act === 'photo-close') closePhotoView();
+    else if (act === 'photo-remove-ask') {
+      var ask = $('photoConfirm');
+      if (ask) ask.hidden = false;
+      var yes = document.querySelector('[data-act="photo-remove-yes"]');
+      var no = document.querySelector('[data-act="photo-remove-no"]');
+      var first = document.querySelector('[data-act="photo-remove-ask"]');
+      if (yes) yes.hidden = false;
+      if (no) no.hidden = false;
+      if (first) first.hidden = true;
+    } else if (act === 'photo-remove-no') openPhotoView(photoViewSlot.dayId, photoViewSlot.slot);
+    else if (act === 'photo-remove-yes') {
+      if (photoViewSlot) removePhotoSlot(photoViewSlot.dayId, photoViewSlot.slot);
+    } else if (act === 'photo-retry') retryPhoto(button.dataset.day, button.dataset.slot);
+    else if (act === 'photo-remove') {
       ElfPlan.setPhoto(overrides, button.dataset.day, null, iso());
       scheduleSave();
       paintSheet();

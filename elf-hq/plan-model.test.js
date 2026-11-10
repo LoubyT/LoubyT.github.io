@@ -259,7 +259,7 @@ function finalized() {
     assert.strictEqual(P.checkPhotoAdd(existing, { dayId: 'day-02', bytes: 10, type: 'image/gif' }).code, 'type');
     assert.strictEqual(P.checkPhotoAdd(existing, { dayId: 'day-02', bytes: P.PHOTO_MAX_BYTES + 1, type: 'image/png' }).code, 'too-big');
     const many = [];
-    for (let i = 0; i < 25; i++) many.push({ dayId: 'day-' + i, bytes: 10, type: 'image/jpeg' });
+    for (let i = 0; i < 50; i++) many.push({ dayId: 'day-' + i, bytes: 10, type: 'image/jpeg' });
     assert.strictEqual(P.checkPhotoAdd(many, { dayId: 'new', bytes: 10, type: 'image/jpeg' }).code, 'count');
     assert.ok(P.photoError('quota').length > 20);
     const loose = P.loosePhotos(
@@ -539,6 +539,20 @@ function finalized() {
     const days = all.changes.filter(function (ch) { return ch.field === 'note'; }).map(function (ch) { return ch.id; });
     assert.strictEqual(days.length, 25);
     assert.strictEqual(plain.days['day-09'].fields.note.committed, P.filmNoteValue('day-09'));
+  });
+
+  await test('an old chapter photo moves into Inspo once', function () {
+    const ov = P.blankOverrides();
+    P.setPhoto(ov, 'day-09', { id: 'pic-oldinspo', bytes: 40, type: 'image/jpeg' }, 't');
+    P.setPhoto(ov, 'day-03', { id: 'pic-oldresult', bytes: 40, type: 'image/jpeg' }, 't');
+    ov.days['day-03'].photo.label = 'End Result';
+    const first = P.migratePhotoSlots(ov);
+    assert.strictEqual(first.ok, true);
+    assert.strictEqual(ov.days['day-09'].photos.inspo.id, 'pic-oldinspo');
+    assert.strictEqual(ov.days['day-03'].photos.result.id, 'pic-oldresult');
+    assert.strictEqual(ov.days['day-09'].photo.id, 'pic-oldinspo');
+    const again = P.migratePhotoSlots(ov);
+    assert.strictEqual(again.changes.length, 0);
   });
 
   await test('rehearsal copy has no prices and no display-date edits', function () {

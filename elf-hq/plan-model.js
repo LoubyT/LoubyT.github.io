@@ -21,8 +21,8 @@
   var CONTENT_FIELDS = ['title', 'description', 'note', 'setup', 'props', 'arrival', 'craftNote'];
   var PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
   var PHOTO_MAX_BYTES = 900 * 1024;
-  var PHOTO_MAX_COUNT = 25;
-  var PHOTO_TOTAL_BUDGET = 12 * 1024 * 1024;
+  var PHOTO_MAX_COUNT = 50;
+  var PHOTO_TOTAL_BUDGET = 24 * 1024 * 1024;
   var BACKUP_PHOTO_BUDGET = 8 * 1024 * 1024;
   var SHOP_STATES = ['need', 'owned', 'bought'];
 
@@ -304,6 +304,16 @@
     return ov;
   }
 
+  function setPhotoSlot(ov, dayId, slot, photo, at, actor) {
+    rejectMonitor(actor);
+    if (slot !== 'inspo' && slot !== 'result') throw new Error('Unknown photo slot');
+    var d = ensureDay(ov, dayId);
+    if (!d.photos) d.photos = {};
+    if (!photo) d.photos[slot] = { removed: true, at: at };
+    else d.photos[slot] = { id: photo.id, bytes: photo.bytes || 0, type: photo.type || '', at: at, removed: false };
+    return ov;
+  }
+
   function setPrepDate(ov, dayId, dateKey, at, actor) {
     rejectMonitor(actor);
     var d = ensureDay(ov, dayId);
@@ -475,6 +485,13 @@
     day.prep = resolvedPrep(displayDate, fixtureDay, ovDay);
     if (ovDay && ovDay.photo && ovDay.photo.id && !ovDay.photo.removed) {
       day.photo = { id: ovDay.photo.id, bytes: ovDay.photo.bytes || 0, type: ovDay.photo.type || '', at: ovDay.photo.at || null };
+    }
+    day.photos = { inspo: null, result: null };
+    if (ovDay && ovDay.photos) {
+      ['inspo', 'result'].forEach(function (slot) {
+        var item = ovDay.photos[slot];
+        if (item && item.id && !item.removed) day.photos[slot] = { id: item.id, bytes: item.bytes || 0, type: item.type || '', at: item.at || null };
+      });
     }
     day.hint = weekdayHint(day);
     day.edited = {
@@ -752,8 +769,8 @@
   function photoError(code) {
     if (code === 'type') return 'That file is not a JPEG, PNG, or WebP. Nothing was replaced.';
     if (code === 'too-big') return 'That picture is still over 900 KB after shrinking. It was not saved. The previous picture is unchanged.';
-    if (code === 'count') return 'This notebook already has 25 pictures. Remove one before adding another. Nothing was replaced.';
-    if (code === 'budget') return 'These pictures would pass the 12 MB rehearsal ceiling. This one was not saved.';
+    if (code === 'count') return 'This notebook already has 50 pictures. Remove one before adding another. Nothing was replaced.';
+    if (code === 'budget') return 'These pictures would pass the 24 MB rehearsal ceiling. This one was not saved.';
     if (code === 'quota') return 'The browser refused to store more. This picture was not saved, and the ones already here were not deleted.';
     if (code === 'decode') return 'That picture could not be read. Nothing was changed.';
     return 'The picture was not saved. Nothing already stored was deleted.';
@@ -1378,12 +1395,57 @@
     return { ok: true, changes: changes };
   }
 
+  var PHOTO_SLOT_REV = 1;
+
+  function photoResultLabel(photo) {
+    if (!photo) return false;
+    var label = String(photo.label || photo.role || photo.slot || '');
+    return label === 'result' || label === 'End Result';
+  }
+
+  function setPhotoSlotRev(ov, dayId, rev) {
+    if (!ov || !dayId) return ov;
+    var bucket = ensureDay(ov, dayId);
+    var next = Number(rev) || 0;
+    if ((Number(bucket.photoSlotRev) || 0) >= next) return ov;
+    bucket.photoSlotRev = next;
+    return ov;
+  }
+
+  function migratePhotoSlots(ov) {
+    if (!ov) return { ok: false, changes: [] };
+    var changes = [];
+    for (var n = 1; n <= 25; n++) {
+      var id = 'day-' + (n < 10 ? '0' : '') + n;
+      var bucket = ensureDay(ov, id);
+      if ((Number(bucket.photoSlotRev) || 0) >= PHOTO_SLOT_REV) continue;
+      var old = bucket.photo;
+      if (old && old.id && !old.removed) {
+        var dest = photoResultLabel(old) ? 'result' : 'inspo';
+        if (!bucket.photos) bucket.photos = {};
+        var already = bucket.photos[dest];
+        if (!already || !already.id || already.removed) {
+          bucket.photos[dest] = { id: old.id, bytes: old.bytes || 0, type: old.type || '', at: old.at || null, removed: false };
+          changes.push({ id: id, field: dest === 'result' ? 'photoResult' : 'photoInspo', value: bucket.photos[dest] });
+        }
+      }
+      bucket.photoSlotRev = PHOTO_SLOT_REV;
+      changes.push({ id: id, field: 'photoSlotRev', value: PHOTO_SLOT_REV });
+    }
+    return { ok: true, changes: changes };
+  }
+
   function loosePhotos(overrides, metas) {
     var referenced = {};
     var days = (overrides && overrides.days) || {};
     Object.keys(days).forEach(function (dayIdKey) {
       var photo = days[dayIdKey].photo;
       if (photo && photo.id && !photo.removed) referenced[photo.id] = true;
+      var slots = days[dayIdKey].photos || {};
+      ['inspo', 'result'].forEach(function (slot) {
+        var item = slots[slot];
+        if (item && item.id && !item.removed) referenced[item.id] = true;
+      });
     });
     return (metas || []).filter(function (m) { return m && m.id && !referenced[m.id]; });
   }
@@ -1427,6 +1489,9 @@
     planFeaturePlayback: planFeaturePlayback,
     setDone: setDone,
     setPhoto: setPhoto,
+    setPhotoSlot: setPhotoSlot,
+    migratePhotoSlots: migratePhotoSlots,
+    setPhotoSlotRev: setPhotoSlotRev,
     setPrepDate: setPrepDate,
     setLeadDays: setLeadDays,
     setCheckDone: setCheckDone,
