@@ -430,14 +430,14 @@ textarea { min-height: 88px; resize: vertical; }
   box-shadow: none;
   border-radius: 0;
   -webkit-mask-image:
-    linear-gradient(to right, transparent 0%, #000 12%, #000 88%, transparent 100%),
-    linear-gradient(to bottom, transparent 0%, #000 12%, #000 88%, transparent 100%);
+    linear-gradient(to right, transparent 0%, #000 8%, #000 92%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, #000 8%, #000 92%, transparent 100%);
   -webkit-mask-size: 100% 100%;
   -webkit-mask-repeat: no-repeat;
   -webkit-mask-composite: source-in;
   mask-image:
-    linear-gradient(to right, transparent 0%, #000 12%, #000 88%, transparent 100%),
-    linear-gradient(to bottom, transparent 0%, #000 12%, #000 88%, transparent 100%);
+    linear-gradient(to right, transparent 0%, #000 8%, #000 92%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, #000 8%, #000 92%, transparent 100%);
   mask-size: 100% 100%;
   mask-repeat: no-repeat;
   mask-composite: intersect;
@@ -458,8 +458,7 @@ textarea { min-height: 88px; resize: vertical; }
     gap: 28px;
     align-items: start;
   }
-  .today-layout .film-wash { width: 100%; margin: 0; }
-  .today-layout .story-tile.is-playing { grid-column: 1 / -1; }
+  .today-layout > .film-block .film-wash { width: 100%; margin: 0; }
 }
 .story-tile {
   display: grid;
@@ -475,6 +474,10 @@ textarea { min-height: 88px; resize: vertical; }
 .story-tile.is-playing {
   display: block;
   margin-top: 8px;
+}
+.story-tile.is-playing .film-wash {
+  width: min(100%, calc(62vh * 9 / 16));
+  margin: 0 auto;
 }
 .story-tile h2 { margin: 0 0 4px; font-size: 1.45rem; }
 .story-thumb { width: 88px; height: 112px; border-radius: 14px; overflow: hidden; background: transparent; }

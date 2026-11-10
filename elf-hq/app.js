@@ -287,11 +287,9 @@
       host.appendChild(video);
       wash.appendChild(host);
       tile.classList.add('is-playing');
-      tile._bonusHome = { parent: tile.parentNode, next: tile.nextSibling };
-      var layout = tile.closest('.today-layout');
-      if (layout && tile.parentNode !== layout) layout.appendChild(tile);
       var bar = el('p', { class: 'row' }, el('button', { type: 'button', class: 'btn ghost', 'data-act': 'bonus-close', text: 'Close the film' }));
       tile.replaceChildren(bar, wash);
+      tile.scrollIntoView({ behavior: reduced() ? 'auto' : 'smooth', block: 'start' });
       var started = video.play();
       if (started && started.catch) started.catch(function () {});
     }, function () {
@@ -302,14 +300,7 @@
   function closeBonus() {
     var tile = document.getElementById('whole-story');
     if (!tile) return;
-    var home = tile._bonusHome;
-    var fresh = mountBonus();
-    if (home && home.parent && home.parent.isConnected) {
-      home.parent.insertBefore(fresh, home.next && home.next.parentNode === home.parent ? home.next : null);
-      tile.remove();
-      return;
-    }
-    tile.replaceWith(fresh);
+    tile.replaceWith(mountBonus());
   }
 
   function chapterLink(day) {
