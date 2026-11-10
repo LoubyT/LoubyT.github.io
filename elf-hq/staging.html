@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="needs-pin">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
@@ -31,7 +31,7 @@
     </div>
   <div class="snow" aria-hidden="true"></div>
 
-  <div class="book" id="book">
+  <div class="book" id="book" hidden>
     <p class="fine" id="stagingMark">Staging. The public book does not connect.</p>
     <header class="mast">
       <div class="mast-titles">
@@ -93,11 +93,13 @@
     <button type="button" class="btn" id="updateBtn" data-act="update">Update</button>
   </div>
   <div id="live" class="sr" aria-live="polite"></div>
+  <p id="filmTrace" hidden></p>
   <noscript>
     <p class="boot">Elf HQ needs JavaScript to turn the pages. Nothing is sent anywhere.</p>
   </noscript>
   <script src="staging-config.js"></script>
   <script src="live-config.js"></script>
+  <script src="pin-screen.js"></script>
   <script src="plan-model.js"></script>
   <script src="demo-plan.js"></script>
   <script src="media-manifest.js"></script>

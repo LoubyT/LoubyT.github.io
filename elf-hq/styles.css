@@ -1,6 +1,27 @@
 /* Elf HQ — an open storybook on a Christmas table.
    Phones may scroll the page. Wider windows keep the document still and scroll inside .page or the chapter sheet. */
 
+.elf-lock { position: fixed; inset: 0; z-index: 80; display: flex; align-items: center; justify-content: center; padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom)); background: #E8F2E5; color: #1c1b19; text-align: center; }
+.elf-lock h1 { font-size: 1.8rem; margin: 0 0 4px; }
+.elf-lock p { margin: 0 0 16px; }
+.elf-dots { display: flex; justify-content: center; gap: 16px; margin: 0 0 12px; }
+.elf-dots i { width: 14px; height: 14px; border-radius: 50%; border: 2px solid rgba(0,0,0,.35); }
+.elf-dots i.on { background: #1c1b19; border-color: #1c1b19; }
+.elf-msg { min-height: 44px; }
+.elf-msg.warn { color: #9c2744; font-weight: 700; }
+.elf-pad { display: grid; grid-template-columns: repeat(3, 72px); gap: 14px 22px; justify-content: center; }
+.elf-pad button { width: 72px; height: 72px; border: 0; border-radius: 50%; background: rgba(0,0,0,.06); font: inherit; font-size: 1.6rem; touch-action: manipulation; }
+.elf-pad button.ghost { background: transparent; font-size: .95rem; font-weight: 700; }
+.elf-pad button:disabled { opacity: .35; }
+.elf-pad button.sp { visibility: hidden; }
+
+html.needs-pin .book,
+html.needs-pin .stage,
+html.needs-pin .snow,
+html.needs-pin .sheet-layer,
+html.needs-pin .toast,
+html.needs-pin .update { display: none !important; }
+
 :root {
   --night: #2a0d16;
   --wine: #6e1830;
