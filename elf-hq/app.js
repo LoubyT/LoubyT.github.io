@@ -1262,7 +1262,8 @@
     clearTimeout(saveTimer);
     var body = $('sheetBody');
     if (body) {
-      body.classList.remove('is-slide-next', 'is-slide-prev');
+      body.classList.remove('is-dragging', 'is-snapping', 'is-slide-next', 'is-slide-prev');
+      body.style.transform = '';
       void body.offsetWidth;
       body.classList.add(dir > 0 ? 'is-slide-next' : 'is-slide-prev');
     }
@@ -1786,12 +1787,115 @@
 
   var swipe = null;
   var chapterSwipe = null;
+  var chapterTouch = null;
+  var dragToken = 0;
+
+  function chapterBlocked(target) {
+    return !!(target && target.closest && target.closest('input, textarea, select, button, a'));
+  }
+
+  function followChapter(body, dx) {
+    if (!body || reduced()) return;
+    dragToken += 1;
+    body.classList.add('is-dragging');
+    body.classList.remove('is-snapping', 'is-slide-next', 'is-slide-prev');
+    body.style.transform = 'translateX(' + dx + 'px)';
+  }
+
+  function releaseChapter(body, snap) {
+    if (!body) return;
+    var token = ++dragToken;
+    body.classList.remove('is-dragging');
+    if (!snap || reduced() || !body.style.transform) {
+      body.style.transform = '';
+      body.classList.remove('is-snapping');
+      return;
+    }
+    body.classList.add('is-snapping');
+    requestAnimationFrame(function () {
+      if (token !== dragToken) return;
+      body.style.transform = 'translateX(0px)';
+    });
+    var clear = function () {
+      if (token !== dragToken) return;
+      dragToken += 1;
+      body.style.transform = '';
+      body.classList.remove('is-snapping');
+      body.removeEventListener('transitionend', clear);
+    };
+    body.addEventListener('transitionend', clear);
+    setTimeout(clear, 280);
+  }
+
+  function settleChapter(body, dx, dy) {
+    if (Math.abs(dx) < 60 || Math.abs(dx) <= Math.abs(dy)) {
+      releaseChapter(body, true);
+      return;
+    }
+    releaseChapter(body, false);
+    goChapter(dx < 0 ? 1 : -1);
+  }
+
+  function touchPoint(list, id) {
+    if (!list) return null;
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].identifier === id) return list[i];
+    }
+    return null;
+  }
+
+  document.addEventListener('touchstart', function (event) {
+    var layer = $('sheetLayer');
+    if (!layer || layer.hidden || event.touches.length !== 1) { chapterTouch = null; return; }
+    var target = event.target;
+    var body = target && target.closest ? target.closest('#sheetBody') : null;
+    if (!body || chapterBlocked(target)) { chapterTouch = null; return; }
+    var t = event.touches[0];
+    chapterTouch = { id: t.identifier, x: t.clientX, y: t.clientY, dx: 0, dy: 0, body: body };
+  }, { passive: true });
+
+  document.addEventListener('touchmove', function (event) {
+    if (!chapterTouch) return;
+    var t = touchPoint(event.changedTouches, chapterTouch.id) || touchPoint(event.touches, chapterTouch.id);
+    if (!t) return;
+    chapterTouch.dx = t.clientX - chapterTouch.x;
+    chapterTouch.dy = t.clientY - chapterTouch.y;
+    if (Math.abs(chapterTouch.dx) > Math.abs(chapterTouch.dy) && Math.abs(chapterTouch.dx) > 8) {
+      if (event.cancelable) event.preventDefault();
+      followChapter(chapterTouch.body, chapterTouch.dx);
+    }
+  }, { passive: false });
+
+  document.addEventListener('touchend', function (event) {
+    if (!chapterTouch) return;
+    var t = touchPoint(event.changedTouches, chapterTouch.id);
+    var gesture = chapterTouch;
+    chapterTouch = null;
+    var dx = t ? t.clientX - gesture.x : gesture.dx;
+    var dy = t ? t.clientY - gesture.y : gesture.dy;
+    settleChapter(gesture.body, dx, dy);
+  }, { passive: true });
+
+  document.addEventListener('touchcancel', function () {
+    if (!chapterTouch) return;
+    var body = chapterTouch.body;
+    chapterTouch = null;
+    releaseChapter(body, true);
+  }, { passive: true });
+
   document.addEventListener('pointerdown', function (event) {
     var tag = event.target.closest ? event.target.closest('.gift-tag') : null;
     swipe = tag ? { id: tag.getAttribute('data-id'), x: event.clientX, y: event.clientY } : null;
+    if (event.pointerType === 'touch') return;
     var body = event.target.closest ? event.target.closest('#sheetBody') : null;
-    var blocked = event.target.closest && event.target.closest('input, textarea, select, video, button, a');
-    chapterSwipe = body && !blocked ? { x: event.clientX, y: event.clientY } : null;
+    if (!body || chapterBlocked(event.target)) { chapterSwipe = null; return; }
+    chapterSwipe = { x: event.clientX, y: event.clientY, pointerId: event.pointerId, body: body };
+  });
+  document.addEventListener('pointermove', function (event) {
+    if (!chapterSwipe || chapterSwipe.pointerId !== event.pointerId) return;
+    var dx = event.clientX - chapterSwipe.x;
+    var dy = event.clientY - chapterSwipe.y;
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 8) followChapter(chapterSwipe.body, dx);
   });
   document.addEventListener('pointerup', function (event) {
     if (swipe) {
@@ -1802,12 +1906,16 @@
       if (tag && dx > 56 && dy < 36) tag.classList.remove('is-open');
       swipe = null;
     }
-    if (!chapterSwipe) return;
-    var travelX = event.clientX - chapterSwipe.x;
-    var travelY = event.clientY - chapterSwipe.y;
+    if (!chapterSwipe || chapterSwipe.pointerId !== event.pointerId) return;
+    var gesture = chapterSwipe;
     chapterSwipe = null;
-    if (Math.abs(travelX) < 60 || Math.abs(travelX) <= Math.abs(travelY)) return;
-    goChapter(travelX < 0 ? 1 : -1);
+    settleChapter(gesture.body, event.clientX - gesture.x, event.clientY - gesture.y);
+  });
+  document.addEventListener('pointercancel', function (event) {
+    if (!chapterSwipe || chapterSwipe.pointerId !== event.pointerId) return;
+    var body = chapterSwipe.body;
+    chapterSwipe = null;
+    releaseChapter(body, true);
   });
   document.addEventListener('keydown', function (event) {
     if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;

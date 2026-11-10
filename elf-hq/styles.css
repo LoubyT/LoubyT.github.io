@@ -250,8 +250,12 @@ body[data-feast="eve"] .garland { opacity: .95; }
   width: 36px; height: 36px; min-height: 36px; min-width: 36px; padding: 0;
   border: 0; border-radius: 50%; background: transparent; color: var(--ink); box-shadow: none;
 }
-.mast .icon-btn svg { width: 18px; height: 18px; display: block; }
-.mast .sound[aria-pressed="true"] { background: transparent; color: var(--pine); border-color: transparent; }
+.mast .icon-btn svg { width: 22px; height: 22px; display: block; }
+.mast .sound { color: #c62828; }
+.mast .sound .sound-on { display: none; }
+.mast .sound[aria-pressed="true"] { background: transparent; color: #1f8a4c; border-color: transparent; }
+.mast .sound[aria-pressed="true"] .sound-off { display: none; }
+.mast .sound[aria-pressed="true"] .sound-on { display: block; }
 .btn { background: var(--cranberry); color: #fff8f4; border-color: #7a1c33; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
 .btn.ghost { background: transparent; color: var(--wine); }
 .btn.danger { background: transparent; color: var(--wine); }
@@ -386,7 +390,13 @@ textarea { min-height: 88px; resize: vertical; }
 }
 .sheet-bar { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-bottom: 0; background-color: var(--scene-plate); }
 .sheet-bar h2 { margin: 0; font-size: 1.3rem; flex: 1; }
-.sheet-body { flex: 1; min-height: 0; overflow-x: clip; overflow-y: auto; padding: 12px 14px calc(18px + var(--safe-b)); background-color: var(--scene-plate); }
+.sheet-body { flex: 1; min-height: 0; overflow-x: clip; overflow-y: auto; padding: 12px 14px calc(18px + var(--safe-b)); background-color: var(--scene-plate); touch-action: pan-y; }
+#sheetBody .film-block,
+#sheetBody .film-wash,
+#sheetBody .film-host,
+#sheetBody video { touch-action: pan-y; }
+#sheetBody.is-dragging { animation: none; transition: none; }
+#sheetBody.is-snapping { transition: transform .2s ease; }
 .day-count { margin: 0; color: var(--soft); font-size: .82rem; font-weight: 650; white-space: nowrap; }
 .chapter-prev, .chapter-next { display: none; min-width: 44px; padding: 0 12px; }
 .sheet-body.is-slide-next { animation: chapter-next .22s ease; }
