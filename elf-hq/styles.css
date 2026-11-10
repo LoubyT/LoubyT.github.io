@@ -240,18 +240,20 @@ body[data-mood="night"] .snow { opacity: .55; animation-duration: 40s; }
 body[data-mood="night"] .book { background: var(--scene-plate); }
 body[data-feast="day"] .stars { opacity: 1; }
 body[data-feast="eve"] .garland { opacity: .95; }
-.tools { display: flex; gap: 8px; }
+.tools { display: flex; gap: 8px; align-items: center; }
 .sound, .settings, .btn, .nav a, .states button {
   min-height: 44px; border-radius: 999px; border: 1px solid var(--line); background: rgba(255,255,255,.55); padding: 0 14px;
 }
 .settings { display: inline-flex; align-items: center; text-decoration: none; color: inherit; font-weight: 700; }
 .sound[aria-pressed="true"] { background: var(--pine); color: var(--cream); border-color: var(--pine); }
 .mast .icon-btn {
+  display: inline-flex; align-items: center; justify-content: center;
   width: 36px; height: 36px; min-height: 36px; min-width: 36px; padding: 0;
   border: 0; border-radius: 50%; background: transparent; color: var(--ink); box-shadow: none;
 }
 .mast .icon-btn svg { width: 22px; height: 22px; display: block; }
-.mast .sound { color: #c62828; }
+.mast .sound { position: relative; color: #c62828; }
+.mast .sound svg { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
 .mast .sound .sound-on { display: none; }
 .mast .sound[aria-pressed="true"] { background: transparent; color: #1f8a4c; border-color: transparent; }
 .mast .sound[aria-pressed="true"] .sound-off { display: none; }
@@ -493,6 +495,18 @@ textarea { min-height: 88px; resize: vertical; }
 }
 .today-layout { display: block; }
 .today-copy { min-width: 0; }
+.today-layout > .film-block,
+.today-layout .film-block *,
+.today-layout .film-caption,
+.today-layout .film-caption-slot,
+.today-layout .film-caption-slot * { touch-action: pan-y; }
+.today-browse { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 8px; }
+.today-browse .day-count { margin: 0; }
+.today-back { min-height: 36px; padding: 0 12px; }
+.film-block.is-slide-next,
+.film-caption-slot.is-slide-next { animation: chapter-next .22s ease; }
+.film-block.is-slide-prev,
+.film-caption-slot.is-slide-prev { animation: chapter-prev .22s ease; }
 @media (min-width: 801px) {
   .chapter-prev, .chapter-next { display: inline-flex; }
   .today-layout {
@@ -502,6 +516,7 @@ textarea { min-height: 88px; resize: vertical; }
     align-items: start;
   }
   .today-layout > .film-block .film-wash { width: 100%; margin: 0; }
+  .today-browse { grid-column: 1 / -1; }
 }
 .story-tile {
   display: grid;

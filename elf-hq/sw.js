@@ -1,25 +1,25 @@
 /* Elf HQ shell only. Network first. Never caches notebooks or pictures.
  * Cache names start with elf-hq- so other apps on this origin keep theirs.
  */
-const VERSION = 'elf-hq-v20';
+const VERSION = 'elf-hq-v21';
 const ASSETS = [
   './',
   './index.html',
-  './styles.css',
-  './app.js',
-  './plan-model.js',
-  './demo-plan.js',
-  './media-manifest.js',
-  './media-fit.js',
-  './sync-engine.js',
-  './gifts.js',
-  './media-vault.js',
-  './live-config.js',
-  './pin-screen.js',
-  './scene-art.js',
-  './sync-port.js',
-  './monitor-contract.js',
-  './scratchpad.js',
+  './styles.css?v=21',
+  './app.js?v=21',
+  './plan-model.js?v=21',
+  './demo-plan.js?v=21',
+  './media-manifest.js?v=21',
+  './media-fit.js?v=21',
+  './sync-engine.js?v=21',
+  './gifts.js?v=21',
+  './media-vault.js?v=21',
+  './live-config.js?v=21',
+  './pin-screen.js?v=21',
+  './scene-art.js?v=21',
+  './sync-port.js?v=21',
+  './monitor-contract.js?v=21',
+  './scratchpad.js?v=21',
   './manifest.webmanifest',
   './icon.svg'
 ];
@@ -44,7 +44,7 @@ self.addEventListener('fetch', (event) => {
   if (!url.pathname.includes('/elf-hq/')) return;
   if (url.pathname.includes('/media/') || url.pathname.endsWith('/manifest.enc.json')) return;
   event.respondWith(
-    fetch(req).then((res) => {
+    fetch(req.url, { cache: 'no-store', credentials: 'same-origin' }).then((res) => {
       if (res.ok) {
         const copy = res.clone();
         caches.open(VERSION).then((cache) => cache.put(req, copy)).catch(() => {});

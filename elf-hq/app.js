@@ -21,6 +21,7 @@
   var liveSession = null;
   var mediaVault = null;
   var filmAsked = false;
+  var browseDay = null;
 
   function $(id) { return document.getElementById(id); }
   function iso() { return new Date().toISOString(); }
@@ -208,6 +209,7 @@
     sound.setAttribute('aria-pressed', on ? 'true' : 'false');
     sound.setAttribute('aria-label', soundLabel);
     sound.setAttribute('title', soundLabel);
+    syncSoundIcons();
     document.querySelectorAll('#nav a').forEach(function (link) {
       var tab = link.getAttribute('data-tab');
       var current = parseHash().name === 'chapter' ? lastTab : parseHash().name;
@@ -395,13 +397,45 @@
     );
   }
 
+  function naturalTodayNumber() {
+    return view && view.shown && view.shown.day ? view.shown.day.number : 1;
+  }
+
+  function browsingNumber() {
+    var natural = naturalTodayNumber();
+    var n = browseDay || natural;
+    if (n < 1) return 1;
+    if (n > 25) return 25;
+    return n;
+  }
+
+  function setHidden(node, hide) {
+    if (!node) return;
+    if (hide) node.setAttribute('hidden', '');
+    else node.removeAttribute('hidden');
+  }
+
+  function syncSoundIcons() {
+    var sound = $('soundBtn');
+    if (!sound) return;
+    var on = sound.getAttribute('aria-pressed') === 'true';
+    setHidden(sound.querySelector('.sound-off'), on);
+    setHidden(sound.querySelector('.sound-on'), !on);
+  }
+
   function paintToday() {
     var shown = view.shown;
-    var day = shown.day;
+    var day = view.days.filter(function (item) { return item.number === browsingNumber(); })[0] || shown.day;
+    var away = day.number !== naturalTodayNumber();
     var phase = view.phase;
     var hello = helloLine();
     var intro = seasonLine();
     void phase;
+    var browse = el('div', { class: 'today-browse', id: 'todayBrowse' },
+      el('p', { class: 'day-count', text: 'Day ' + day.number + ' of 25' }),
+      el('button', { type: 'button', class: 'btn ghost today-back', 'data-act': 'back-today', text: 'Back to today' })
+    );
+    if (!away) browse.hidden = true;
     var peek = el('label', { class: 'field' }, 'Open the book at', el('select', { id: 'peek', 'data-act': 'peek' },
       el('option', { value: '', text: 'The real Chicago date', selected: !view.meta.peekDayId })
     ));
@@ -422,7 +456,7 @@
     add(copy, el('p', { class: 'lede', text: intro }));
     add(copy, dayCard(day));
     if (next) add(copy, dayCard(next));
-    mount($('page'), el('div', { class: 'today-layout' }, film, copy));
+    mount($('page'), el('div', { class: 'today-layout' }, browse, film, copy));
   }
 
   function paintStory() {
@@ -1571,7 +1605,10 @@
       paintClock();
       if (view.meta.soundEnabled && reduced()) announce('Sound is on, and it stays quiet while reduce motion is on.');
       else if (view.meta.soundEnabled) chime();
-    }     else if (act === 'close-sheet') {
+    }     else if (act === 'back-today') {
+      browseDay = null;
+      paint(true);
+    } else if (act === 'close-sheet') {
       if (document.activeElement) commitBlur(document.activeElement);
       location.hash = '#' + lastTab;
     } else if (act === 'chapter-prev') goChapter(-1);
@@ -1794,45 +1831,116 @@
     return !!(target && target.closest && target.closest('input, textarea, select, button, a'));
   }
 
-  function followChapter(body, dx) {
-    if (!body || reduced()) return;
-    dragToken += 1;
-    body.classList.add('is-dragging');
-    body.classList.remove('is-snapping', 'is-slide-next', 'is-slide-prev');
-    body.style.transform = 'translateX(' + dx + 'px)';
+  function gestureNodes(gesture) {
+    if (!gesture) return [];
+    if (gesture.nodes && gesture.nodes.length) return gesture.nodes.filter(Boolean);
+    return gesture.body ? [gesture.body] : [];
   }
 
-  function releaseChapter(body, snap) {
-    if (!body) return;
+  function followGesture(gesture, dx) {
+    if (reduced()) return;
+    dragToken += 1;
+    gestureNodes(gesture).forEach(function (body) {
+      body.classList.add('is-dragging');
+      body.classList.remove('is-snapping', 'is-slide-next', 'is-slide-prev');
+      body.style.transform = 'translateX(' + dx + 'px)';
+    });
+  }
+
+  function releaseGesture(gesture, snap) {
+    var nodes = gestureNodes(gesture);
+    if (!nodes.length) return;
     var token = ++dragToken;
-    body.classList.remove('is-dragging');
-    if (!snap || reduced() || !body.style.transform) {
-      body.style.transform = '';
-      body.classList.remove('is-snapping');
-      return;
-    }
-    body.classList.add('is-snapping');
+    nodes.forEach(function (body) {
+      body.classList.remove('is-dragging');
+      if (!snap || reduced() || !body.style.transform) {
+        body.style.transform = '';
+        body.classList.remove('is-snapping');
+        return;
+      }
+      body.classList.add('is-snapping');
+    });
+    if (!snap || reduced()) return;
     requestAnimationFrame(function () {
       if (token !== dragToken) return;
-      body.style.transform = 'translateX(0px)';
+      nodes.forEach(function (body) { body.style.transform = 'translateX(0px)'; });
     });
     var clear = function () {
       if (token !== dragToken) return;
       dragToken += 1;
-      body.style.transform = '';
-      body.classList.remove('is-snapping');
-      body.removeEventListener('transitionend', clear);
+      nodes.forEach(function (body) {
+        body.style.transform = '';
+        body.classList.remove('is-snapping');
+        body.removeEventListener('transitionend', clear);
+      });
     };
-    body.addEventListener('transitionend', clear);
+    nodes.forEach(function (body) { body.addEventListener('transitionend', clear); });
     setTimeout(clear, 280);
   }
 
-  function settleChapter(body, dx, dy) {
-    if (Math.abs(dx) < 60 || Math.abs(dx) <= Math.abs(dy)) {
-      releaseChapter(body, true);
+  function todayDragNodes() {
+    var layout = document.querySelector('.today-layout');
+    if (!layout) return [];
+    var nodes = [];
+    Array.prototype.forEach.call(layout.children, function (child) {
+      if (child.classList && child.classList.contains('film-block')) nodes.push(child);
+    });
+    var cap = layout.querySelector('.film-caption-slot');
+    if (cap && nodes.indexOf(cap) < 0) nodes.push(cap);
+    return nodes;
+  }
+
+  function slideToday(dir) {
+    var cls = dir > 0 ? 'is-slide-next' : 'is-slide-prev';
+    todayDragNodes().forEach(function (node) {
+      node.classList.remove('is-dragging', 'is-snapping', 'is-slide-next', 'is-slide-prev');
+      node.style.transform = '';
+      void node.offsetWidth;
+      node.classList.add(cls);
+    });
+  }
+
+  function goBrowse(dir) {
+    if (!view) return false;
+    var natural = naturalTodayNumber();
+    var current = browseDay || natural;
+    var next = current + dir;
+    if (next < 1 || next > 25) return false;
+    browseDay = next === natural ? null : next;
+    paint(true);
+    slideToday(dir);
+    return true;
+  }
+
+  function beginSwipe(target) {
+    if (!target || !target.closest || chapterBlocked(target)) return null;
+    var sheet = $('sheetLayer');
+    if (sheet && !sheet.hidden) {
+      var body = target.closest('#sheetBody');
+      if (!body) return null;
+      return { kind: 'sheet', body: body, nodes: [body] };
+    }
+    if (parseHash().name !== 'today') return null;
+    if (target.closest('#whole-story, .story-tile') || document.querySelector('.film-host.is-bonus')) return null;
+    var hit = target.closest('.today-layout .film-host, .today-layout .film-wash, .today-layout .film-block, .today-layout .film-caption, .today-layout .film-caption-slot, .today-layout video');
+    if (!hit) return null;
+    var nodes = todayDragNodes();
+    if (!nodes.length) return null;
+    return { kind: 'today', body: nodes[0], nodes: nodes };
+  }
+
+  function settleGesture(gesture, dx, dy) {
+    var pass = Math.abs(dx) >= 60 && Math.abs(dx) > Math.abs(dy);
+    if (!pass) { releaseGesture(gesture, true); return; }
+    if (gesture.kind === 'today') {
+      var dir = dx < 0 ? 1 : -1;
+      var current = browseDay || naturalTodayNumber();
+      if (current + dir < 1 || current + dir > 25) { releaseGesture(gesture, true); return; }
+      releaseGesture(gesture, false);
+      goBrowse(dir);
       return;
     }
-    releaseChapter(body, false);
+    releaseGesture(gesture, false);
     goChapter(dx < 0 ? 1 : -1);
   }
 
@@ -1845,13 +1953,11 @@
   }
 
   document.addEventListener('touchstart', function (event) {
-    var layer = $('sheetLayer');
-    if (!layer || layer.hidden || event.touches.length !== 1) { chapterTouch = null; return; }
-    var target = event.target;
-    var body = target && target.closest ? target.closest('#sheetBody') : null;
-    if (!body || chapterBlocked(target)) { chapterTouch = null; return; }
+    if (event.touches.length !== 1) { chapterTouch = null; return; }
+    var start = beginSwipe(event.target);
+    if (!start) { chapterTouch = null; return; }
     var t = event.touches[0];
-    chapterTouch = { id: t.identifier, x: t.clientX, y: t.clientY, dx: 0, dy: 0, body: body };
+    chapterTouch = { kind: start.kind, body: start.body, nodes: start.nodes, id: t.identifier, x: t.clientX, y: t.clientY, dx: 0, dy: 0 };
   }, { passive: true });
 
   document.addEventListener('touchmove', function (event) {
@@ -1861,8 +1967,8 @@
     chapterTouch.dx = t.clientX - chapterTouch.x;
     chapterTouch.dy = t.clientY - chapterTouch.y;
     if (Math.abs(chapterTouch.dx) > Math.abs(chapterTouch.dy) && Math.abs(chapterTouch.dx) > 8) {
-      if (event.cancelable) event.preventDefault();
-      followChapter(chapterTouch.body, chapterTouch.dx);
+      if (chapterTouch.kind === 'sheet' && event.cancelable) event.preventDefault();
+      followGesture(chapterTouch, chapterTouch.dx);
     }
   }, { passive: false });
 
@@ -1873,29 +1979,29 @@
     chapterTouch = null;
     var dx = t ? t.clientX - gesture.x : gesture.dx;
     var dy = t ? t.clientY - gesture.y : gesture.dy;
-    settleChapter(gesture.body, dx, dy);
+    settleGesture(gesture, dx, dy);
   }, { passive: true });
 
   document.addEventListener('touchcancel', function () {
     if (!chapterTouch) return;
-    var body = chapterTouch.body;
+    var gesture = chapterTouch;
     chapterTouch = null;
-    releaseChapter(body, true);
+    releaseGesture(gesture, true);
   }, { passive: true });
 
   document.addEventListener('pointerdown', function (event) {
     var tag = event.target.closest ? event.target.closest('.gift-tag') : null;
     swipe = tag ? { id: tag.getAttribute('data-id'), x: event.clientX, y: event.clientY } : null;
     if (event.pointerType === 'touch') return;
-    var body = event.target.closest ? event.target.closest('#sheetBody') : null;
-    if (!body || chapterBlocked(event.target)) { chapterSwipe = null; return; }
-    chapterSwipe = { x: event.clientX, y: event.clientY, pointerId: event.pointerId, body: body };
+    var start = beginSwipe(event.target);
+    if (!start) { chapterSwipe = null; return; }
+    chapterSwipe = { kind: start.kind, body: start.body, nodes: start.nodes, x: event.clientX, y: event.clientY, pointerId: event.pointerId };
   });
   document.addEventListener('pointermove', function (event) {
     if (!chapterSwipe || chapterSwipe.pointerId !== event.pointerId) return;
     var dx = event.clientX - chapterSwipe.x;
     var dy = event.clientY - chapterSwipe.y;
-    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 8) followChapter(chapterSwipe.body, dx);
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 8) followGesture(chapterSwipe, dx);
   });
   document.addEventListener('pointerup', function (event) {
     if (swipe) {
@@ -1906,16 +2012,23 @@
       if (tag && dx > 56 && dy < 36) tag.classList.remove('is-open');
       swipe = null;
     }
+    if (event.pointerType === 'touch') {
+      if (!chapterTouch) return;
+      var touchGesture = chapterTouch;
+      chapterTouch = null;
+      settleGesture(touchGesture, touchGesture.dx, touchGesture.dy);
+      return;
+    }
     if (!chapterSwipe || chapterSwipe.pointerId !== event.pointerId) return;
     var gesture = chapterSwipe;
     chapterSwipe = null;
-    settleChapter(gesture.body, event.clientX - gesture.x, event.clientY - gesture.y);
+    settleGesture(gesture, event.clientX - gesture.x, event.clientY - gesture.y);
   });
   document.addEventListener('pointercancel', function (event) {
     if (!chapterSwipe || chapterSwipe.pointerId !== event.pointerId) return;
-    var body = chapterSwipe.body;
+    var gesture = chapterSwipe;
     chapterSwipe = null;
-    releaseChapter(body, true);
+    releaseGesture(gesture, true);
   });
   document.addEventListener('keydown', function (event) {
     if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
@@ -2008,6 +2121,7 @@
     if (bootNode) bootNode.textContent = 'Elf HQ hit a snag while opening. Your notebook was not cleared. Reload the page.';
   });
 
+  syncSoundIcons();
   if (window.ElfPin && ElfPin.whenOpen) ElfPin.whenOpen(boot);
   else boot();
 })();
