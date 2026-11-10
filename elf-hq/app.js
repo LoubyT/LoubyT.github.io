@@ -232,42 +232,46 @@
   }
 
   function mountBonus() {
-    var wash = el('div', { class: 'film-wash' });
-    var host = el('div', { class: 'film-host' });
+    var tile = el('article', { class: 'story-tile' });
+    var thumb = el('div', { class: 'story-thumb' });
+    var copy = el('div', {});
     var token = {};
-    wash.id = 'whole-story';
-    host._bonusToken = token;
-    wash.appendChild(host);
+    tile.id = 'whole-story';
+    tile._bonusToken = token;
+    thumb.appendChild(posterCard('', false));
+    copy.appendChild(el('h2', { text: 'Whole story' }));
     var entry = mediaVault && mediaVault.bonus ? mediaVault.bonus() : null;
     if (!entry || !entry.video) {
-      host.appendChild(posterCard('Whole story', true));
-      return wash;
+      copy.appendChild(el('button', { type: 'button', class: 'coming', disabled: true, text: 'Coming soon' }));
+      tile.appendChild(thumb);
+      tile.appendChild(copy);
+      return tile;
     }
-    host.appendChild(posterCard('', false));
-    wash.appendChild(el('h2', { text: 'Whole story' }));
-    if (entry.badge) wash.appendChild(el('p', { class: 'cut-badge', text: entry.badge }));
-    wash.appendChild(el('p', { class: 'row' }, el('button', { type: 'button', class: 'btn', 'data-act': 'bonus-play', text: 'Play' })));
+    if (entry.badge) copy.appendChild(el('p', { class: 'cut-badge', text: entry.badge }));
+    copy.appendChild(el('button', { type: 'button', class: 'btn', 'data-act': 'bonus-play', text: 'Play' }));
+    tile.appendChild(thumb);
+    tile.appendChild(copy);
     if (mediaVault.bonusPoster) {
       mediaVault.bonusPoster().then(function (url) {
-        if (!url || host._bonusToken !== token || !host.isConnected || host.querySelector('video')) return;
+        if (!url || tile._bonusToken !== token || !thumb.isConnected || tile.querySelector('video')) return;
         var img = document.createElement('img');
-        img.className = 'chapter-film';
-        img.alt = 'Whole story';
+        img.alt = '';
         img.src = url;
-        host.replaceChildren(img);
+        thumb.replaceChildren(img);
       }, function () {});
     }
-    return wash;
+    return tile;
   }
 
   function playBonus(button) {
     if (!mediaVault || !mediaVault.openBonus) return;
-    var wash = document.getElementById('whole-story');
-    var host = wash && wash.querySelector('.film-host');
-    if (!host || host.querySelector('video')) return;
+    var tile = document.getElementById('whole-story');
+    if (!tile || tile.querySelector('video')) return;
     if (button) button.disabled = true;
     mediaVault.openBonus().then(function (slot) {
-      if (!slot || !slot.videoUrl || !host.isConnected) return;
+      if (!slot || !slot.videoUrl || !tile.isConnected) return;
+      var wash = el('div', { class: 'film-wash' });
+      var host = el('div', { class: 'film-host' });
       var video = document.createElement('video');
       video.className = 'chapter-film';
       video.muted = true;
@@ -280,7 +284,9 @@
       video.setAttribute('muted', '');
       video.src = slot.videoUrl;
       video.addEventListener('loadeddata', function () { blendFilm(host, video); });
-      host.replaceChildren(video);
+      host.appendChild(video);
+      wash.appendChild(host);
+      tile.replaceChildren(wash);
       var started = video.play();
       if (started && started.catch) started.catch(function () {});
     }, function () {
@@ -975,18 +981,22 @@
   }
 
   function mountFilm(day) {
+    var block = el('div', { class: 'film-block' });
     var host = el('div', { class: 'film-host' });
     var wash = el('div', { class: 'film-wash' });
+    var capSlot = el('div', { class: 'film-caption-slot' });
     var token = {};
     host._filmToken = token;
     wash.appendChild(host);
+    block.appendChild(wash);
+    block.appendChild(capSlot);
     host.appendChild(posterCard(labelOf(day), false));
-    if (!mediaVault || !mediaVault.ready()) return wash;
+    if (!mediaVault || !mediaVault.ready()) return block;
     var entry = mediaVault.peek(day.number);
     if (!entry || !entry.video) {
       filmTrace({ key: 'yes', manifest: 'yes', film: 'no', err: 'noday' });
       showFilmDiag();
-      return wash;
+      return block;
     }
     var asked = filmAsked;
     mediaVault.openDay(day.number, { play: asked || !reduced(), reduced: reduced() }).then(function (slot) {
@@ -1022,8 +1032,8 @@
         if (slot.play) video.autoplay = true;
         else bits.push(el('button', { type: 'button', class: 'btn', 'data-act': 'film-play', text: 'Play' }));
       } else bits.push(posterCard(labelOf(day), false));
-      if (slot.caption) bits.push(el('p', { class: 'fine', text: slot.caption }));
       mount(host, bits);
+      if (slot.caption) capSlot.appendChild(el('p', { class: 'film-caption', text: slot.caption }));
       var playing = host.querySelector('video');
       if (playing && slot.play) {
         var started = playing.play();
@@ -1033,7 +1043,7 @@
       filmTrace({ key: 'yes', manifest: 'yes', film: 'no', err: errBit(err) });
       showFilmDiag();
     });
-    return wash;
+    return block;
   }
 
   function paint(force) {

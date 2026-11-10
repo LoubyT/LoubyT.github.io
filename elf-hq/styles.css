@@ -393,12 +393,13 @@ textarea { min-height: 88px; resize: vertical; }
   .nav a, .sound, .settings { min-height: 36px; }
 }
 
+.film-block { margin: 0 0 12px; background: transparent; }
 .film-wash {
-  margin: 0 0 8px;
+  margin: 0;
   padding: 0;
   border: 0;
   box-shadow: none;
-  background: radial-gradient(ellipse 100% 96% at 50% 46%, var(--film-plate, transparent) 0%, var(--film-plate, transparent) 42%, transparent 100%);
+  background: var(--film-plate, transparent);
 }
 .film-host {
   position: relative;
@@ -406,29 +407,43 @@ textarea { min-height: 88px; resize: vertical; }
   padding: 0;
   border: 0;
   box-shadow: none;
-  background: none;
-}
-.film-host::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  pointer-events: none;
-  border-radius: 22px;
-  background:
-    linear-gradient(to right, var(--scene-plate) 0%, transparent 11%, transparent 89%, var(--scene-plate) 100%),
-    linear-gradient(to bottom, var(--scene-plate) 0%, transparent 11%, transparent 89%, var(--scene-plate) 100%);
+  background: var(--film-plate, transparent);
 }
 .film-host .poster {
   background: transparent;
   box-shadow: none;
   border: 0;
-  min-height: 240px;
+  min-height: 0;
+  padding: 12px 0;
 }
 .chapter-film {
   display: block; width: 100%; aspect-ratio: 9 / 16; max-height: 70vh; min-height: 240px;
-  object-fit: contain; background: transparent; border: 0; box-shadow: none; border-radius: 22px;
+  object-fit: contain; background: var(--film-plate, transparent); border: 0; box-shadow: none; border-radius: 0;
 }
+.film-caption {
+  margin: 14px 0 0;
+  color: var(--ink);
+  background: transparent;
+  font-weight: 650;
+}
+.story-tile {
+  display: grid;
+  grid-template-columns: 88px 1fr;
+  gap: 12px;
+  align-items: center;
+  margin: 16px 0 8px;
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+}
+.story-tile h2 { margin: 0 0 4px; font-size: 1.45rem; }
+.story-thumb { width: 88px; height: 112px; border-radius: 14px; overflow: hidden; background: transparent; }
+.story-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.story-thumb .poster { min-height: 0; padding: 0; box-shadow: none; background: transparent; }
+.story-thumb .poster svg { width: 72px; height: 64px; }
+.story-tile .cut-badge { margin: 0 0 8px; }
+.story-tile .btn { margin-top: 0; }
 .cut-badge {
   display: inline-flex; align-items: center; min-height: 28px; margin: 8px 0 0;
   padding: 0 10px; border-radius: 999px; background: #fff; color: var(--ink);
@@ -454,7 +469,7 @@ textarea { min-height: 88px; resize: vertical; }
 @media (forced-colors: active) {
   .book, .door, .card, .sheet, .btn, .nav a { border: 1px solid ButtonText; }
   .stage { display: none; }
-  .film-host::after { display: none; }
+  .film-caption { color: CanvasText; }
 }
 
 @media (max-width: 500px),
