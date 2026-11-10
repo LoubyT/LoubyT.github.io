@@ -78,6 +78,12 @@
     var listeners = [];
     var remoteListeners = [];
     var fetches = 0;
+    var downSince = 0;
+    var backoffMs = 0;
+    var retryTimer = null;
+    var beat = null;
+    var preferPull = false;
+    var reconnecting = null;
     if (server && typeof server.subscribe === 'function') {
       server.subscribe(function (msg) {
         (msg && msg.changes || []).forEach(function (ch) {
@@ -100,6 +106,9 @@
         visible[path] = clone(fields[path].value);
       });
       Object.keys(drafts).forEach(function (path) { visible[path] = clone(drafts[path]); });
+      var online = typeof navigator === 'undefined' || navigator.onLine !== false;
+      var socketUp = true;
+      if (server && typeof server.alive === 'function') socketUp = server.alive();
       return {
         state: status,
         deployed: !!(server && server.deployed),
@@ -108,8 +117,99 @@
         fields: visible,
         conflicts: conflicts.slice(),
         unsent: queue.length,
-        asleep: hidden
+        asleep: hidden,
+        online: online,
+        downFor: downSince ? Math.max(0, Date.now() - downSince) : 0,
+        socketUp: socketUp
       };
+    }
+
+    function pageVisible() {
+      if (typeof document === 'undefined') return true;
+      return document.visibilityState !== 'hidden';
+    }
+
+    function scheduleRetry() {
+      if (stopped || hidden || !server || server.kind !== 'elf-room') return;
+      clearTimeout(retryTimer);
+      var cap = pageVisible() ? 5000 : 30000;
+      var wait = backoffMs;
+      backoffMs = Math.min(cap, Math.max(400, (backoffMs || 200) * 2));
+      retryTimer = setTimeout(function () { reconnectNow(); }, wait);
+    }
+
+    function noteDown() {
+      if (!downSince) downSince = Date.now();
+      scheduleRetry();
+    }
+
+    function armBeat() {
+      clearInterval(beat);
+      beat = null;
+      if (!server || server.kind !== 'elf-room' || typeof server.ping !== 'function') return;
+      beat = setInterval(function () {
+        if (stopped || hidden || !pageVisible()) return;
+        if (typeof server.alive === 'function' && !server.alive()) { reconnectNow(); return; }
+        var probe = preferPull && server.pull ? server.pull(since) : server.ping();
+        probe.then(function () {
+          downSince = 0;
+          if (!queue.length && !conflicts.length) status = 'saved';
+          emit();
+        }, function () {
+          if (!preferPull && server.pull && typeof server.alive === 'function' && server.alive()) {
+            preferPull = true;
+            server.pull(since).then(function () {
+              downSince = 0;
+              if (!queue.length && !conflicts.length) status = 'saved';
+              emit();
+            }, function () { reconnectNow(); });
+            return;
+          }
+          reconnectNow();
+        });
+      }, 25000);
+      if (beat && typeof beat.unref === 'function') beat.unref();
+    }
+
+    function reconnectNow() {
+      if (stopped || !server) return Promise.resolve(view());
+      if (reconnecting) return reconnecting;
+      clearTimeout(retryTimer);
+      if (server.kind !== 'elf-room') {
+        return pump().then(function () { return view(); }, function () { return view(); });
+      }
+      var prep = typeof opts.refreshToken === 'function'
+        ? Promise.resolve().then(function () { return opts.refreshToken(); }).then(function (value) { return value; }, function () { return ''; })
+        : Promise.resolve(null);
+      reconnecting = prep.then(function (next) {
+        if (typeof next === 'string' && next && server.setToken) server.setToken(next);
+        if (next === '' && typeof opts.tokenFresh === 'function' && !opts.tokenFresh()) {
+          if (!downSince) downSince = Date.now();
+          status = 'reconnecting';
+          emit();
+          return 'stale';
+        }
+        return server.forceReconnect ? server.forceReconnect() : Promise.resolve('ok');
+      }).then(function (flag) {
+        reconnecting = null;
+        if (flag === 'stale') return view();
+        return pump().then(function () {
+          if (status === 'offline' || status === 'reconnecting') return view();
+          downSince = 0;
+          backoffMs = 0;
+          if (!queue.length && !conflicts.length) status = 'saved';
+          emit();
+          armBeat();
+          return view();
+        }, function () { return view(); });
+      }, function () {
+        reconnecting = null;
+        noteDown();
+        status = 'reconnecting';
+        emit();
+        return view();
+      });
+      return reconnecting;
     }
 
     function knownRev(path) { return fields[path] ? fields[path].rev : 0; }
@@ -146,6 +246,7 @@
         return view();
       }, function (err) {
         status = 'reconnecting';
+        noteDown();
         emit();
         throw err;
       });
@@ -173,6 +274,7 @@
       }, function () {
         pushing = false;
         status = 'offline';
+        noteDown();
         emit();
       });
     }
@@ -193,6 +295,15 @@
         status = 'reconnecting';
         emit();
         if (!stopped && !hidden && server) timer = setTimeout(loop, pollMs);
+      });
+    }
+
+    if (server && typeof server.onDown === 'function') {
+      server.onDown(function () {
+        if (stopped) return;
+        status = hidden ? 'disconnected' : 'reconnecting';
+        noteDown();
+        emit();
       });
     }
 
@@ -235,10 +346,26 @@
         fields[path] = { value: clone(c.local), rev: c.serverRev, deleted: false };
         return enqueue(path, c.local, false);
       },
-      start: function () { hidden = false; if (!server) { status = 'disconnected'; emit(); return Promise.resolve(view()); } return pump().then(function () { loop(); return view(); }); },
-      suspend: function () { hidden = true; clearTimeout(timer); timer = null; emit(); },
-      resume: function () { hidden = false; if (!server) { status = 'disconnected'; emit(); return Promise.resolve(view()); } return pump().then(function () { loop(); return view(); }); },
-      stop: function () { stopped = true; clearTimeout(timer); timer = null; if (server && server.close) server.close(); },
+      start: function () {
+        hidden = false;
+        if (!server) { status = 'disconnected'; emit(); return Promise.resolve(view()); }
+        return pump().then(function () {
+          if (status === 'offline' || status === 'reconnecting') return view();
+          loop();
+          downSince = 0;
+          armBeat();
+          return view();
+        });
+      },
+      suspend: function () { hidden = true; clearTimeout(timer); clearTimeout(retryTimer); clearInterval(beat); beat = null; timer = null; emit(); },
+      resume: function () {
+        hidden = false;
+        if (!server) { status = 'disconnected'; emit(); return Promise.resolve(view()); }
+        if (server.kind === 'elf-room') { backoffMs = 0; return reconnectNow(); }
+        return pump().then(function () { loop(); return view(); });
+      },
+      wake: function () { hidden = false; backoffMs = 0; clearTimeout(retryTimer); return reconnectNow(); },
+      stop: function () { stopped = true; clearTimeout(timer); clearTimeout(retryTimer); clearInterval(beat); beat = null; timer = null; if (server && server.close) server.close(); },
       on: function (fn) { listeners.push(fn); },
       onRemote: function (fn) { remoteListeners.push(fn); },
       mediaKey: function () {
@@ -327,6 +454,13 @@
     var listeners = [];
     var connecting = null;
     var lastSocket = { ready: -1, close: 0, reason: '' };
+    var downListeners = [];
+    var epoch = 0;
+    function noteSocketDown(err) {
+      downListeners.forEach(function (fn) {
+        try { fn(err); } catch (e) {}
+      });
+    }
     var api = {
       kind: 'elf-room',
       fail: false,
@@ -340,7 +474,10 @@
       socketState: function () {
         if (ws) lastSocket.ready = ws.readyState;
         return { ready: lastSocket.ready, close: lastSocket.close, reason: lastSocket.reason };
-      }
+      },
+      alive: function () { return !!(helloOk && ws && ws.readyState === 1); },
+      setToken: function (next) { if (typeof next === 'string' && next) token = next; },
+      onDown: function (fn) { downListeners.push(fn); }
     };
 
     function rejectPending(err) {
@@ -353,13 +490,15 @@
     function connect() {
       if (helloOk && ws && ws.readyState === 1) return Promise.resolve();
       if (connecting) return connecting;
-      connecting = new Promise(function (resolve, reject) {
+      var tracked;
+      tracked = new Promise(function (resolve, reject) {
         if (!WS || !worker || !token) {
           connecting = null;
           reject(new Error('not-configured'));
           return;
         }
         var sock;
+        var sockEpoch = epoch;
         try { sock = new WS(roomUrl(worker)); }
         catch (err) { connecting = null; reject(err); return; }
         ws = sock;
@@ -427,12 +566,30 @@
             void fail;
           }
           rejectPending(closed);
+          if (sockEpoch === epoch) noteSocketDown(closed);
         };
-      }).then(function (value) { connecting = null; return value; }, function (err) { connecting = null; throw err; });
+      }).then(function (value) {
+        if (connecting === tracked) connecting = null;
+        return value;
+      }, function (err) {
+        if (connecting === tracked) connecting = null;
+        throw err;
+      });
+      connecting = tracked;
       return connecting;
     }
 
-    function rpc(type, extra) {
+    api.forceReconnect = function () {
+      epoch += 1;
+      try { if (ws) ws.close(); } catch (e) {}
+      ws = null;
+      helloOk = false;
+      connecting = null;
+      rejectPending(new Error('reconnect'));
+      return connect();
+    };
+
+    function rpc(type, extra, timeoutMs) {
       if (api.fail) return Promise.reject(new Error('offline'));
       return connect().then(function () {
         if (!ws || ws.readyState !== 1) return Promise.reject(new Error('offline'));
@@ -442,7 +599,7 @@
             if (!pending[id]) return;
             delete pending[id];
             reject(new Error('timeout'));
-          }, 8000);
+          }, timeoutMs || 8000);
           pending[id] = {
             resolve: function (msg) { clearTimeout(timer); resolve(msg); },
             reject: function (err) { clearTimeout(timer); reject(err); }
@@ -471,6 +628,12 @@
         return msg.mediaKey;
       });
     };
+    api.ping = function () {
+      return rpc('ping', {}, 10000).then(function (msg) {
+        if (!msg || (msg.type !== 'pong' && msg.type !== 'ping')) return Promise.reject(new Error('ping'));
+        return msg;
+      });
+    };
     return api;
   }
 
@@ -482,8 +645,13 @@
 
   function statusLabel(view) {
     view = view || {};
-    if (view.state === 'offline' && view.connected) return 'Offline';
-    if (view.state === 'reconnecting' && view.connected) return 'Reconnecting';
+    if (view.online === false) return 'Offline - changes saved';
+    var down = Number(view.downFor) || 0;
+    var dropped = view.connected && (view.state === 'offline' || view.state === 'reconnecting' || view.socketUp === false);
+    if (dropped) {
+      if (down >= 3000) return 'Reconnecting';
+      if (view.deployed) return 'Synced';
+    }
     if (view.state === 'saving' && view.connected && view.deployed) return 'Saving';
     if (view.state === 'conflict' && view.connected && view.deployed) return 'Needs a look';
     if (view.state === 'saved' && view.connected && view.deployed) return 'Synced';
@@ -494,7 +662,12 @@
     opts = opts || {};
     if (opts.enabled === false) return createSession({ server: null, pollMs: opts.pollMs });
     if (opts.worker && opts.token) {
-      return createSession({ server: createRoomServer(opts), pollMs: opts.pollMs == null ? 0 : opts.pollMs });
+      return createSession({
+        server: createRoomServer(opts),
+        pollMs: opts.pollMs == null ? 0 : opts.pollMs,
+        refreshToken: opts.refreshToken,
+        tokenFresh: opts.tokenFresh
+      });
     }
     if (opts.endpoint && opts.token) {
       return createSession({ server: createHttpServer(opts), pollMs: opts.pollMs || 0, fetch: opts.fetch });

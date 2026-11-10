@@ -164,11 +164,19 @@
   }
 
   function paintSave() {
-    var node = $('saveState');
-    if (!node) return;
+    var dot = $('syncDot');
+    if (!dot) return;
     var liveView = liveSession ? liveSession.view() : { state: 'disconnected', deployed: false, connected: false };
     var text = window.ElfLive ? ElfLive.statusLabel(liveView) : 'Only on this phone';
-    if (node.textContent !== text) node.textContent = text;
+    var state = 'idle';
+    if (text === 'Synced' || text === 'Saving') state = 'synced';
+    else if (text === 'Reconnecting' || text.indexOf('Offline') === 0) state = 'wait';
+    else if (text === 'Needs a look') state = 'look';
+    if (dot.getAttribute('data-state') !== state) dot.setAttribute('data-state', state);
+    if (dot.getAttribute('aria-label') !== text) {
+      dot.setAttribute('aria-label', text);
+      dot.setAttribute('title', text);
+    }
   }
 
   function paintClock() {
@@ -185,7 +193,8 @@
     var apple = document.querySelector('meta[name="apple-mobile-web-app-title"]');
     if (apple) apple.setAttribute('content', ElfPlan.appTitle(view.meta));
     if (!document.getElementById('elfLockNow')) {
-      var lock = el('button', { type: 'button', class: 'sound', id: 'elfLockNow', text: 'Lock' });
+      var lock = el('button', { type: 'button', class: 'icon-btn', id: 'elfLockNow', 'aria-label': 'Lock', title: 'Lock' });
+      lock.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="6" y="11" width="12" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
       lock.addEventListener('click', function () {
         var done = window.ElfPin && ElfPin.forget ? ElfPin.forget() : Promise.resolve();
         Promise.resolve(done).then(function () { location.reload(); });
@@ -195,8 +204,10 @@
     }
     var sound = $('soundBtn');
     var on = !!view.meta.soundEnabled;
+    var soundLabel = on ? (reduced() ? 'Sound quiet' : 'Sound on') : 'Sound off';
     sound.setAttribute('aria-pressed', on ? 'true' : 'false');
-    sound.textContent = on ? (reduced() ? 'Sound quiet' : 'Sound on') : 'Sound off';
+    sound.setAttribute('aria-label', soundLabel);
+    sound.setAttribute('title', soundLabel);
     document.querySelectorAll('#nav a').forEach(function (link) {
       var tab = link.getAttribute('data-tab');
       var current = parseHash().name === 'chapter' ? lastTab : parseHash().name;
@@ -247,7 +258,6 @@
       tile.appendChild(copy);
       return tile;
     }
-    if (entry.badge) copy.appendChild(el('p', { class: 'cut-badge', text: entry.badge }));
     copy.appendChild(el('button', { type: 'button', class: 'btn', 'data-act': 'bonus-play', text: 'Play' }));
     tile.appendChild(thumb);
     tile.appendChild(copy);
@@ -264,8 +274,7 @@
   }
 
   function bonusTitle() {
-    var entry = mediaVault && mediaVault.bonus ? mediaVault.bonus() : null;
-    return 'Whole story' + (entry && entry.badge ? ' · ' + entry.badge : '');
+    return 'Whole story';
   }
 
   function bonusVideo(slot) {
@@ -775,6 +784,12 @@
     var day = view.days.filter(function (item) { return item.id === sheetDay; })[0];
     if (!day) return;
     $('sheetTitle').textContent = labelOf(day);
+    var count = $('dayCount');
+    if (count) count.textContent = 'Day ' + day.number + ' of 25';
+    var prevBtn = document.querySelector('[data-act="chapter-prev"]');
+    var nextBtn = document.querySelector('[data-act="chapter-next"]');
+    if (prevBtn) prevBtn.disabled = day.number <= 1;
+    if (nextBtn) nextBtn.disabled = day.number >= 25;
     var prev = day.number > 1 ? view.days[day.number - 2] : null;
     var next = day.number < 25 ? view.days[day.number] : null;
     var photo = day.photo
@@ -910,17 +925,56 @@
       if (parseHash().name === 'gifts') paint(true);
       return;
     }
-    var note = /^story\.([A-Za-z0-9_-]+)\.note$/.exec(ch.path);
-    if (!note) return;
+    if (ch.path === 'story.meta.filmTitlesRev') {
+      var rev = Number(ch.value) || 0;
+      if ((Number(overrides.meta.filmTitlesRev) || 0) < rev) {
+        overrides.meta.filmTitlesRev = rev;
+        scheduleSave();
+      }
+      return;
+    }
+    var story = /^story\.([A-Za-z0-9_-]+)\.(title|description|note)$/.exec(ch.path);
+    if (!story) return;
+    var dayId = story[1];
+    var fieldName = story[2];
+    var next = ch.deleted ? '' : String(ch.value == null ? '' : ch.value);
+    if ((fieldName === 'title' || fieldName === 'description') && ElfPlan.filmSeedValue && ElfPlan.filmLineValue) {
+      var local = currentStoryField(dayId, fieldName);
+      var oldSeed = ElfPlan.filmSeedValue(dayId, fieldName);
+      var newSeed = ElfPlan.filmLineValue(dayId, fieldName);
+      if (next === oldSeed && local === newSeed) return;
+      if (next === newSeed && local !== oldSeed && local !== newSeed && local !== '') return;
+    }
     var focused = document.activeElement;
-    if (focused && focused.dataset && focused.dataset.field === 'note' && focused.dataset.day === note[1]) return;
-    ElfPlan.setField(overrides, note[1], 'note', ch.deleted ? '' : String(ch.value == null ? '' : ch.value), iso());
+    var domField = fieldName === 'description' ? 'idea' : fieldName;
+    if (focused && focused.dataset && focused.dataset.field === domField && focused.dataset.day === dayId) return;
+    ElfPlan.setField(overrides, dayId, fieldName, next, iso());
     scheduleSave();
     refresh();
-    if (sheetDay === note[1]) {
-      var box = document.getElementById('note-' + note[1]);
-      if (box && document.activeElement !== box) box.value = ch.deleted ? '' : String(ch.value == null ? '' : ch.value);
+    if (sheetDay === dayId) {
+      var box = document.getElementById(domField + '-' + dayId);
+      if (box && document.activeElement !== box) box.value = next;
     }
+  }
+
+  function currentStoryField(dayId, field) {
+    var bucket = overrides && overrides.days && overrides.days[dayId];
+    var stored = bucket && bucket.fields && bucket.fields[field] && bucket.fields[field].committed;
+    if (stored != null) return String(stored);
+    var fix = fixture && fixture.days ? fixture.days.filter(function (day) { return day.id === dayId; })[0] : null;
+    return fix && fix[field] != null ? String(fix[field]) : '';
+  }
+
+  function maybeMigrateTitles() {
+    if (!overrides || !fixture || !ElfPlan.migrateFilmTitles) return;
+    var result = ElfPlan.migrateFilmTitles(overrides, fixture.days, iso());
+    if (!result || !result.ok || !result.changes || !result.changes.length) return;
+    scheduleSave();
+    result.changes.forEach(function (ch) {
+      if (ch.id === 'meta') pushLive('story.meta.filmTitlesRev', ch.value);
+      else if (ch.field === 'title' || ch.field === 'description') pushLive('story.' + ch.id + '.' + ch.field, ch.value);
+    });
+    refresh();
   }
 
   function mediaBase() {
@@ -956,17 +1010,25 @@
     return 'session:' + filmDiag.session + ' key:' + filmDiag.key + ' manifest:' + filmDiag.manifest + ' film:' + filmDiag.film + (filmDiag.err ? ' err:' + filmDiag.err : '');
   }
 
+  function debugOn() {
+    return /(?:^|[?&])debug=1(?:&|$)/.test(location.search);
+  }
+
   function filmTrace(patch) {
     if (patch) {
       Object.keys(patch).forEach(function (key) { filmDiag[key] = patch[key]; });
     }
     filmDiag.session = sessionBit();
+    var line = filmLine();
+    if (document.body) document.body.setAttribute('data-diag', line);
     var node = $('filmTrace');
-    if (node) node.textContent = filmLine();
+    if (node) node.textContent = line;
   }
 
   function showFilmDiag() {
     filmTrace();
+    if (!debugOn()) return;
+    document.documentElement.classList.add('debug');
     var node = $('filmTrace');
     if (node) node.hidden = false;
   }
@@ -1079,7 +1141,7 @@
     mediaVault.openDay(day.number, { play: asked || !reduced(), reduced: reduced() }).then(function (slot) {
       if (!slot || host._filmToken !== token || !host.isConnected) return;
       var bits = [];
-      if (slot.badge) bits.push(el('p', { class: 'cut-badge', text: slot.badge }));
+      if (slot.badge && slot.badge !== 'Rough cut') bits.push(el('p', { class: 'cut-badge', text: slot.badge }));
       if (slot.videoUrl) {
         var video = document.createElement('video');
         video.className = 'chapter-film';
@@ -1185,6 +1247,30 @@
     ElfPlan.setField(overrides, target.dataset.day, map[target.dataset.field], target.value, iso());
     scheduleSave();
     if (target.dataset.field === 'note') pushLive('story.' + target.dataset.day + '.note', target.value);
+    if (target.dataset.field === 'title') pushLive('story.' + target.dataset.day + '.title', target.value);
+    if (target.dataset.field === 'idea') pushLive('story.' + target.dataset.day + '.description', target.value);
+  }
+
+  function goChapter(dir) {
+    if (!view || !sheetDay) return;
+    var day = view.days.filter(function (item) { return item.id === sheetDay; })[0];
+    if (!day) return;
+    var target = view.days.filter(function (item) { return item.number === day.number + dir; })[0];
+    if (!target) return;
+    var active = document.activeElement;
+    if (active && active.closest && active.closest('#sheetBody')) commitBlur(active);
+    clearTimeout(saveTimer);
+    var body = $('sheetBody');
+    if (body) {
+      body.classList.remove('is-slide-next', 'is-slide-prev');
+      void body.offsetWidth;
+      body.classList.add(dir > 0 ? 'is-slide-next' : 'is-slide-prev');
+    }
+    Promise.resolve(flush()).then(function () {
+      var nextHash = '#chapter/' + target.id;
+      if (location.hash === nextHash) paint(true);
+      else location.hash = nextHash;
+    });
   }
 
   function sit() {
@@ -1285,6 +1371,29 @@
     return id;
   }
 
+  function sessionStillValid() {
+    try { return Number(sessionStorage.getItem('elf-hq-session-exp') || 0) > Date.now(); }
+    catch (e) { return false; }
+  }
+
+  function readStoredSession() {
+    if (sessionStillValid()) {
+      try { return Promise.resolve(sessionStorage.getItem('elf-hq-session') || ''); }
+      catch (e) { return Promise.resolve(''); }
+    }
+    if (window.ElfPin && ElfPin.current) {
+      return ElfPin.current().then(function (saved) {
+        if (!saved || !saved.session || !(saved.exp > Date.now())) return '';
+        try {
+          sessionStorage.setItem('elf-hq-session', saved.session);
+          sessionStorage.setItem('elf-hq-session-exp', String(saved.exp));
+        } catch (e) {}
+        return saved.session;
+      }, function () { return ''; });
+    }
+    return Promise.resolve('');
+  }
+
   function bootLive() {
     var live = liveParts();
     var token = '';
@@ -1296,14 +1405,26 @@
       paintSave();
       return;
     }
-    liveSession = ElfLive.open({ worker: live.worker, token: token, pollMs: 0, enabled: true });
+    liveSession = ElfLive.open({
+      worker: live.worker,
+      token: token,
+      pollMs: 0,
+      enabled: true,
+      refreshToken: readStoredSession,
+      tokenFresh: sessionStillValid
+    });
     if (liveSession.on) liveSession.on(function () { paintSave(); paintConflicts(); });
     if (liveSession.onRemote) liveSession.onRemote(applyLiveValue);
     var sync = function () {
       liveSession.start().then(function () {
+        maybeMigrateTitles();
         paintSave();
-        paintClock();
-      }, function () { paintSave(); });
+        paint(true);
+      }, function () {
+        maybeMigrateTitles();
+        paintSave();
+        paint(true);
+      });
     };
     var media = armMedia();
     if (media && media.then) media.then(sync, sync);
@@ -1337,11 +1458,19 @@
       var exp = 0;
       try { token = sessionStorage.getItem('elf-hq-session') || ''; exp = Number(sessionStorage.getItem('elf-hq-session-exp') || 0); } catch (e) {}
       if (!liveNow.worker || !token) { announce('The phones did not connect.'); return; }
-      liveSession = ElfLive.open({ worker: liveNow.worker, token: token, pollMs: 0, enabled: true });
+      liveSession = ElfLive.open({
+        worker: liveNow.worker,
+        token: token,
+        pollMs: 0,
+        enabled: true,
+        refreshToken: readStoredSession,
+        tokenFresh: sessionStillValid
+      });
       if (liveSession.on) liveSession.on(function () { paintSave(); paintConflicts(); });
       if (liveSession.onRemote) liveSession.onRemote(applyLiveValue);
       var sync = function () {
         liveSession.start().then(function () {
+          maybeMigrateTitles();
           paintSave();
           if (parseHash().name === 'settings') paintDesk();
           announce(ElfLive.statusLabel(liveSession.view()));
@@ -1441,10 +1570,12 @@
       paintClock();
       if (view.meta.soundEnabled && reduced()) announce('Sound is on, and it stays quiet while reduce motion is on.');
       else if (view.meta.soundEnabled) chime();
-    } else if (act === 'close-sheet') {
+    }     else if (act === 'close-sheet') {
       if (document.activeElement) commitBlur(document.activeElement);
       location.hash = '#' + lastTab;
-    } else if (act === 'feature-play') askForFeature();
+    } else if (act === 'chapter-prev') goChapter(-1);
+    else if (act === 'chapter-next') goChapter(1);
+    else if (act === 'feature-play') askForFeature();
     else if (act === 'bonus-play') playBonus(button);
     else if (act === 'bonus-close') closeBonus();
     else if (act === 'gift-filter') { giftFilter = button.dataset.filter || 'all'; paint(true); }
@@ -1654,32 +1785,59 @@
   });
 
   var swipe = null;
+  var chapterSwipe = null;
   document.addEventListener('pointerdown', function (event) {
     var tag = event.target.closest ? event.target.closest('.gift-tag') : null;
-    if (!tag) { swipe = null; return; }
-    swipe = { id: tag.getAttribute('data-id'), x: event.clientX, y: event.clientY };
+    swipe = tag ? { id: tag.getAttribute('data-id'), x: event.clientX, y: event.clientY } : null;
+    var body = event.target.closest ? event.target.closest('#sheetBody') : null;
+    var blocked = event.target.closest && event.target.closest('input, textarea, select, video, button, a');
+    chapterSwipe = body && !blocked ? { x: event.clientX, y: event.clientY } : null;
   });
   document.addEventListener('pointerup', function (event) {
-    if (!swipe) return;
-    var dx = event.clientX - swipe.x;
-    var dy = Math.abs(event.clientY - swipe.y);
-    var tag = document.querySelector('.gift-tag[data-id="' + swipe.id + '"]');
-    if (tag && dx < -56 && dy < 36) tag.classList.add('is-open');
-    if (tag && dx > 56 && dy < 36) tag.classList.remove('is-open');
-    swipe = null;
+    if (swipe) {
+      var dx = event.clientX - swipe.x;
+      var dy = Math.abs(event.clientY - swipe.y);
+      var tag = document.querySelector('.gift-tag[data-id="' + swipe.id + '"]');
+      if (tag && dx < -56 && dy < 36) tag.classList.add('is-open');
+      if (tag && dx > 56 && dy < 36) tag.classList.remove('is-open');
+      swipe = null;
+    }
+    if (!chapterSwipe) return;
+    var travelX = event.clientX - chapterSwipe.x;
+    var travelY = event.clientY - chapterSwipe.y;
+    chapterSwipe = null;
+    if (Math.abs(travelX) < 60 || Math.abs(travelX) <= Math.abs(travelY)) return;
+    goChapter(travelX < 0 ? 1 : -1);
   });
+  document.addEventListener('keydown', function (event) {
+    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+    var layer = $('sheetLayer');
+    if (!layer || layer.hidden) return;
+    var typing = event.target && /^(INPUT|TEXTAREA|SELECT)$/.test(event.target.tagName);
+    if (typing) return;
+    if (event.target && event.target.closest && event.target.closest('video')) return;
+    event.preventDefault();
+    goChapter(event.key === 'ArrowRight' ? 1 : -1);
+  });
+
+  function wakeLive() {
+    var session = liveSession;
+    if (!session) return;
+    var run = session.wake || session.resume;
+    if (!run) return;
+    run.call(session).then(function () { paintSave(); paintConflicts(); }, function () { paintSave(); });
+  }
 
   document.addEventListener('visibilitychange', function () {
     if (document.hidden) flush();
     else {
       catchUp();
-      if (liveSession && liveSession.resume) liveSession.resume().then(function () { paintSave(); });
+      wakeLive();
     }
   });
-  window.addEventListener('pageshow', catchUp);
-  window.addEventListener('online', function () {
-    if (liveSession && liveSession.resume) liveSession.resume().then(function () { paintSave(); paintConflicts(); });
-  });
+  window.addEventListener('pageshow', function () { catchUp(); wakeLive(); });
+  window.addEventListener('online', function () { wakeLive(); });
+  window.addEventListener('offline', function () { paintSave(); });
   window.addEventListener('beforeunload', function (event) {
     if ((scratch && !scratch.persistent && overrides && overrides.meta.welcomedAt) || saveState === 'failed') {
       event.preventDefault();
@@ -1715,6 +1873,10 @@
       if (!overrides.meta.welcomedAt) ElfPlan.setMeta(overrides, 'welcomedAt', iso());
       bootLive();
       refresh();
+      var liveNow = liveParts();
+      var sessionExp = 0;
+      try { sessionExp = Number(sessionStorage.getItem('elf-hq-session-exp') || 0); } catch (e) {}
+      if (!liveNow.worker || !(sessionExp > Date.now())) maybeMigrateTitles();
       if (scratch.failed) announce('This browser cannot keep the story after you leave. Export a backup if you need one.');
       $('boot').remove();
       paint(true);

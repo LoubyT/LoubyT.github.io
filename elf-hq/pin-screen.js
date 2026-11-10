@@ -191,7 +191,14 @@
     }, showPad);
   }
 
-  root.ElfPin = { whenOpen: whenOpen, start: start, forget: forget };
+  function current() {
+    return readSession().then(function (saved) {
+      if (saved && saved.session && saved.exp > Date.now()) return { session: saved.session, exp: saved.exp };
+      return null;
+    }, function () { return null; });
+  }
+
+  root.ElfPin = { whenOpen: whenOpen, start: start, forget: forget, current: current };
   if (document.body) start();
   else document.addEventListener('DOMContentLoaded', start);
 })(window);

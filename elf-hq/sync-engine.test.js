@@ -121,6 +121,9 @@ function waitFor(fn, ms) {
   assert.notStrictEqual(a.get('story.day-01.note'), 'only here');
   assert.strictEqual(Live.statusLabel(lone.view()), 'Only on this phone');
   assert.strictEqual(Live.statusLabel({ state: 'saved', deployed: true, connected: true }), 'Synced');
+  assert.strictEqual(Live.statusLabel({ state: 'reconnecting', deployed: true, connected: true, downFor: 1000, socketUp: false }), 'Synced');
+  assert.strictEqual(Live.statusLabel({ state: 'reconnecting', deployed: true, connected: true, downFor: 3000, socketUp: false }), 'Reconnecting');
+  assert.strictEqual(Live.statusLabel({ state: 'saved', deployed: true, connected: true, online: false }), 'Offline - changes saved');
 
   const http = Live.open({
     endpoint: 'https://relay.test',

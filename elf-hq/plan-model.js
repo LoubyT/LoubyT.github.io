@@ -178,7 +178,8 @@
         welcomedAt: null,
         peekDayId: null,
         sampleStory: true,
-        houseName: ''
+        houseName: '',
+        filmTitlesRev: 0
       },
       days: {},
       shopping: { patched: {}, added: [], removed: [] },
@@ -209,7 +210,8 @@
         welcomedAt: meta.welcomedAt || null,
         peekDayId: meta.peekDayId || null,
         sampleStory: meta.sampleStory !== false,
-        houseName: meta.houseName ? String(meta.houseName).slice(0, 60) : ''
+        houseName: meta.houseName ? String(meta.houseName).slice(0, 60) : '',
+        filmTitlesRev: Number(meta.filmTitlesRev) || 0
       },
       days: raw.days && typeof raw.days === 'object' ? raw.days : {},
       shopping: {
@@ -1146,6 +1148,83 @@
     return { ok: true };
   }
 
+  var FILM_TITLES_REV = 1;
+  var FILM_LINES = [
+    ['Flour tracks', 'The toy car writes tracks through the flour. The donut was meant to survive the lap. It does not.', 'Flour donut drive', 'The elf takes the toy car for a lap through the flour. The donut was supposed to survive. It does not.'],
+    ['One bell short', 'Bramble swears the hall bell was here yesterday. It is under the cat.', 'Christmas moon and stars', 'A moon and a scatter of stars take their places. One star sits a little higher than the plan.'],
+    ['Sock auditions', 'Every unmatched sock wants the speaking part. The navy one is a terrible singer and knows it.', 'Green tape tree', 'Green tape becomes a tree, and the elf is the star on it. The tape holds. Mostly.'],
+    ['Birds in the window', 'Dot hangs felt birds where the lamp can see them. One bird faces the wrong way out of principle.', 'Cookie face', 'A cookie packet gets a face and looks very pleased about it. The crumbs are part of the expression.'],
+    ['Tags for the cocoa', 'The cocoa tin gets a tag that says “for sharing,” which Pip interprets as a dare.', 'Fridge orange face', 'An orange on the fridge grows a face and stares at breakfast. Breakfast stares back.'],
+    ['A wreath of strangers', 'Buttons from lost coats become a wreath. None of them match, which is the point.', 'Gummy fishing', 'A line goes in, and a gummy comes out. This is the only fishing that always works.'],
+    ['Pebbles with opinions', 'Five stones get one word each. The smallest stone says “more biscuits.”', 'Bow climb and seven gifts', 'A bow becomes a ladder, and seven gifts wait at the top. The climb is the whole show.'],
+    ['Jam-jar moonlight', 'Clean jars, a pinch of salt, and paper collars. The kitchen smells like last summer.', 'Paper snowflake art', 'Paper snowflakes cover the table, each one a little different on purpose. The scissors get the last word.'],
+    ['Mitten theater', 'Two mittens bow, get stuck, and call it a play. The audience is a row of spoons.', 'Pantry candy sneak', 'The pantry door opens a crack. The candy was not invited, and it goes anyway.'],
+    ['Moons on a plate', 'Salt-dough moons dry by the stove. One has a thumbprint and refuses to be fixed.', 'Drive-in date', 'Two tiny seats and one small screen make a date that fits on the counter. Popcorn was inevitable.'],
+    ['Notes for a tiny sled', 'A paper sled no longer than a hand carries one kind sentence and immediately looks important.', 'Doctor play', 'The patient is brave, and the doctor is braver. The bandage is mostly for style.'],
+    ['Bells for the railing', 'The garland is for the railing on this Saturday. Pip wrote “Sunday” on the note and will not discuss it.', 'Helping Mom with noodles', 'The noodles need a helper, and the helper needs a stool. Dinner is a collaboration.'],
+    ['Popcorn on a string', 'The broken pieces are officially snacks. This is the only rule everyone keeps.', 'Cotton clouds', 'Cotton becomes a sky, one cloud at a time. One of the clouds is clearly showing off.'],
+    ['Five small firs', 'Felt trees hold hands. The shortest one is placed in the middle, by vote.', 'Gingerbread house', 'A gingerbread house goes up wall by wall, with frosting for mortar. The roof is the dramatic part.'],
+    ['Bookmarks for a quiet night', 'Two stitched bookmarks. One stays in the house, which feels only fair.', 'Sink smile', 'The sink gets a smile, which is a bold choice for a sink. The smile stays through the dishes.'],
+    ['Ribbons on the spice shelf', 'Loose bows, so dinner can still happen. The cinnamon jar looks fancy and knows it.', 'New baby elf', 'A new baby elf arrives and is immediately the center of the room. Everyone else is the audience.'],
+    ['A lane of little houses', 'A cereal box becomes a street with no addresses. The houses are shy.', 'Pompom ball pit', 'A pit of pompoms opens for business. The rule is to jump in, and then jump in again.'],
+    ['Wands from the ribbon tin', 'Star sequins are a luxury. Bramble uses one and immediately loses it to the cat.', 'Flower family', 'A family of flowers stands in a row and looks related. The smallest one does the talking.'],
+    ['Cocoa coasters', 'Round felt coasters for the mugs. The note says Sunday. The page does not move.', 'Ice cream sundaes', 'The sundaes pile up, cherry last. The spoon is a supporting character.'],
+    ['Potato stars', 'One potato prints a perfect star, then smears, then is forgiven and boiled.', 'Ribbon swing', 'A ribbon becomes a swing, and the ride is very serious. The landing is mostly graceful.'],
+    ['Lamps for the step', 'Paper bags, a little sand, holes like constellations. Skip it if the wind is showing off.', 'Candy cane hang', 'Candy canes take their places and hang on like they mean it. The stripes stay lined up.'],
+    ['The recipe with a smudge', 'The cocoa recipe is copied by hand, smudge and all. The smudge is not a secret ingredient.', 'Burrito and baby tacos', 'One burrito and a row of baby tacos sit down together. Nobody is sharing, which is the point.'],
+    ['Jars of quiet snow', 'A spoon of glitter, then the lid, then a firm talk about not being a roommate.', 'Two sleeps', 'Two sleeps are left, counted out loud so they stay in order. Tomorrow is closer than it looks.'],
+    ['Thank-you, and that is all', 'Tags that say thank you and nothing else. Speeches are for people with bigger cards.', 'Christmas Eve sprinkles', 'Christmas Eve gets sprinkles, which is the right amount of ceremony. Morning can have the rest.'],
+    ['The lantern walk', 'Everything made, and the gap where something was not, goes out together. The gap is invited.', 'Snowflake farewell', 'One last snowflake says goodbye, and the book closes on a quiet floor. The mess is invited.']
+  ];
+
+  function filmRow(dayId) {
+    var match = /^day-(\d+)$/.exec(String(dayId || ''));
+    if (!match) return null;
+    return FILM_LINES[Number(match[1]) - 1] || null;
+  }
+
+  function filmSeedValue(dayId, field) {
+    var row = filmRow(dayId);
+    if (!row) return null;
+    if (field === 'title') return row[0];
+    if (field === 'description') return row[1];
+    return null;
+  }
+
+  function filmLineValue(dayId, field) {
+    var row = filmRow(dayId);
+    if (!row) return null;
+    if (field === 'title') return row[2];
+    if (field === 'description') return row[3];
+    return null;
+  }
+
+  function migrateFilmTitles(ov, fixtureDays, at) {
+    if (!ov || !ov.meta) return { ok: false, changes: [] };
+    if ((Number(ov.meta.filmTitlesRev) || 0) >= FILM_TITLES_REV) return { ok: true, changes: [], skipped: true };
+    var byId = {};
+    (fixtureDays || []).forEach(function (day) { if (day && day.id) byId[day.id] = day; });
+    var changes = [];
+    FILM_LINES.forEach(function (row, index) {
+      var id = 'day-' + (index < 9 ? '0' : '') + (index + 1);
+      var fix = byId[id] || {};
+      var bucket = ensureDay(ov, id);
+      [['title', row[0], row[2]], ['description', row[1], row[3]]].forEach(function (spec) {
+        var field = spec[0];
+        var oldVal = spec[1];
+        var next = spec[2];
+        var stored = bucket.fields[field] && bucket.fields[field].committed != null ? String(bucket.fields[field].committed) : null;
+        var current = stored != null ? stored : (fix[field] == null ? '' : String(fix[field]));
+        if (current !== oldVal) return;
+        setField(ov, id, field, next, at);
+        changes.push({ id: id, field: field, value: next });
+      });
+    });
+    ov.meta.filmTitlesRev = FILM_TITLES_REV;
+    changes.push({ id: 'meta', field: 'filmTitlesRev', value: FILM_TITLES_REV });
+    return { ok: true, changes: changes };
+  }
+
   function loosePhotos(overrides, metas) {
     var referenced = {};
     var days = (overrides && overrides.days) || {};
@@ -1228,6 +1307,10 @@
     finalizeFixture: finalizeFixture,
     loosePhotos: loosePhotos,
     importSeed: importSeed,
+    migrateFilmTitles: migrateFilmTitles,
+    filmSeedValue: filmSeedValue,
+    filmLineValue: filmLineValue,
+    FILM_TITLES_REV: FILM_TITLES_REV,
     houseKicker: houseKicker,
     appTitle: appTitle,
     SAMPLE_HOUSE: SAMPLE_HOUSE,
