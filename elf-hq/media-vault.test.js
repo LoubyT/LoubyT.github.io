@@ -47,7 +47,8 @@ function seal(key, plain) {
   };
   const manifestBin = seal(key, Buffer.from(JSON.stringify(doc)));
   const manifest = JSON.stringify({ scheme: 'aes-256-gcm-iv12', data: manifestBin.toString('base64') });
-  const files = { 'manifest.enc.json': manifest, [videoName]: videoBin, [posterName]: posterBin };
+  const manifestUrl = 'manifest.enc.json?v=22';
+  const files = { [manifestUrl]: manifest, [videoName]: videoBin, [posterName]: posterBin };
   let fetches = [];
   const vault = Vault.createVault({
     base: '',
@@ -68,7 +69,7 @@ function seal(key, plain) {
   URL.revokeObjectURL = function (u) { revoked.push(u); return real.call(URL, u); };
   vault.setKey(key);
   await vault.loadManifest();
-  assert.deepStrictEqual(fetches, ['manifest.enc.json']);
+  assert.deepStrictEqual(fetches, [manifestUrl]);
   assert.strictEqual(vault.peek(17).video, null);
   assert.strictEqual(vault.peek(1).badge, 'Being revised');
   const slot = await vault.openDay(1, { reduced: true });
@@ -126,7 +127,7 @@ function seal(key, plain) {
   wrong.days[0].video.sha256 = 'deadbeef';
   wrong.days[0].video.size = 12;
   const wrongManifest = JSON.stringify({ scheme: 'aes-256-gcm-iv12', data: seal(key, Buffer.from(JSON.stringify(wrong))).toString('base64') });
-  files['manifest.enc.json'] = wrongManifest;
+  files[manifestUrl] = wrongManifest;
   loose.setKey(key);
   await loose.loadManifest();
   const played = await loose.openDay(1, { reduced: true });

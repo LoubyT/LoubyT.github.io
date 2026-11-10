@@ -8,7 +8,7 @@ const root = __dirname;
 const shape = JSON.parse(fs.readFileSync(path.join(root, 'manifest.public-shape.json'), 'utf8'));
 const wrap = JSON.parse(fs.readFileSync(path.join(root, 'manifest.enc.json'), 'utf8'));
 
-assert.strictEqual(shape.version, 5);
+assert.strictEqual(shape.version, 6);
 assert.strictEqual(wrap.scheme, 'aes-256-gcm-iv12');
 assert.strictEqual(typeof wrap.data, 'string');
 assert.ok(wrap.data.length > 100);
@@ -25,6 +25,7 @@ const gone = [
   'day-09.p1.1984e498e37e.bin', 'day-09.v1.2eaee28102ff.bin',
   'day-09.p2.d58186fe88f4.bin', 'day-09.v2.d0a371a85cc8.bin',
   'day-11.p2.bef4843691d9.bin', 'day-11.v2.2f120951f7a6.bin',
+  'day-11.p3.99996a2cf4e1.bin', 'day-11.v3.f50109e0a5eb.bin',
   'day-12.p1.5c9b528474ca.bin', 'day-12.v1.0bc9dffa4e79.bin',
   'day-13.p1.5e0f631b1f45.bin', 'day-13.v1.bab14ddd7cba.bin',
   'day-16.p2.45b5f7dada06.bin', 'day-16.v2.c49a6da6e9d1.bin'

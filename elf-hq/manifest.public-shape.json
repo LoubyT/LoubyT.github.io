@@ -1,5 +1,5 @@
 {
- "version": 5,
+ "version": 6,
  "days": [
   {
    "day": 1,
@@ -145,14 +145,14 @@
    "day": 11,
    "status": "current",
    "video": {
-    "file": "media/day-11.v3.f50109e0a5eb.bin",
-    "size": 873649,
-    "sha256": "f50109e0a5ebbf175ef005276645bdef1a35798d3e4b418cd52c528de1c07fef"
+    "file": "media/day-11.v4.85f6e78a518b.bin",
+    "size": 1706294,
+    "sha256": "85f6e78a518bd71489d8902bee6be83a7549c9592a8d606d40f4fbf02155a287"
    },
    "poster": {
-    "file": "media/day-11.p3.99996a2cf4e1.bin",
-    "size": 87408,
-    "sha256": "99996a2cf4e16974eb299af9fa7bcf32234d31039eda8787e12a230c7faaa0eb"
+    "file": "media/day-11.p4.2a2bfe43cb89.bin",
+    "size": 78534,
+    "sha256": "2a2bfe43cb895fdd9d3d0ada9f98564f6321cc670a2a2424b17d9cc3fab38b23"
    }
   },
   {
