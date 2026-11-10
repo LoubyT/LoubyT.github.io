@@ -351,17 +351,18 @@ textarea { min-height: 88px; resize: vertical; }
 .photo-preview { width: min(100%, 240px); border-radius: 16px; }
 
 .sheet-layer {
-  position: fixed; z-index: 30; left: 0; right: 0; top: var(--vvtop); height: var(--vvh);
+  position: fixed; z-index: 30; inset: 0;
   display: flex; padding: max(10px, env(safe-area-inset-top)) 10px max(10px, env(safe-area-inset-bottom));
   background: rgba(42, 13, 22, .55);
 }
 .sheet {
   margin: auto; width: min(680px, 100%); height: 100%; display: flex; flex-direction: column; min-height: 0;
-  background: var(--paper); border-radius: 22px; overflow: hidden;
+  background-color: var(--scene-plate); border-radius: 22px; overflow: hidden;
 }
-.sheet-bar { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-bottom: 0; }
+.sheet-bar { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-bottom: 0; background-color: var(--scene-plate); }
 .sheet-bar h2 { margin: 0; font-size: 1.3rem; flex: 1; }
-.sheet-body { flex: 1; min-height: 0; overflow: auto; padding: 12px 14px calc(18px + var(--safe-b)); }
+.sheet-body { flex: 1; min-height: 0; overflow: auto; padding: 12px 14px calc(18px + var(--safe-b)); background-color: var(--scene-plate); }
+.sheet input, .sheet textarea, .sheet select { background-color: #fff; opacity: 1; }
 .toast, .update {
   position: fixed; z-index: 40; left: 50%; bottom: max(12px, env(safe-area-inset-bottom)); transform: translateX(-50%);
   width: min(480px, calc(100% - 24px)); background: var(--ink); color: var(--cream); border-radius: 16px; padding: 12px 14px;
@@ -479,6 +480,17 @@ textarea { min-height: 88px; resize: vertical; }
   width: min(100%, calc(62vh * 9 / 16));
   margin: 0 auto;
 }
+.film-now {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 0 0 8px;
+  color: var(--ink);
+  font-weight: 700;
+}
+.film-now .btn { flex: 0 0 auto; }
 .story-tile h2 { margin: 0 0 4px; font-size: 1.45rem; }
 .story-thumb { width: 88px; height: 112px; border-radius: 14px; overflow: hidden; background: transparent; }
 .story-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -525,4 +537,10 @@ textarea { min-height: 88px; resize: vertical; }
   .gift-bar { top: 64px; }
   .nav a { font-size: .78rem; padding: 0 4px; }
   body.sheet-open { overflow: hidden; }
+  body.sheet-open .book,
+  body.sheet-open .stage,
+  body.sheet-open .snow { visibility: hidden; }
+  .sheet-layer { padding: 0; background-color: var(--scene-plate); }
+  .sheet { width: 100%; max-width: none; margin: 0; border-radius: 0; background-color: var(--scene-plate); }
+  .sheet-body { padding-bottom: calc(28px + env(safe-area-inset-bottom)); }
 }
