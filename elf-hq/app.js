@@ -877,17 +877,61 @@
     });
   }
 
+  function blendFilm(host, video) {
+    if (!host || !video || video.videoWidth < 2 || video.videoHeight < 2) return;
+    var canvas = document.createElement('canvas');
+    var w = 32;
+    var h = 32;
+    canvas.width = w;
+    canvas.height = h;
+    var ctx = canvas.getContext('2d', { willReadFrequently: true });
+    if (!ctx) return;
+    try { ctx.drawImage(video, 0, 0, w, h); }
+    catch (e) { return; }
+    var data;
+    try { data = ctx.getImageData(0, 0, w, h).data; }
+    catch (e) { return; }
+    var r = 0;
+    var g = 0;
+    var b = 0;
+    var n = 0;
+    var edge = 3;
+    var y;
+    var x;
+    for (y = 0; y < h; y++) {
+      for (x = 0; x < w; x++) {
+        if (x >= edge && y >= edge && x < w - edge && y < h - edge) continue;
+        var i = (y * w + x) * 4;
+        if (data[i + 3] < 128) continue;
+        r += data[i];
+        g += data[i + 1];
+        b += data[i + 2];
+        n += 1;
+      }
+    }
+    if (!n) return;
+    r = Math.round(r / n);
+    g = Math.round(g / n);
+    b = Math.round(b / n);
+    if (r + g + b < 48) return;
+    var plate = host.closest ? (host.closest('.film-wash') || host) : host;
+    plate.style.setProperty('--film-plate', 'rgb(' + r + ',' + g + ',' + b + ')');
+    plate.classList.add('is-blended');
+  }
+
   function mountFilm(day) {
     var host = el('div', { class: 'film-host' });
+    var wash = el('div', { class: 'film-wash' });
     var token = {};
     host._filmToken = token;
+    wash.appendChild(host);
     host.appendChild(posterCard(labelOf(day), false));
-    if (!mediaVault || !mediaVault.ready()) return host;
+    if (!mediaVault || !mediaVault.ready()) return wash;
     var entry = mediaVault.peek(day.number);
     if (!entry || !entry.video) {
       filmTrace({ key: 'yes', manifest: 'yes', film: 'no', err: 'noday' });
       showFilmDiag();
-      return host;
+      return wash;
     }
     var asked = filmAsked;
     mediaVault.openDay(day.number, { play: asked || !reduced(), reduced: reduced() }).then(function (slot) {
@@ -908,10 +952,12 @@
         video.preload = 'auto';
         video.controls = false;
         if (slot.posterUrl) video.poster = slot.posterUrl;
-        video.src = slot.videoUrl;
         video.addEventListener('loadeddata', function () {
+          blendFilm(host, video);
           filmTrace({ key: 'yes', manifest: 'yes', film: 'yes', err: slot.note || '' });
         });
+        video.src = slot.videoUrl;
+        if (video.readyState >= 2) blendFilm(host, video);
         video.addEventListener('error', function () {
           var code = video.error ? video.error.code : 0;
           filmTrace({ key: 'yes', manifest: 'yes', film: 'no', err: 'video' + code });
@@ -932,7 +978,7 @@
       filmTrace({ key: 'yes', manifest: 'yes', film: 'no', err: errBit(err) });
       showFilmDiag();
     });
-    return host;
+    return wash;
   }
 
   function paint(force) {

@@ -393,10 +393,41 @@ textarea { min-height: 88px; resize: vertical; }
   .nav a, .sound, .settings { min-height: 36px; }
 }
 
-.film-host { margin: 0 0 12px; }
+.film-wash {
+  margin: 0 0 8px;
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+  background: radial-gradient(ellipse 100% 96% at 50% 46%, var(--film-plate, transparent) 0%, var(--film-plate, transparent) 42%, transparent 100%);
+}
+.film-host {
+  position: relative;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+  background: none;
+}
+.film-host::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  border-radius: 22px;
+  background:
+    linear-gradient(to right, var(--scene-plate) 0%, transparent 11%, transparent 89%, var(--scene-plate) 100%),
+    linear-gradient(to bottom, var(--scene-plate) 0%, transparent 11%, transparent 89%, var(--scene-plate) 100%);
+}
+.film-host .poster {
+  background: transparent;
+  box-shadow: none;
+  border: 0;
+  min-height: 240px;
+}
 .chapter-film {
   display: block; width: 100%; aspect-ratio: 9 / 16; max-height: 70vh; min-height: 240px;
-  object-fit: contain; background: var(--scene-plate); border-radius: 28px;
+  object-fit: contain; background: transparent; border: 0; box-shadow: none; border-radius: 22px;
 }
 .cut-badge {
   display: inline-flex; align-items: center; min-height: 28px; margin: 8px 0 0;
@@ -423,6 +454,7 @@ textarea { min-height: 88px; resize: vertical; }
 @media (forced-colors: active) {
   .book, .door, .card, .sheet, .btn, .nav a { border: 1px solid ButtonText; }
   .stage { display: none; }
+  .film-host::after { display: none; }
 }
 
 @media (max-width: 500px),
