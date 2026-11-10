@@ -842,7 +842,16 @@
     }
     filmTrace({ key: 'wait', manifest: '?', film: '?', err: '' });
     mediaVault = ElfVault.createVault({ base: mediaBase() });
+    var watchdog = setTimeout(function () {
+      if (filmDiag.key !== 'wait') return;
+      var sock = liveSession.socketState ? liveSession.socketState() : { ready: -1, close: 0, reason: '' };
+      var err = 'ready' + sock.ready + '.close' + (sock.close || 0);
+      if (sock.reason) err += '.' + String(sock.reason).replace(/[^A-Za-z0-9_.:-]/g, '').slice(0, 24);
+      filmTrace({ key: 'timeout', err: err });
+      showFilmDiag();
+    }, 10000);
     return liveSession.mediaKey().then(function (text) {
+      clearTimeout(watchdog);
       filmTrace({ key: 'yes', manifest: 'wait', film: '?', err: '' });
       try { mediaVault.setKey(ElfVault.decodeKey(text)); }
       catch (err) {
@@ -856,8 +865,12 @@
       if (sheetDay) paintSheet();
       else paint(true);
     }, function (err) {
-      var key = filmDiag.key === 'yes' ? (err && err.keyStage === 'decode' ? 'bad' : 'yes') : 'no';
-      filmTrace({ key: key, manifest: 'no', film: 'no', err: errBit(err) });
+      clearTimeout(watchdog);
+      var sock = liveSession && liveSession.socketState ? liveSession.socketState() : { ready: -1, close: 0, reason: '' };
+      var detail = 'ready' + sock.ready + '.close' + (sock.close || 0);
+      if (sock.reason) detail += '.' + String(sock.reason).replace(/[^A-Za-z0-9_.:-]/g, '').slice(0, 24);
+      var key = filmDiag.key === 'yes' ? (err && err.keyStage === 'decode' ? 'bad' : 'yes') : (sock.close ? 'closed' : 'timeout');
+      filmTrace({ key: key, manifest: 'no', film: 'no', err: filmDiag.key === 'yes' ? errBit(err) : detail });
       showFilmDiag();
       if (mediaVault) mediaVault.close();
       mediaVault = null;

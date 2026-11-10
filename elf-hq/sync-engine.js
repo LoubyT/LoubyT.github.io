@@ -244,6 +244,10 @@
       mediaKey: function () {
         if (!server || typeof server.mediaKey !== 'function') return Promise.reject(new Error('not-configured'));
         return server.mediaKey();
+      },
+      socketState: function () {
+        if (server && server.socketState) return server.socketState();
+        return { ready: -1, close: 0, reason: '' };
       }
     };
   }
@@ -322,6 +326,7 @@
     var seq = 0;
     var listeners = [];
     var connecting = null;
+    var lastSocket = { ready: -1, close: 0, reason: '' };
     var api = {
       kind: 'elf-room',
       fail: false,
@@ -331,6 +336,10 @@
         try { if (ws) ws.close(); } catch (e) {}
         ws = null;
         helloOk = false;
+      },
+      socketState: function () {
+        if (ws) lastSocket.ready = ws.readyState;
+        return { ready: lastSocket.ready, close: lastSocket.close, reason: lastSocket.reason };
       }
     };
 
@@ -356,13 +365,19 @@
         ws = sock;
         sock.binaryType = 'arraybuffer';
         var timer = setTimeout(function () {
+          lastSocket.ready = sock.readyState;
           connecting = null;
           try { sock.close(); } catch (e) {}
           reject(new Error('timeout'));
-        }, 8000);
+        }, 12000);
         sock.onopen = function () {
+          lastSocket.ready = sock.readyState;
           try { sock.send(JSON.stringify({ type: 'hello', session: token })); }
           catch (err) { clearTimeout(timer); connecting = null; reject(err); }
+        };
+        sock.onerror = function () {
+          lastSocket.ready = sock.readyState;
+          if (!lastSocket.reason) lastSocket.reason = 'error';
         };
         sock.onmessage = function (ev) {
           readSocketData(ev.data, function (text) {
@@ -394,18 +409,24 @@
           }
           });
         };
-        sock.onerror = function () {};
-        sock.onclose = function () {
+        sock.onclose = function (ev) {
+          var code = ev && ev.code ? ev.code : 0;
+          var reason = String(ev && ev.reason || '').replace(/[^A-Za-z0-9_.:-]/g, '').slice(0, 24);
+          lastSocket.ready = 3;
+          lastSocket.close = code;
+          if (reason) lastSocket.reason = reason;
           helloOk = false;
           ws = null;
           clearTimeout(timer);
+          var closed = new Error(code ? 'close' + code : 'closed');
+          closed.closeCode = code;
           if (connecting) {
             var fail = connecting;
             connecting = null;
-            reject(new Error('closed'));
+            reject(closed);
             void fail;
           }
-          rejectPending(new Error('closed'));
+          rejectPending(closed);
         };
       }).then(function (value) { connecting = null; return value; }, function (err) { connecting = null; throw err; });
       return connecting;
