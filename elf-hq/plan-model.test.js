@@ -520,6 +520,27 @@ function finalized() {
     assert.strictEqual(ov.days['day-02'].fields.note.committed.split('Props: A private bell').length, 2);
   });
 
+  await test('seed notes become film notes and edited notes stay', function () {
+    const fx = finalized();
+    const ov = P.blankOverrides();
+    P.setField(ov, 'day-09', 'note', 'Our own candy note', 't1');
+    const first = P.migrateNoteSeeds(ov, fx.days, 't2');
+    assert.strictEqual(first.ok, true);
+    const changed = first.changes.filter(function (ch) { return ch.field === 'note'; }).map(function (ch) { return ch.id; });
+    assert.strictEqual(changed.indexOf('day-09'), -1);
+    assert.strictEqual(ov.days['day-09'].fields.note.committed, 'Our own candy note');
+    assert.strictEqual(ov.days['day-01'].fields.note.committed, 'Flour on the table. The donut takes the lap.');
+    assert.strictEqual(ov.days['day-10'].fields.note.committed, 'A tiny drive-in. Popcorn included.');
+    assert.strictEqual(changed.length, 24);
+    const again = P.migrateNoteSeeds(ov, fx.days, 't3');
+    assert.strictEqual(again.changes.length, 0);
+    const plain = P.blankOverrides();
+    const all = P.migrateNoteSeeds(plain, fx.days, 't4');
+    const days = all.changes.filter(function (ch) { return ch.field === 'note'; }).map(function (ch) { return ch.id; });
+    assert.strictEqual(days.length, 25);
+    assert.strictEqual(plain.days['day-09'].fields.note.committed, P.filmNoteValue('day-09'));
+  });
+
   await test('rehearsal copy has no prices and no display-date edits', function () {
     const fx = finalized();
     assert.strictEqual(P.hasPriceLanguage(demo.raw), false);

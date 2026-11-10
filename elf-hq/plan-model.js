@@ -1299,6 +1299,85 @@
     return { ok: true, changes: changes };
   }
 
+  var NOTE_SEED_REV = 1;
+  var FILM_NOTES = [
+    'Flour on the table. The donut takes the lap.',
+    'A moon and stars. One star sits a little high.',
+    'Green tape for the tree. The elf is the star.',
+    'A face on the cookie packet. Crumbs included.',
+    'An orange on the fridge, with a face.',
+    'One cast. One gummy.',
+    'The bow is the ladder. Seven gifts at the top.',
+    'Paper snowflakes, each one a little different.',
+    'Candy box raid. The pantry door was only a crack.',
+    'A tiny drive-in. Popcorn included.',
+    'Doctor play. The bandage is mostly for style.',
+    'Helping with the noodles. A stool is required.',
+    'Cotton clouds. One of them is showing off.',
+    'Gingerbread house. The roof is the dramatic part.',
+    'The sink gets a smile, and keeps it.',
+    'A new baby elf. Everyone else watches.',
+    'Pompom ball pit. Jump in, then jump in again.',
+    'A family of flowers. The smallest one talks.',
+    'Ice cream sundaes. Cherry last.',
+    'A ribbon swing. The landing is mostly graceful.',
+    'Candy canes hung in a row. Stripes lined up.',
+    'One burrito and a row of baby tacos. No sharing.',
+    'Two sleeps left, counted out loud.',
+    'Christmas Eve sprinkles. Morning can wait.',
+    'One last snowflake says goodbye.'
+  ];
+
+  function filmNoteSeed(dayId, fixtureDay) {
+    if (fixtureDay && fixtureDay.note != null) return String(fixtureDay.note);
+    return null;
+  }
+
+  function filmNoteValue(dayId) {
+    var match = /^day-(\d+)$/.exec(String(dayId || ''));
+    if (!match) return null;
+    return FILM_NOTES[Number(match[1]) - 1] || null;
+  }
+
+  function setNoteSeedRev(ov, dayId, rev) {
+    if (!ov || !dayId) return ov;
+    var bucket = ensureDay(ov, dayId);
+    var next = Number(rev) || 0;
+    if ((Number(bucket.noteSeedRev) || 0) >= next) return ov;
+    bucket.noteSeedRev = next;
+    return ov;
+  }
+
+  function migrateNoteSeeds(ov, fixtureDays, at) {
+    if (!ov) return { ok: false, changes: [] };
+    var byId = {};
+    (fixtureDays || []).forEach(function (day) { if (day && day.id) byId[day.id] = day; });
+    var changes = [];
+    for (var n = 1; n <= 25; n++) {
+      var id = 'day-' + (n < 10 ? '0' : '') + n;
+      var fix = byId[id] || {};
+      var bucket = ensureDay(ov, id);
+      var oldSeed = filmNoteSeed(id, fix);
+      var next = filmNoteValue(id);
+      if (oldSeed == null || !next) continue;
+      var slot = bucket.fields.note;
+      var stored = slot && slot.committed != null ? String(slot.committed) : null;
+      var current = stored != null ? stored : oldSeed;
+      if (current !== oldSeed) {
+        if ((Number(bucket.noteSeedRev) || 0) < NOTE_SEED_REV) {
+          bucket.noteSeedRev = NOTE_SEED_REV;
+          changes.push({ id: id, field: 'noteSeedRev', value: NOTE_SEED_REV });
+        }
+        continue;
+      }
+      setField(ov, id, 'note', next, at);
+      bucket.noteSeedRev = NOTE_SEED_REV;
+      changes.push({ id: id, field: 'note', value: next });
+      changes.push({ id: id, field: 'noteSeedRev', value: NOTE_SEED_REV });
+    }
+    return { ok: true, changes: changes };
+  }
+
   function loosePhotos(overrides, metas) {
     var referenced = {};
     var days = (overrides && overrides.days) || {};
@@ -1385,6 +1464,10 @@
     migrateNotesFold: migrateNotesFold,
     setNotesFoldRev: setNotesFoldRev,
     NOTES_FOLD_REV: NOTES_FOLD_REV,
+    migrateNoteSeeds: migrateNoteSeeds,
+    setNoteSeedRev: setNoteSeedRev,
+    filmNoteValue: filmNoteValue,
+    NOTE_SEED_REV: NOTE_SEED_REV,
     filmSeedValue: filmSeedValue,
     filmLineValue: filmLineValue,
     FILM_TITLES_REV: FILM_TITLES_REV,

@@ -971,6 +971,12 @@
       scheduleSave();
       return;
     }
+    var seeded = /^story\.(day-\d{2})\.noteSeedRev$/.exec(ch.path);
+    if (seeded) {
+      if (ElfPlan.setNoteSeedRev) ElfPlan.setNoteSeedRev(overrides, seeded[1], Number(ch.value) || 0);
+      scheduleSave();
+      return;
+    }
     if (ch.path === 'story.meta.filmTitlesRev') {
       var rev = Number(ch.value) || 0;
       if ((Number(overrides.meta.filmTitlesRev) || 0) < rev) {
@@ -990,6 +996,15 @@
       var newSeed = ElfPlan.filmLineValue(dayId, fieldName);
       if (next === oldSeed && local === newSeed) return;
       if (next === newSeed && local !== oldSeed && local !== newSeed && local !== '') return;
+    }
+    if (fieldName === 'note' && ElfPlan.filmNoteValue) {
+      var localNote = currentStoryField(dayId, 'note');
+      var oldNote = '';
+      var fixNote = fixture && fixture.days ? fixture.days.filter(function (day) { return day.id === dayId; })[0] : null;
+      if (fixNote && fixNote.note != null) oldNote = String(fixNote.note);
+      var newNote = ElfPlan.filmNoteValue(dayId);
+      if (next === oldNote && localNote === newNote) return;
+      if (newNote && next === newNote && localNote !== oldNote && localNote !== newNote && localNote !== '') return;
     }
     var focused = document.activeElement;
     var domField = fieldName === 'description' ? 'idea' : fieldName;
@@ -1022,6 +1037,19 @@
     result.changes.forEach(function (ch) {
       if (ch.field === 'note') pushLive('story.' + ch.id + '.note', ch.value);
       else if (ch.field === 'notesFoldRev') pushLive('story.' + ch.id + '.notesFoldRev', ch.value);
+    });
+    refresh();
+    maybeMigrateNoteSeeds();
+  }
+
+  function maybeMigrateNoteSeeds() {
+    if (!overrides || !fixture || !ElfPlan.migrateNoteSeeds) return;
+    var result = ElfPlan.migrateNoteSeeds(overrides, fixture.days, iso());
+    if (!result || !result.ok || !result.changes || !result.changes.length) return;
+    scheduleSave();
+    result.changes.forEach(function (ch) {
+      if (ch.field === 'note') pushLive('story.' + ch.id + '.note', ch.value);
+      else if (ch.field === 'noteSeedRev') pushLive('story.' + ch.id + '.noteSeedRev', ch.value);
     });
     refresh();
   }
