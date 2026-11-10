@@ -828,37 +828,43 @@
     var next = day.number < 25 ? view.days[day.number] : null;
     var photo = day.photo
       ? el('img', { class: 'photo-preview', alt: 'Inspiration picture for ' + ElfPlan.formatLong(day.displayDate, 'America/Chicago', true) + '. Unnamed.', 'data-photo': day.photo.id })
-      : el('p', { class: 'fine', text: 'No inspiration picture yet. A picture stays on this browser until private sync exists. It does not need a name.' });
+      : el('p', { class: 'fine', text: 'No picture yet.' });
+    var notes = field(day, 'note', 'Notes', day.note, true);
+    var notesBox = notes.querySelector('textarea');
+    if (notesBox) notesBox.classList.add('notes-grow');
     mount($('sheetBody'),
       mountFilm(day),
-      el('p', { text: ElfPlan.formatLong(day.displayDate, 'America/Chicago', true) }),
-      day.hint ? el('p', { class: 'guess', text: 'The note says ' + day.hint.mentioned.join(' and ') + '. This page stays on ' + day.hint.displayWeekday + '.' }) : null,
-      field(day, 'title', 'Chapter title, if you want one', day.title, false),
-      field(day, 'idea', 'What happens', day.description, true),
-      field(day, 'note', 'Your exact words', day.note, true),
-      el('p', { class: 'row' }, el('button', { type: 'button', class: 'btn ghost', 'data-act': 'copy-note', 'data-day': day.id, text: 'Copy the words' })),
-      field(day, 'arrival', 'Who arrives, if anyone', day.arrival, false),
-      field(day, 'setup', 'How the chapter is set', day.setup, true),
-      field(day, 'props', 'Props', day.props, true),
-      field(day, 'craft', 'Making note', day.craftNote, true),
-      el('label', { class: 'field' }, 'Prep date you choose', el('input', { type: 'date', 'data-act': 'prep-date', 'data-day': day.id, value: day.prep.source === 'date' ? day.prep.date : '' })),
-      el('label', { class: 'field' }, 'Or lead time, in days before this chapter', el('input', { type: 'number', min: '0', max: '30', 'data-act': 'lead', 'data-day': day.id, value: day.prep.source === 'lead' ? String(day.prep.leadDays) : '' })),
-      el('button', { type: 'button', class: 'btn ghost', 'data-act': 'clear-prep', 'data-day': day.id, text: 'Clear prep date' }),
-      el('p', { class: 'fine', text: 'Checking a step does not count as changing the chapter’s picture.' }),
-      checks(day, 'prep', 'Before the day'),
-      checks(day, 'completion', 'On the day'),
-      el('label', { class: 'check' }, el('input', { type: 'checkbox', 'data-act': 'done', 'data-day': day.id, checked: day.done ? 'checked' : null }), 'This chapter is told'),
-      el('h3', { text: 'Inspiration picture' }),
-      photo,
-      el('label', { class: 'field' }, 'Add a JPEG, PNG, or WebP', el('input', { type: 'file', accept: 'image/jpeg,image/png,image/webp', 'data-act': 'photo', 'data-day': day.id })),
-      day.photo ? el('button', { type: 'button', class: 'btn ghost', 'data-act': 'photo-remove', 'data-day': day.id, text: 'Take the picture off this chapter' }) : null,
+      el('p', { class: 'sheet-date', text: ElfPlan.formatLong(day.displayDate, 'America/Chicago', true) }),
+      field(day, 'title', 'Title', day.title, false),
+      notes,
+      el('section', { class: 'sheet-quiet' },
+        checks(day, 'prep', 'Before the day'),
+        checks(day, 'completion', 'On the day'),
+        el('label', { class: 'check' }, el('input', { type: 'checkbox', 'data-act': 'done', 'data-day': day.id, checked: day.done ? 'checked' : null }), 'This chapter is told'),
+        el('h3', { text: 'Picture' }),
+        photo,
+        el('label', { class: 'field' }, 'Add a picture', el('input', { type: 'file', accept: 'image/jpeg,image/png,image/webp', 'data-act': 'photo', 'data-day': day.id })),
+        day.photo ? el('button', { type: 'button', class: 'btn ghost', 'data-act': 'photo-remove', 'data-day': day.id, text: 'Take the picture off' }) : null
+      ),
       el('p', { class: 'row' },
         prev ? el('a', { class: 'btn ghost', href: '#chapter/' + prev.id, text: 'Previous chapter' }) : null,
         next ? el('a', { class: 'btn ghost', href: '#chapter/' + next.id, text: 'Next chapter' }) : null
       )
     );
     hydrate($('sheetBody'));
+    var grown = $('sheetBody') && $('sheetBody').querySelector('textarea.notes-grow');
+    if (grown) growNote(grown);
     paintConflicts();
+  }
+
+  function growNote(box) {
+    if (!box) return;
+    var max = Math.round(window.innerHeight * 0.5);
+    box.style.height = 'auto';
+    var next = box.scrollHeight;
+    if (next > max) next = max;
+    if (next < 152) next = 152;
+    box.style.height = next + 'px';
   }
 
   function hydrate(root) {
@@ -959,6 +965,12 @@
       if (parseHash().name === 'gifts') paint(true);
       return;
     }
+    var folded = /^story\.(day-\d{2})\.notesFoldRev$/.exec(ch.path);
+    if (folded) {
+      if (ElfPlan.setNotesFoldRev) ElfPlan.setNotesFoldRev(overrides, folded[1], Number(ch.value) || 0);
+      scheduleSave();
+      return;
+    }
     if (ch.path === 'story.meta.filmTitlesRev') {
       var rev = Number(ch.value) || 0;
       if ((Number(overrides.meta.filmTitlesRev) || 0) < rev) {
@@ -987,7 +999,10 @@
     refresh();
     if (sheetDay === dayId) {
       var box = document.getElementById(domField + '-' + dayId);
-      if (box && document.activeElement !== box) box.value = next;
+      if (box && document.activeElement !== box) {
+        box.value = next;
+        if (box.classList.contains('notes-grow')) growNote(box);
+      }
     }
   }
 
@@ -997,6 +1012,18 @@
     if (stored != null) return String(stored);
     var fix = fixture && fixture.days ? fixture.days.filter(function (day) { return day.id === dayId; })[0] : null;
     return fix && fix[field] != null ? String(fix[field]) : '';
+  }
+
+  function maybeMigrateNotes() {
+    if (!overrides || !fixture || !ElfPlan.migrateNotesFold) return;
+    var result = ElfPlan.migrateNotesFold(overrides, fixture.days, iso());
+    if (!result || !result.ok || !result.changes || !result.changes.length) return;
+    scheduleSave();
+    result.changes.forEach(function (ch) {
+      if (ch.field === 'note') pushLive('story.' + ch.id + '.note', ch.value);
+      else if (ch.field === 'notesFoldRev') pushLive('story.' + ch.id + '.notesFoldRev', ch.value);
+    });
+    refresh();
   }
 
   function maybeMigrateTitles() {
@@ -1453,10 +1480,12 @@
     var sync = function () {
       liveSession.start().then(function () {
         maybeMigrateTitles();
+        maybeMigrateNotes();
         paintSave();
         paint(true);
       }, function () {
         maybeMigrateTitles();
+        maybeMigrateNotes();
         paintSave();
         paint(true);
       });
@@ -1506,6 +1535,7 @@
       var sync = function () {
         liveSession.start().then(function () {
           maybeMigrateTitles();
+          maybeMigrateNotes();
           paintSave();
           if (parseHash().name === 'settings') paintDesk();
           announce(ElfLive.statusLabel(liveSession.view()));
@@ -1722,7 +1752,10 @@
     } else if (act === 'update') location.reload();
   });
 
-  document.addEventListener('input', function (event) { commitFrom(event.target); });
+  document.addEventListener('input', function (event) {
+    commitFrom(event.target);
+    if (event.target && event.target.classList && event.target.classList.contains('notes-grow')) growNote(event.target);
+  });
   document.addEventListener('focusout', function (event) { commitBlur(event.target); });
   document.addEventListener('change', function (event) {
     var target = event.target;
@@ -2097,7 +2130,10 @@
       var liveNow = liveParts();
       var sessionExp = 0;
       try { sessionExp = Number(sessionStorage.getItem('elf-hq-session-exp') || 0); } catch (e) {}
-      if (!liveNow.worker || !(sessionExp > Date.now())) maybeMigrateTitles();
+      if (!liveNow.worker || !(sessionExp > Date.now())) {
+        maybeMigrateTitles();
+        maybeMigrateNotes();
+      }
       if (scratch.failed) announce('This browser cannot keep the story after you leave. Export a backup if you need one.');
       $('boot').remove();
       paint(true);

@@ -208,7 +208,7 @@
       loadManifest: async function () {
         if (!key || !fetchImpl) throw new Error('not-configured');
         var cryptoKey = await importKey(key);
-        var res = await fetchImpl(base + 'manifest.enc.json?v=22', { cache: 'no-store' });
+        var res = await fetchImpl(base + 'manifest.enc.json?v=23', { cache: 'no-store' });
         if (!res.ok) throw new Error('manifest');
         var text = await res.text();
         var wrap = JSON.parse(text);

@@ -47,7 +47,7 @@ function seal(key, plain) {
   };
   const manifestBin = seal(key, Buffer.from(JSON.stringify(doc)));
   const manifest = JSON.stringify({ scheme: 'aes-256-gcm-iv12', data: manifestBin.toString('base64') });
-  const manifestUrl = 'manifest.enc.json?v=22';
+  const manifestUrl = 'manifest.enc.json?v=23';
   const files = { [manifestUrl]: manifest, [videoName]: videoBin, [posterName]: posterBin };
   let fetches = [];
   const vault = Vault.createVault({

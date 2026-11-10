@@ -1225,6 +1225,80 @@
     return { ok: true, changes: changes };
   }
 
+  var NOTES_FOLD_REV = 1;
+  var FOLD_SPECS = [
+    ['description', 'What happens'],
+    ['arrival', 'Who arrives'],
+    ['setup', 'How the chapter is set'],
+    ['props', 'Props'],
+    ['craftNote', 'Making note']
+  ];
+
+  function placeholderField(dayId, field, value, fixtureDay) {
+    var text = String(value == null ? '' : value).replace(/\s+/g, ' ').trim();
+    if (!text) return true;
+    var seed = fixtureDay && fixtureDay[field] != null ? String(fixtureDay[field]).replace(/\s+/g, ' ').trim() : '';
+    if (text === seed) return true;
+    if (field === 'description') {
+      var oldLine = filmSeedValue(dayId, 'description');
+      var newLine = filmLineValue(dayId, 'description');
+      if (oldLine && text === String(oldLine).replace(/\s+/g, ' ').trim()) return true;
+      if (newLine && text === String(newLine).replace(/\s+/g, ' ').trim()) return true;
+    }
+    return false;
+  }
+
+  function setNotesFoldRev(ov, dayId, rev) {
+    if (!ov || !dayId) return ov;
+    var bucket = ensureDay(ov, dayId);
+    var next = Number(rev) || 0;
+    if ((Number(bucket.notesFoldRev) || 0) >= next) return ov;
+    bucket.notesFoldRev = next;
+    return ov;
+  }
+
+  function migrateNotesFold(ov, fixtureDays, at) {
+    if (!ov) return { ok: false, changes: [] };
+    var byId = {};
+    (fixtureDays || []).forEach(function (day) { if (day && day.id) byId[day.id] = day; });
+    var changes = [];
+    for (var n = 1; n <= 25; n++) {
+      var id = 'day-' + (n < 10 ? '0' : '') + n;
+      var fix = byId[id] || {};
+      var bucket = ensureDay(ov, id);
+      if ((Number(bucket.notesFoldRev) || 0) >= NOTES_FOLD_REV) continue;
+      var lines = [];
+      FOLD_SPECS.forEach(function (spec) {
+        var field = spec[0];
+        var slot = bucket.fields[field];
+        if (!slot || slot.committed == null) return;
+        if (placeholderField(id, field, slot.committed, fix)) return;
+        lines.push(spec[1] + ': ' + String(slot.committed).replace(/\s+/g, ' ').trim());
+      });
+      if (bucket.prepDate && bucket.prepDate.value && String(bucket.prepDate.value).trim()) {
+        lines.push('Prep date: ' + String(bucket.prepDate.value).trim());
+      }
+      if (bucket.leadDays && bucket.leadDays.value != null && String(bucket.leadDays.value) !== '') {
+        lines.push('Lead time: ' + String(bucket.leadDays.value).trim() + ' days');
+      }
+      var noteSlot = bucket.fields.note;
+      var base = noteSlot && noteSlot.committed != null
+        ? String(noteSlot.committed)
+        : (fix.note == null ? '' : String(fix.note));
+      var have = base.split('\n');
+      var add = lines.filter(function (line) { return have.indexOf(line) < 0; });
+      if (add.length) {
+        var next = base.replace(/\s+$/, '');
+        next = next ? next + '\n' + add.join('\n') : add.join('\n');
+        setField(ov, id, 'note', next, at);
+        changes.push({ id: id, field: 'note', value: next });
+      }
+      bucket.notesFoldRev = NOTES_FOLD_REV;
+      changes.push({ id: id, field: 'notesFoldRev', value: NOTES_FOLD_REV });
+    }
+    return { ok: true, changes: changes };
+  }
+
   function loosePhotos(overrides, metas) {
     var referenced = {};
     var days = (overrides && overrides.days) || {};
@@ -1308,6 +1382,9 @@
     loosePhotos: loosePhotos,
     importSeed: importSeed,
     migrateFilmTitles: migrateFilmTitles,
+    migrateNotesFold: migrateNotesFold,
+    setNotesFoldRev: setNotesFoldRev,
+    NOTES_FOLD_REV: NOTES_FOLD_REV,
     filmSeedValue: filmSeedValue,
     filmLineValue: filmLineValue,
     FILM_TITLES_REV: FILM_TITLES_REV,

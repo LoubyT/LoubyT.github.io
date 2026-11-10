@@ -490,6 +490,36 @@ function finalized() {
     assert.strictEqual(next.days[0].displayDate, '2026-12-01');
   });
 
+  await test('notes fold keeps edits once and skips untouched seeds', function () {
+    const fx = finalized();
+    const ov = P.blankOverrides();
+    P.setField(ov, 'day-09', 'props', 'Two single mittens, spoons', 't0');
+    P.setField(ov, 'day-09', 'props', 'The red bowl', 't1');
+    P.setField(ov, 'day-09', 'description', P.filmLineValue('day-09', 'description'), 't1');
+    P.setField(ov, 'day-04', 'arrival', 'Dot', 't1');
+    P.setPrepDate(ov, 'day-09', '2026-12-08', 't1');
+    const first = P.migrateNotesFold(ov, fx.days, 't2');
+    assert.strictEqual(first.ok, true);
+    const note = ov.days['day-09'].fields.note.committed;
+    assert.ok(note.indexOf('Props: The red bowl') >= 0);
+    assert.ok(note.indexOf('Prep date: 2026-12-08') >= 0);
+    assert.strictEqual(note.indexOf('What happens:'), -1);
+    assert.strictEqual(note.indexOf('Two single mittens'), -1);
+    assert.strictEqual(ov.days['day-09'].fields.props.committed, 'The red bowl');
+    assert.strictEqual(ov.days['day-09'].prepDate.value, '2026-12-08');
+    var day4note = ov.days['day-04'].fields.note;
+    assert.ok(!day4note || String(day4note.committed).indexOf('Who arrives:') < 0);
+    const again = P.migrateNotesFold(ov, fx.days, 't3');
+    assert.strictEqual(again.changes.length, 0);
+    assert.strictEqual(ov.days['day-09'].fields.note.committed, note);
+    P.setNotesFoldRev(ov, 'day-02', 1);
+    P.setField(ov, 'day-02', 'props', 'A private bell', 't4');
+    ov.days['day-02'].notesFoldRev = 0;
+    ov.days['day-02'].fields.note = { value: 'Already\nProps: A private bell', committed: 'Already\nProps: A private bell', at: 't4' };
+    P.migrateNotesFold(ov, fx.days, 't5');
+    assert.strictEqual(ov.days['day-02'].fields.note.committed.split('Props: A private bell').length, 2);
+  });
+
   await test('rehearsal copy has no prices and no display-date edits', function () {
     const fx = finalized();
     assert.strictEqual(P.hasPriceLanguage(demo.raw), false);

@@ -294,6 +294,11 @@ input[type="text"], input[type="date"], input[type="number"], textarea, select {
   width: 100%; min-height: 44px; border-radius: 14px; border: 1px solid var(--line); background: #fff; padding: 8px 12px; font-size: 16px;
 }
 textarea { min-height: 88px; resize: vertical; }
+textarea.notes-grow { min-height: 9.5rem; line-height: 1.45; font-weight: 500; }
+.sheet-date { margin: 2px 0 10px; color: var(--soft); font-size: .92rem; }
+.sheet-quiet { margin-top: 8px; }
+.sheet-quiet h3 { margin-top: 14px; font-size: 1rem; }
+.sheet-quiet .field { margin-bottom: 8px; }
 
 .hero-tale {
   display: grid; grid-template-columns: minmax(150px, 230px) 1fr; gap: 16px;
