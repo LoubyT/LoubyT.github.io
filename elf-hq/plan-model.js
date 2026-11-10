@@ -1218,10 +1218,10 @@
 
   function migrateFilmTitles(ov, fixtureDays, at) {
     if (!ov || !ov.meta) return { ok: false, changes: [] };
-    if ((Number(ov.meta.filmTitlesRev) || 0) >= FILM_TITLES_REV) return { ok: true, changes: [], skipped: true };
     var byId = {};
     (fixtureDays || []).forEach(function (day) { if (day && day.id) byId[day.id] = day; });
     var changes = [];
+    var already = (Number(ov.meta.filmTitlesRev) || 0) >= FILM_TITLES_REV;
     FILM_LINES.forEach(function (row, index) {
       var id = 'day-' + (index < 9 ? '0' : '') + (index + 1);
       var fix = byId[id] || {};
@@ -1230,15 +1230,18 @@
         var field = spec[0];
         var oldVal = spec[1];
         var next = spec[2];
-        var stored = bucket.fields[field] && bucket.fields[field].committed != null ? String(bucket.fields[field].committed) : null;
+        var slot = bucket.fields[field];
+        var stored = slot && slot.committed != null ? String(slot.committed) : (slot && slot.value != null ? String(slot.value) : null);
         var current = stored != null ? stored : (fix[field] == null ? '' : String(fix[field]));
         if (current !== oldVal) return;
         setField(ov, id, field, next, at);
         changes.push({ id: id, field: field, value: next });
       });
     });
-    ov.meta.filmTitlesRev = FILM_TITLES_REV;
-    changes.push({ id: 'meta', field: 'filmTitlesRev', value: FILM_TITLES_REV });
+    if (!already) {
+      ov.meta.filmTitlesRev = FILM_TITLES_REV;
+      changes.push({ id: 'meta', field: 'filmTitlesRev', value: FILM_TITLES_REV });
+    }
     return { ok: true, changes: changes };
   }
 
@@ -1345,6 +1348,12 @@
     'One last snowflake says goodbye.'
   ];
 
+  function sameSeedText(current, seed) {
+    if (current == null || seed == null) return false;
+    if (String(current) === String(seed)) return true;
+    return String(current).replace(/\s+/g, ' ').trim() === String(seed).replace(/\s+/g, ' ').trim();
+  }
+
   function filmNoteSeed(dayId, fixtureDay) {
     if (fixtureDay && fixtureDay.note != null) return String(fixtureDay.note);
     return null;
@@ -1378,9 +1387,9 @@
       var next = filmNoteValue(id);
       if (oldSeed == null || !next) continue;
       var slot = bucket.fields.note;
-      var stored = slot && slot.committed != null ? String(slot.committed) : null;
+      var stored = slot && slot.committed != null ? String(slot.committed) : (slot && slot.value != null ? String(slot.value) : null);
       var current = stored != null ? stored : oldSeed;
-      if (current !== oldSeed) {
+      if (!sameSeedText(current, oldSeed)) {
         if ((Number(bucket.noteSeedRev) || 0) < NOTE_SEED_REV) {
           bucket.noteSeedRev = NOTE_SEED_REV;
           changes.push({ id: id, field: 'noteSeedRev', value: NOTE_SEED_REV });

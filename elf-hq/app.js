@@ -1099,6 +1099,37 @@
     if (slot) mount(slot, $('sheetLayer').hidden ? [] : list.map(conflictCard));
   }
 
+  function sameText(a, b) {
+    return String(a == null ? '' : a).replace(/\s+/g, ' ').trim() === String(b == null ? '' : b).replace(/\s+/g, ' ').trim();
+  }
+
+  function paintStaleField(dayId, fieldName) {
+    if (sheetDay !== dayId) return;
+    var domField = fieldName === 'description' ? 'idea' : fieldName;
+    var box = document.getElementById(domField + '-' + dayId);
+    var shown = currentStoryField(dayId, fieldName);
+    if (!box || document.activeElement === box || box.value === shown) return;
+    box.value = shown;
+    if (box.classList.contains('notes-grow')) growNote(box);
+  }
+
+  function absorbStaleSeed(dayId, fieldName, oldSeed, newSeed, incoming) {
+    if (!oldSeed || !newSeed || !sameText(incoming, oldSeed)) return false;
+    var local = currentStoryField(dayId, fieldName);
+    var path = 'story.' + dayId + '.' + fieldName;
+    if (!sameText(local, oldSeed) && !sameText(local, newSeed)) {
+      pushLive(path, local);
+      return true;
+    }
+    if (!sameText(local, newSeed)) {
+      ElfPlan.setField(overrides, dayId, fieldName, newSeed, iso());
+      scheduleSave();
+      refresh();
+    }
+    pushLive(path, newSeed);
+    return true;
+  }
+
   function applyLiveValue(ch) {
     if (!ch || !overrides || typeof ch.path !== 'string') return;
     if (ch.path.indexOf('gifts/') === 0) {
@@ -1154,20 +1185,26 @@
     var fieldName = story[2];
     var next = ch.deleted ? '' : String(ch.value == null ? '' : ch.value);
     if ((fieldName === 'title' || fieldName === 'description') && ElfPlan.filmSeedValue && ElfPlan.filmLineValue) {
-      var local = currentStoryField(dayId, fieldName);
       var oldSeed = ElfPlan.filmSeedValue(dayId, fieldName);
       var newSeed = ElfPlan.filmLineValue(dayId, fieldName);
-      if (next === oldSeed && local === newSeed) return;
-      if (next === newSeed && local !== oldSeed && local !== newSeed && local !== '') return;
+      if (absorbStaleSeed(dayId, fieldName, oldSeed, newSeed, next)) {
+        paintStaleField(dayId, fieldName);
+        return;
+      }
+      var local = currentStoryField(dayId, fieldName);
+      if (newSeed && next === newSeed && !sameText(local, oldSeed) && !sameText(local, newSeed)) return;
     }
     if (fieldName === 'note' && ElfPlan.filmNoteValue) {
-      var localNote = currentStoryField(dayId, 'note');
       var oldNote = '';
       var fixNote = fixture && fixture.days ? fixture.days.filter(function (day) { return day.id === dayId; })[0] : null;
       if (fixNote && fixNote.note != null) oldNote = String(fixNote.note);
       var newNote = ElfPlan.filmNoteValue(dayId);
-      if (next === oldNote && localNote === newNote) return;
-      if (newNote && next === newNote && localNote !== oldNote && localNote !== newNote && localNote !== '') return;
+      if (absorbStaleSeed(dayId, fieldName, oldNote, newNote, next)) {
+        paintStaleField(dayId, fieldName);
+        return;
+      }
+      var localNote = currentStoryField(dayId, 'note');
+      if (newNote && next === newNote && !sameText(localNote, oldNote) && !sameText(localNote, newNote)) return;
     }
     var focused = document.activeElement;
     var domField = fieldName === 'description' ? 'idea' : fieldName;
@@ -1193,15 +1230,17 @@
   }
 
   function maybeMigrateNotes() {
-    if (!overrides || !fixture || !ElfPlan.migrateNotesFold) return;
-    var result = ElfPlan.migrateNotesFold(overrides, fixture.days, iso());
-    if (!result || !result.ok || !result.changes || !result.changes.length) return;
-    scheduleSave();
-    result.changes.forEach(function (ch) {
-      if (ch.field === 'note') pushLive('story.' + ch.id + '.note', ch.value);
-      else if (ch.field === 'notesFoldRev') pushLive('story.' + ch.id + '.notesFoldRev', ch.value);
-    });
-    refresh();
+    if (overrides && fixture && ElfPlan.migrateNotesFold) {
+      var result = ElfPlan.migrateNotesFold(overrides, fixture.days, iso());
+      if (result && result.ok && result.changes && result.changes.length) {
+        scheduleSave();
+        result.changes.forEach(function (ch) {
+          if (ch.field === 'note') pushLive('story.' + ch.id + '.note', ch.value);
+          else if (ch.field === 'notesFoldRev') pushLive('story.' + ch.id + '.notesFoldRev', ch.value);
+        });
+        refresh();
+      }
+    }
     maybeMigrateNoteSeeds();
     maybeMigratePhotoSlots();
   }
