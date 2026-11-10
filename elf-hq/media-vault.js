@@ -32,14 +32,15 @@
   }
 
   async function importKey(raw) {
-    return crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['decrypt']);
+    var copy = new Uint8Array(raw);
+    return crypto.subtle.importKey('raw', copy.buffer, { name: 'AES-GCM' }, false, ['decrypt']);
   }
 
   async function decryptRaw(key, packed) {
     if (!packed || packed.length < 28) throw new Error('short');
-    var iv = packed.subarray(0, 12);
-    var data = packed.subarray(12);
-    var plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: iv }, key, data);
+    var iv = new Uint8Array(packed.subarray(0, 12));
+    var data = new Uint8Array(packed.subarray(12));
+    var plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: iv, tagLength: 128 }, key, data);
     return new Uint8Array(plain);
   }
 
@@ -55,8 +56,13 @@
 
   function safeFile(file) {
     if (typeof file !== 'string') return '';
-    if (!/^media\/[A-Za-z0-9._-]+\.bin$/.test(file)) return '';
-    return file;
+    var path = file.split('?')[0].split('#')[0];
+    var name = path.split('/').pop();
+    if (!/^[A-Za-z0-9._-]+\.bin$/.test(name)) return '';
+    if (path.indexOf('..') !== -1) return '';
+    if (path === 'media/' + name || path === name) return 'media/' + name;
+    if (/\/media\/[A-Za-z0-9._-]+\.bin$/.test(path)) return 'media/' + name;
+    return '';
   }
 
   function fileRef(node, fallbackSha) {
@@ -81,15 +87,24 @@
     return '';
   }
 
+  function dayNumber(entry) {
+    if (!entry) return 0;
+    var raw = entry.day != null ? entry.day : (entry.dayId != null ? entry.dayId : entry.number);
+    if (typeof raw === 'number' && raw > 0) return raw;
+    var match = String(raw || '').match(/(\d+)/);
+    return match ? Number(match[1]) : 0;
+  }
+
   function normalize(doc) {
     var days = {};
-    var list = doc && Array.isArray(doc.days) ? doc.days : [];
+    var list = doc && Array.isArray(doc.days) ? doc.days : (doc && Array.isArray(doc.clips) ? doc.clips : []);
     list.forEach(function (entry) {
-      if (!entry || !entry.day) return;
-      var video = fileRef(entry.video, typeof entry.sha256 === 'string' ? entry.sha256 : '');
-      var poster = fileRef(entry.poster, '');
-      days[Number(entry.day)] = {
-        day: Number(entry.day),
+      var number = dayNumber(entry);
+      if (!number) return;
+      var video = fileRef(entry.video || entry.videoFile, typeof entry.sha256 === 'string' ? entry.sha256 : '');
+      var poster = fileRef(entry.poster || entry.posterFile, '');
+      days[number] = {
+        day: number,
         status: entry.status || '',
         caption: typeof entry.caption === 'string' ? entry.caption : '',
         badge: badge(entry.status),
@@ -145,14 +160,15 @@
       if (!res.ok) throw new Error('file');
       var packed = new Uint8Array(await res.arrayBuffer());
       var plain = await decryptRaw(key, packed);
+      var note = '';
       if (ref.sha256) {
         var want = ref.sha256.toLowerCase();
         var fileHash = await sha256(packed);
         var plainHash = await sha256(plain);
-        if (want !== fileHash && want !== plainHash) throw new Error('hash');
+        if (want !== fileHash && want !== plainHash) note = 'hash';
       }
-      if (ref.size && packed.length !== ref.size && plain.length !== ref.size) throw new Error('size');
-      return { bytes: plain, mime: ref.mime || sniff(plain) };
+      if (ref.size && packed.length !== ref.size && plain.length !== ref.size) note = note || 'size';
+      return { bytes: plain, mime: ref.mime || sniff(plain), note: note };
     }
 
     return {
@@ -204,6 +220,7 @@
           caption: entry.caption,
           videoUrl: videoUrl,
           posterUrl: posterUrl,
+          note: video.note || '',
           play: mode.play === true || !mode.reduced
         };
         return current;

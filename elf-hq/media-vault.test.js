@@ -97,6 +97,35 @@ function seal(key, plain) {
   assert.strictEqual(shaped[6].video.mime, 'video/mp4');
   assert.strictEqual(shaped[14].video, null);
   assert.strictEqual(shaped[16].video, null);
+  const aliased = Vault.normalize({
+    days: [{ day: 'day-01', video: 'https://www.louby.net/elf-hq/media/day-01.v1.abc.bin' }]
+  });
+  assert.strictEqual(aliased[1].video.file, 'media/day-01.v1.abc.bin');
+
+  const loose = Vault.createVault({
+    base: '',
+    fetch: function (url) {
+      const body = files[url];
+      if (!body) return Promise.resolve({ ok: false, status: 404 });
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        text: async function () { return body.toString(); },
+        arrayBuffer: async function () { return body.buffer.slice(body.byteOffset, body.byteOffset + body.byteLength); }
+      });
+    }
+  });
+  const wrong = JSON.parse(JSON.stringify(doc));
+  wrong.days[0].video.sha256 = 'deadbeef';
+  wrong.days[0].video.size = 12;
+  const wrongManifest = JSON.stringify({ scheme: 'aes-256-gcm-iv12', data: seal(key, Buffer.from(JSON.stringify(wrong))).toString('base64') });
+  files['manifest.enc.json'] = wrongManifest;
+  loose.setKey(key);
+  await loose.loadManifest();
+  const played = await loose.openDay(1, { reduced: true });
+  assert.ok(played.videoUrl);
+  assert.strictEqual(played.note, 'hash');
+  loose.close();
   fs.rmSync(dir, { recursive: true, force: true });
   console.log('ok media vault');
 })().catch(function (err) {

@@ -296,6 +296,13 @@
     return 'wss://' + base + '/room';
   }
 
+  function readSocketData(data, cb) {
+    if (typeof data === 'string') { cb(data); return; }
+    if (data && typeof data.text === 'function') { data.text().then(cb, function () { cb(''); }); return; }
+    try { cb(new TextDecoder().decode(data)); }
+    catch (e) { cb(''); }
+  }
+
   function tainted(msg) {
     if (!msg || typeof msg !== 'object') return false;
     if (msg.kid || Object.prototype.hasOwnProperty.call(msg, 'key')) return true;
@@ -347,6 +354,7 @@
         try { sock = new WS(roomUrl(worker)); }
         catch (err) { connecting = null; reject(err); return; }
         ws = sock;
+        sock.binaryType = 'arraybuffer';
         var timer = setTimeout(function () {
           connecting = null;
           try { sock.close(); } catch (e) {}
@@ -357,8 +365,9 @@
           catch (err) { clearTimeout(timer); connecting = null; reject(err); }
         };
         sock.onmessage = function (ev) {
+          readSocketData(ev.data, function (text) {
           var msg;
-          try { msg = JSON.parse(typeof ev.data === 'string' ? ev.data : ''); }
+          try { msg = JSON.parse(text); }
           catch (e) { return; }
           if (tainted(msg)) {
             api.close();
@@ -383,6 +392,7 @@
             pending[msg.id].resolve(msg);
             delete pending[msg.id];
           }
+          });
         };
         sock.onerror = function () {};
         sock.onclose = function () {
@@ -407,9 +417,17 @@
         if (!ws || ws.readyState !== 1) return Promise.reject(new Error('offline'));
         var id = 'c' + (++seq);
         return new Promise(function (resolve, reject) {
-          pending[id] = { resolve: resolve, reject: reject };
+          var timer = setTimeout(function () {
+            if (!pending[id]) return;
+            delete pending[id];
+            reject(new Error('timeout'));
+          }, 8000);
+          pending[id] = {
+            resolve: function (msg) { clearTimeout(timer); resolve(msg); },
+            reject: function (err) { clearTimeout(timer); reject(err); }
+          };
           try { ws.send(JSON.stringify(Object.assign({ type: type, id: id }, extra || {}))); }
-          catch (err) { delete pending[id]; reject(err); }
+          catch (err) { clearTimeout(timer); delete pending[id]; reject(err); }
         });
       });
     }

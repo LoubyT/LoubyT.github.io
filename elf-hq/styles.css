@@ -415,6 +415,11 @@ textarea { min-height: 88px; resize: vertical; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
+#filmTrace:not([hidden]) {
+  position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 90;
+  margin: 0; padding: 10px 12px; border-radius: 12px; background: #fff; color: #1c1b19;
+}
+
 @media (forced-colors: active) {
   .book, .door, .card, .sheet, .btn, .nav a { border: 1px solid ButtonText; }
   .stage { display: none; }
