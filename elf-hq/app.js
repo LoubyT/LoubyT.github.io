@@ -184,6 +184,15 @@
     document.title = ElfPlan.appTitle(view.meta);
     var apple = document.querySelector('meta[name="apple-mobile-web-app-title"]');
     if (apple) apple.setAttribute('content', ElfPlan.appTitle(view.meta));
+    if (!document.getElementById('elfLockNow')) {
+      var lock = el('button', { type: 'button', class: 'sound', id: 'elfLockNow', text: 'Lock' });
+      lock.addEventListener('click', function () {
+        var done = window.ElfPin && ElfPin.forget ? ElfPin.forget() : Promise.resolve();
+        Promise.resolve(done).then(function () { location.reload(); });
+      });
+      var tools = document.querySelector('.tools');
+      if (tools) tools.appendChild(lock);
+    }
     var sound = $('soundBtn');
     var on = !!view.meta.soundEnabled;
     sound.setAttribute('aria-pressed', on ? 'true' : 'false');
