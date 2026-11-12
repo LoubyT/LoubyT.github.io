@@ -552,6 +552,11 @@ textarea.notes-grow { min-height: 9.5rem; line-height: 1.45; font-weight: 500; }
   min-height: 0;
   padding: 12px 0;
 }
+.film-host > .chapter-film:not([src]) {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
 .chapter-film {
   display: block;
   width: 100%;

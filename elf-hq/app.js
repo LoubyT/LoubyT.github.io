@@ -1574,48 +1574,79 @@
     if (node) node.hidden = false;
   }
 
+  function filmKeyDb(mode, fn) {
+    return new Promise(function (resolve, reject) {
+      var req;
+      try { req = indexedDB.open('elf-hq-open', 1); }
+      catch (err) { reject(err); return; }
+      req.onupgradeneeded = function () {
+        if (!req.result.objectStoreNames.contains('s')) req.result.createObjectStore('s');
+      };
+      req.onerror = function () { reject(req.error); };
+      req.onsuccess = function () {
+        var db = req.result;
+        try {
+          var tx = db.transaction('s', mode);
+          var out = fn(tx.objectStore('s'));
+          tx.oncomplete = function () { db.close(); resolve(out && out.result); };
+          tx.onerror = function () { db.close(); reject(tx.error); };
+        } catch (err) { db.close(); reject(err); }
+      };
+    });
+  }
+
+  function readFilmKey() {
+    return filmKeyDb('readonly', function (store) { return store.get('film-key'); }).then(function (saved) {
+      return typeof saved === 'string' && saved ? saved : '';
+    }, function () { return ''; });
+  }
+
+  function writeFilmKey(text) {
+    if (!text) return Promise.resolve();
+    return filmKeyDb('readwrite', function (store) { return store.put(text, 'film-key'); }).catch(function () {});
+  }
+
   function armMedia() {
     filmDiag = { session: sessionBit(), key: '?', manifest: '?', film: '?', err: '' };
-    if (!liveParts().worker || !window.ElfVault || !liveSession || typeof liveSession.mediaKey !== 'function') {
-      filmTrace({ key: 'no', manifest: 'no', film: 'no', err: 'nosession' });
+    if (!window.ElfVault) {
+      filmTrace({ key: 'no', manifest: 'no', film: 'no', err: 'novault' });
       showFilmDiag();
       return Promise.resolve();
     }
-    filmTrace({ key: 'wait', manifest: '?', film: '?', err: '' });
-    mediaVault = ElfVault.createVault({ base: mediaBase() });
-    var watchdog = setTimeout(function () {
-      if (filmDiag.key !== 'wait') return;
-      var sock = liveSession.socketState ? liveSession.socketState() : { ready: -1, close: 0, reason: '' };
-      var err = 'ready' + sock.ready + '.close' + (sock.close || 0);
-      if (sock.reason) err += '.' + String(sock.reason).replace(/[^A-Za-z0-9_.:-]/g, '').slice(0, 24);
-      filmTrace({ key: 'timeout', err: err });
-      showFilmDiag();
-    }, 10000);
-    return liveSession.mediaKey().then(function (text) {
-      clearTimeout(watchdog);
-      filmTrace({ key: 'yes', manifest: 'wait', film: '?', err: '' });
+    if (!mediaVault) mediaVault = ElfVault.createVault({ base: mediaBase() });
+    function useKey(text) {
       try { mediaVault.setKey(ElfVault.decodeKey(text)); }
       catch (err) {
         var decodeErr = err instanceof Error ? err : new Error('media-key');
         decodeErr.keyStage = 'decode';
         throw decodeErr;
       }
-      return mediaVault.loadManifest();
-    }).then(function () {
-      filmTrace({ key: 'yes', manifest: 'yes', film: '?', err: '' });
-      if (sheetDay) paintSheet();
-      else paint(true);
-    }, function (err) {
-      clearTimeout(watchdog);
-      var sock = liveSession && liveSession.socketState ? liveSession.socketState() : { ready: -1, close: 0, reason: '' };
-      var detail = 'ready' + sock.ready + '.close' + (sock.close || 0);
-      if (sock.reason) detail += '.' + String(sock.reason).replace(/[^A-Za-z0-9_.:-]/g, '').slice(0, 24);
-      var key = filmDiag.key === 'yes' ? (err && err.keyStage === 'decode' ? 'bad' : 'yes') : (sock.close ? 'closed' : 'timeout');
-      filmTrace({ key: key, manifest: 'no', film: 'no', err: filmDiag.key === 'yes' ? errBit(err) : detail });
-      showFilmDiag();
-      if (mediaVault) mediaVault.close();
-      mediaVault = null;
-    });
+      filmTrace({ key: 'yes', manifest: 'wait', film: '?', err: '' });
+      return mediaVault.loadManifest().then(function () {
+        filmTrace({ key: 'yes', manifest: 'yes', film: '?', err: '' });
+        if (sheetDay) paintSheet();
+        else paint(true);
+      });
+    }
+    return readFilmKey().then(function (cached) {
+      var fromCache = cached ? useKey(cached).then(function () { return true; }, function () { return false; }) : Promise.resolve(false);
+      return fromCache.then(function (hadCache) {
+        if (!liveSession || typeof liveSession.mediaKey !== 'function') {
+          if (!hadCache) filmTrace({ key: 'no', manifest: 'no', film: 'no', err: 'nosession' });
+          return;
+        }
+        return liveSession.mediaKey().then(function (text) {
+          return writeFilmKey(text).then(function () { return useKey(text); });
+        }, function (err) {
+          if (hadCache) return;
+          var sock = liveSession && liveSession.socketState ? liveSession.socketState() : { ready: -1, close: 0, reason: '' };
+          var detail = 'ready' + sock.ready + '.close' + (sock.close || 0);
+          if (sock.reason) detail += '.' + String(sock.reason).replace(/[^A-Za-z0-9_.:-]/g, '').slice(0, 24);
+          filmTrace({ key: sock.close ? 'closed' : 'timeout', manifest: 'no', film: 'no', err: errBit(err) || detail });
+          showFilmDiag();
+        });
+      });
+    }, function () { return Promise.resolve(); });
   }
 
   function blendFilm(host, video) {
@@ -1671,6 +1702,19 @@
     block.appendChild(wash);
     block.appendChild(capSlot);
     host.appendChild(posterCard(labelOf(day), false));
+    var shell = document.createElement('video');
+    shell.className = 'chapter-film';
+    shell.muted = true;
+    shell.defaultMuted = true;
+    shell.loop = true;
+    shell.playsInline = true;
+    shell.preload = 'none';
+    shell.setAttribute('playsinline', '');
+    shell.setAttribute('webkit-playsinline', '');
+    shell.setAttribute('muted', '');
+    shell.setAttribute('loop', '');
+    shell.setAttribute('data-film', 'day-' + (day.number < 10 ? '0' : '') + day.number);
+    host.appendChild(shell);
     if (!mediaVault || !mediaVault.ready()) return block;
     var entry = mediaVault.peek(day.number);
     if (!entry || !entry.video) {
@@ -1936,9 +1980,9 @@
       overrides.containsPrivate = true;
       scheduleSave();
     }
-    return Promise.all(outgoing.map(function (item) {
-      return pushLive('kids/' + item.id, item);
-    })).then(function () {
+    var batch = outgoing.map(function (item) { return { path: 'kids/' + item.id, value: item }; });
+    var send = liveSession.commitAll ? liveSession.commitAll(batch) : Promise.all(batch.map(function (item) { return pushLive(item.path, item.value); }));
+    return send.then(function () {
       var live = liveSession.view();
       if (live.conflicts && live.conflicts.length) return Promise.reject(new Error('conflict'));
       if (live.unsent || live.state === 'offline' || live.state === 'reconnecting') return Promise.reject(new Error('not-synced'));
@@ -2004,22 +2048,18 @@
     });
     if (liveSession.on) liveSession.on(function () { paintSave(); paintConflicts(); });
     if (liveSession.onRemote) liveSession.onRemote(applyLiveValue);
-    var sync = function () {
-      liveSession.start().then(function () {
-        maybeMigrateTitles();
-        maybeMigrateNotes();
-        paintSave();
-        paint(true);
-      }, function () {
-        maybeMigrateTitles();
-        maybeMigrateNotes();
-        paintSave();
-        paint(true);
-      });
-    };
-    var media = armMedia();
-    if (media && media.then) media.then(sync, sync);
-    else sync();
+    armMedia();
+    liveSession.start().then(function () {
+      maybeMigrateTitles();
+      maybeMigrateNotes();
+      paintSave();
+      paint(true);
+    }, function () {
+      maybeMigrateTitles();
+      maybeMigrateNotes();
+      paintSave();
+      paint(true);
+    });
   }
 
   function connectPhones() {
@@ -2059,21 +2099,17 @@
       });
       if (liveSession.on) liveSession.on(function () { paintSave(); paintConflicts(); });
       if (liveSession.onRemote) liveSession.onRemote(applyLiveValue);
-      var sync = function () {
-        liveSession.start().then(function () {
-          maybeMigrateTitles();
-          maybeMigrateNotes();
-          paintSave();
-          if (parseHash().name === 'settings') paintDesk();
-          announce(ElfLive.statusLabel(liveSession.view()));
-        }, function () {
-          paintSave();
-          announce('The phones did not connect.');
-        });
-      };
-      var media = armMedia();
-      if (media && media.then) media.then(sync, sync);
-      else sync();
+      armMedia();
+      liveSession.start().then(function () {
+        maybeMigrateTitles();
+        maybeMigrateNotes();
+        paintSave();
+        if (parseHash().name === 'settings') paintDesk();
+        announce(ElfLive.statusLabel(liveSession.view()));
+      }, function () {
+        paintSave();
+        announce('Offline, changes will sync later');
+      });
     }, function () { announce('The phones did not connect.'); });
   }
 
@@ -2764,13 +2800,8 @@
       if (!overrides.meta.welcomedAt) ElfPlan.setMeta(overrides, 'welcomedAt', iso());
       bootLive();
       refresh();
-      var liveNow = liveParts();
-      var sessionExp = 0;
-      try { sessionExp = Number(sessionStorage.getItem('elf-hq-session-exp') || 0); } catch (e) {}
-      if (!liveNow.worker || !(sessionExp > Date.now())) {
-        maybeMigrateTitles();
-        maybeMigrateNotes();
-      }
+      maybeMigrateTitles();
+      maybeMigrateNotes();
       if (scratch.failed) announce('This browser cannot keep the story after you leave. Export a backup if you need one.');
       $('boot').remove();
       paint(true);

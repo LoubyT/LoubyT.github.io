@@ -1,26 +1,26 @@
 /* Elf HQ shell only. Network first. Never caches notebooks or pictures.
  * Cache names start with elf-hq- so other apps on this origin keep theirs.
  */
-const VERSION = 'elf-hq-v29';
+const VERSION = 'elf-hq-v30';
 const ASSETS = [
   './',
   './index.html',
-  './styles.css?v=29',
-  './app.js?v=29',
-  './plan-model.js?v=29',
-  './demo-plan.js?v=29',
-  './media-manifest.js?v=29',
-  './media-fit.js?v=29',
-  './sync-engine.js?v=29',
-  './gifts.js?v=29',
-  './kids-list.js?v=29',
-  './media-vault.js?v=29',
-  './live-config.js?v=29',
-  './pin-screen.js?v=29',
-  './scene-art.js?v=29',
-  './sync-port.js?v=29',
-  './monitor-contract.js?v=29',
-  './scratchpad.js?v=29',
+  './styles.css?v=30',
+  './app.js?v=30',
+  './plan-model.js?v=30',
+  './demo-plan.js?v=30',
+  './media-manifest.js?v=30',
+  './media-fit.js?v=30',
+  './sync-engine.js?v=30',
+  './gifts.js?v=30',
+  './kids-list.js?v=30',
+  './media-vault.js?v=30',
+  './live-config.js?v=30',
+  './pin-screen.js?v=30',
+  './scene-art.js?v=30',
+  './sync-port.js?v=30',
+  './monitor-contract.js?v=30',
+  './scratchpad.js?v=30',
   './manifest.webmanifest',
   './icon.svg'
 ];

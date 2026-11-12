@@ -319,6 +319,22 @@
         fields[path] = { value: clone(value), rev: knownRev(path), deleted: false };
         return enqueue(path, value, false);
       },
+      commitAll: function (list) {
+        var changes = [];
+        (list || []).forEach(function (item) {
+          if (!item || typeof item.path !== 'string' || !item.path) return;
+          var base = knownRev(item.path);
+          delete drafts[item.path];
+          delete held[item.path];
+          fields[item.path] = { value: clone(item.value), rev: base, deleted: !!item.deleted };
+          changes.push({ path: item.path, value: clone(item.value), baseRev: base, deleted: !!item.deleted });
+        });
+        if (!changes.length) return Promise.resolve(view());
+        var op = { id: sessionId + '-' + (++seq) + '-batch', changes: changes };
+        queue.push(op);
+        if (!server) { status = 'disconnected'; emit(); return Promise.resolve(view()); }
+        return pump();
+      },
       remove: function (path) {
         delete drafts[path];
         fields[path] = { value: fields[path] ? fields[path].value : null, rev: knownRev(path), deleted: true };
@@ -516,7 +532,7 @@
           connecting = null;
           try { sock.close(); } catch (e) {}
           reject(new Error('timeout'));
-        }, 12000);
+        }, 5000);
         sock.onopen = function () {
           lastSocket.ready = sock.readyState;
           try { sock.send(JSON.stringify({ type: 'hello', session: token })); }
@@ -673,12 +689,15 @@
 
   function statusLabel(view) {
     view = view || {};
-    if (view.online === false) return 'Offline - changes saved';
+    if (view.online === false || view.state === 'offline') return 'Offline, changes will sync later';
     var down = Number(view.downFor) || 0;
     var dropped = view.connected && (view.state === 'offline' || view.state === 'reconnecting' || view.socketUp === false);
     if (dropped) {
       if (down >= 3000) return 'Reconnecting';
       if (view.deployed) return 'Synced';
+    }
+    if (view.state === 'reconnecting' && view.serverKind === 'elf-room' && !(view.connected && view.deployed)) {
+      return 'Offline, changes will sync later';
     }
     if (view.state === 'saving' && view.connected && view.deployed) return 'Saving';
     if (view.state === 'conflict' && view.connected && view.deployed) return 'Needs a look';

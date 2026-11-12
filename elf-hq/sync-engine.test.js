@@ -123,7 +123,8 @@ function waitFor(fn, ms) {
   assert.strictEqual(Live.statusLabel({ state: 'saved', deployed: true, connected: true }), 'Synced');
   assert.strictEqual(Live.statusLabel({ state: 'reconnecting', deployed: true, connected: true, downFor: 1000, socketUp: false }), 'Synced');
   assert.strictEqual(Live.statusLabel({ state: 'reconnecting', deployed: true, connected: true, downFor: 3000, socketUp: false }), 'Reconnecting');
-  assert.strictEqual(Live.statusLabel({ state: 'saved', deployed: true, connected: true, online: false }), 'Offline - changes saved');
+  assert.strictEqual(Live.statusLabel({ state: 'saved', deployed: true, connected: true, online: false }), 'Offline, changes will sync later');
+  assert.strictEqual(Live.statusLabel({ state: 'reconnecting', deployed: false, connected: false, serverKind: 'elf-room' }), 'Offline, changes will sync later');
 
   const http = Live.open({
     endpoint: 'https://relay.test',
@@ -160,6 +161,25 @@ function waitFor(fn, ms) {
   const first = await server.push(op);
   const second = await server.push(op);
   assert.strictEqual(JSON.stringify(first), JSON.stringify(second));
+
+  let batchPushes = 0;
+  const batchPush = server.push.bind(server);
+  server.push = function (op) {
+    batchPushes += 1;
+    assert.strictEqual(op.changes.length, 3);
+    return batchPush(op);
+  };
+  const batch = Live.createSession({ server: server, pollMs: 0 });
+  await batch.start();
+  await batch.commitAll([
+    { path: 'kids/a', value: { id: 'a' } },
+    { path: 'kids/b', value: { id: 'b' } },
+    { path: 'kids/c', value: { id: 'c' } }
+  ]);
+  assert.strictEqual(batchPushes, 1);
+  assert.strictEqual(batch.get('kids/b').id, 'b');
+  batch.stop();
+  server.push = batchPush;
 
   a.stop(); b.stop(); a2.stop(); b2.stop(); stale.stop();
 
