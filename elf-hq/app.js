@@ -1896,8 +1896,55 @@
   }
 
   function pushLive(path, value) {
-    if (!liveSession || !liveSession.view().connected) return;
-    liveSession.commit(path, value);
+    if (!liveSession || !liveSession.view().connected) return Promise.resolve();
+    return liveSession.commit(path, value);
+  }
+
+  function seedKidsCatalog(catalog) {
+    if (document.documentElement.classList.contains('needs-pin') || !overrides || !sessionStillValid()) {
+      return Promise.reject(new Error('locked'));
+    }
+    if (!liveSession || !liveSession.view().connected) return Promise.reject(new Error('not-synced'));
+    var raws = Array.isArray(catalog) ? catalog : (catalog && Array.isArray(catalog.items) ? catalog.items : null);
+    if (!raws) return Promise.reject(new Error('catalog'));
+    var seen = {};
+    var present = 0;
+    var toAdd = [];
+    var toPublish = [];
+    raws.forEach(function (raw) {
+      var item = ElfKids.normalize(raw);
+      if (!item || seen[item.id]) return;
+      seen[item.id] = true;
+      var local = ElfKids.get(kidsState(), item.id);
+      var remote = liveSession.get('kids/' + item.id);
+      if (local) {
+        present += 1;
+        if (remote == null) toPublish.push(local);
+        return;
+      }
+      if (remote != null) {
+        present += 1;
+        return;
+      }
+      toAdd.push(item);
+    });
+    var ensured = ElfKids.ensureAll(kidsState(), toAdd);
+    var outgoing = ensured.added.concat(toPublish);
+    if (!outgoing.length) return Promise.resolve({ added: 0, present: present });
+    if (ensured.added.length) {
+      overrides.kids = ensured.book;
+      overrides.containsPrivate = true;
+      scheduleSave();
+    }
+    return Promise.all(outgoing.map(function (item) {
+      return pushLive('kids/' + item.id, item);
+    })).then(function () {
+      var live = liveSession.view();
+      if (live.conflicts && live.conflicts.length) return Promise.reject(new Error('conflict'));
+      if (live.unsent || live.state === 'offline' || live.state === 'reconnecting') return Promise.reject(new Error('not-synced'));
+      paintKidsSoon();
+      return { added: ensured.added.length, present: present };
+    });
   }
 
   function deviceId() {
@@ -2737,6 +2784,7 @@
         setTimeout(function () { catchUp(); armMidnight(); }, wait);
       })();
       if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).catch(function () {});
+      window.elfSeedKids = seedKidsCatalog;
     }).catch(function () {
       $('boot').textContent = 'Elf HQ hit a snag while opening. Your notebook was not cleared. Reload the page.';
     });
