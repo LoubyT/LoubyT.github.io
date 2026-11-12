@@ -183,8 +183,21 @@
       },
       days: {},
       shopping: { patched: {}, added: [], removed: [] },
-      gifts: { patched: {}, added: [], removed: [] }
+      gifts: { patched: {}, added: [], removed: [] },
+      kids: { byId: {} }
     };
+  }
+
+  function copyKids(raw) {
+    var byId = {};
+    var src = raw && raw.byId && typeof raw.byId === 'object' ? raw.byId : {};
+    Object.keys(src).forEach(function (id) {
+      if (!/^[A-Za-z0-9_-]{1,48}$/.test(id)) return;
+      var item = src[id];
+      if (!item || typeof item !== 'object') return;
+      byId[id] = item;
+    });
+    return { byId: byId };
   }
 
   function normalizeOverrides(raw) {
@@ -223,7 +236,8 @@
         patched: raw.gifts && raw.gifts.patched && typeof raw.gifts.patched === 'object' ? raw.gifts.patched : {},
         added: raw.gifts && Array.isArray(raw.gifts.added) ? raw.gifts.added : [],
         removed: raw.gifts && Array.isArray(raw.gifts.removed) ? raw.gifts.removed : []
-      }
+      },
+      kids: copyKids(raw.kids)
     };
     return { overrides: overrides, mode: privateLocal ? 'private-local' : 'ok', canWrite: true };
   }

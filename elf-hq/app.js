@@ -18,6 +18,10 @@
   var giftFilter = 'all';
   var giftPerson = null;
   var giftOpen = {};
+  var giftMode = 'ideas';
+  var kidFilter = 'all';
+  var kidsRestoreArmed = false;
+  var kidsPaintTimer = 0;
   var liveSession = null;
   var mediaVault = null;
   var filmAsked = false;
@@ -78,7 +82,8 @@
     }
     toast.hidden = false;
     clearTimeout(announce.timer);
-    announce.timer = setTimeout(function () { toast.hidden = true; }, action ? 9000 : 5000);
+    var wait = action && action.ms ? action.ms : (action ? 9000 : 5000);
+    announce.timer = setTimeout(function () { toast.hidden = true; }, wait);
   }
 
   function pageScrolls() {
@@ -576,7 +581,234 @@
     return button;
   }
 
+  function kidsState() {
+    if (!overrides.kids || !overrides.kids.byId) overrides.kids = ElfKids.empty();
+    return overrides.kids;
+  }
+
+  function rememberKid(item) {
+    var saved = ElfKids.save(kidsState(), item);
+    if (!saved.ok) return null;
+    overrides.kids = saved.book;
+    overrides.containsPrivate = true;
+    scheduleSave();
+    pushLive('kids/' + saved.item.id, saved.item);
+    return saved.item;
+  }
+
+  function paintKidsSoon() {
+    if (parseHash().name !== 'gifts' || giftMode !== 'kids') return;
+    clearTimeout(kidsPaintTimer);
+    kidsPaintTimer = setTimeout(function () { paint(true); }, 40);
+  }
+
+  function applyKidValue(ch) {
+    var id = ch.path.slice('kids/'.length);
+    if (!ElfKids.validId(id)) return;
+    if (ch.deleted) {
+      var existing = ElfKids.get(kidsState(), id);
+      if (!existing) return;
+      if (existing.locked) {
+        pushLive('kids/' + id, existing);
+        return;
+      }
+      var gone = ElfKids.remove(kidsState(), id);
+      if (!gone.ok) return;
+      overrides.kids = gone.book;
+      overrides.containsPrivate = true;
+      scheduleSave();
+      paintKidsSoon();
+      return;
+    }
+    var stored = ElfKids.normalize(ch.value);
+    if (!stored || stored.id !== id) return;
+    if (stored.locked) stored.removed = false;
+    var remoteRemoved = !!(ch.value && ch.value.removed);
+    overrides.kids = ElfKids.save(kidsState(), stored).book;
+    overrides.containsPrivate = true;
+    scheduleSave();
+    if (stored.locked && remoteRemoved) pushLive('kids/' + id, ElfKids.get(overrides.kids, id));
+    paintKidsSoon();
+  }
+
+  function removeKid(id) {
+    var result = ElfKids.remove(kidsState(), id);
+    if (!result.ok) return;
+    overrides.kids = result.book;
+    overrides.containsPrivate = true;
+    scheduleSave();
+    pushLive('kids/' + id, result.item);
+    kidsRestoreArmed = false;
+    paint(true);
+    announce('Removed.', {
+      label: 'Undo',
+      ms: 6000,
+      run: function () { restoreKid(id); }
+    });
+  }
+
+  function restoreKid(id) {
+    var result = ElfKids.restore(kidsState(), id);
+    if (!result.ok) return;
+    rememberKid(result.item);
+    kidsRestoreArmed = false;
+    paint(true);
+  }
+
+  function restoreAllKids() {
+    var result = ElfKids.restoreAll(kidsState());
+    overrides.kids = result.book;
+    overrides.containsPrivate = true;
+    scheduleSave();
+    result.items.forEach(function (item) { pushLive('kids/' + item.id, item); });
+    kidsRestoreArmed = false;
+    paint(true);
+  }
+
+  function assignKid(id, person) {
+    var result = ElfKids.assign(kidsState(), id, person);
+    if (!result.ok || !result.changed) return;
+    overrides.kids = result.book;
+    overrides.containsPrivate = true;
+    scheduleSave();
+    pushLive('kids/' + id, result.item);
+    paint(true);
+  }
+
+  function kidPlaceholder() {
+    var box = el('span', { class: 'kid-ph', 'aria-hidden': 'true' });
+    box.insertAdjacentHTML('beforeend', '<svg viewBox="0 0 64 64"><rect x="8" y="24" width="48" height="32" rx="6" fill="#fff" stroke="#9c2744" stroke-width="3"/><path d="M8 32h48M32 24v32" stroke="#e3b15a" stroke-width="3"/><path d="M32 24c-8-12-20-8-16 0M32 24c8-12 20-8 16 0" fill="none" stroke="#9c2744" stroke-width="3" stroke-linecap="round"/></svg>');
+    return box;
+  }
+
+  function kidLock() {
+    var box = el('span', { class: 'kid-lock', title: 'This one stays', 'aria-label': 'This one stays' });
+    box.insertAdjacentHTML('beforeend', '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2" fill="currentColor"/><path d="M8 10V8a4 4 0 0 1 8 0v2" fill="none" stroke="currentColor" stroke-width="2"/></svg>');
+    return box;
+  }
+
+  function kidPhoto(item) {
+    if (!item.image) return kidPlaceholder();
+    var img = el('img', { class: 'kid-img', alt: '', loading: 'lazy', decoding: 'async', referrerpolicy: 'no-referrer', src: item.image });
+    img.addEventListener('error', function () {
+      if (!img.parentNode) return;
+      img.parentNode.replaceChild(kidPlaceholder(), img);
+    });
+    return img;
+  }
+
+  function kidCard(item, removed) {
+    var person = el('select', {
+      class: 'kid-person',
+      'data-act': 'kid-person',
+      'data-id': item.id,
+      'aria-label': 'Whose list'
+    }, ElfKids.PEOPLE.map(function (name) {
+      var opt = el('option', { value: name, text: name });
+      if (name === item.person) opt.selected = true;
+      return opt;
+    }));
+    var card = el('article', { class: removed ? 'kid-gone' : 'kid-card', 'data-kid': item.id },
+      removed ? el('div', { class: 'kid-main' },
+        kidPhoto(item),
+        el('div', { class: 'kid-copy' },
+          el('strong', { text: item.title }),
+          el('p', { class: 'kid-price', text: ElfKids.priceLabel(item) })
+        )
+      ) : el('a', {
+        class: 'kid-main',
+        href: item.url,
+        target: '_blank',
+        rel: 'noopener noreferrer'
+      },
+        kidPhoto(item),
+        el('div', { class: 'kid-copy' },
+          el('strong', { text: item.title }),
+          el('p', { class: 'kid-price', text: ElfKids.priceLabel(item) })
+        )
+      ),
+      el('div', { class: 'kid-tools' },
+        person,
+        removed
+          ? el('button', { type: 'button', class: 'btn ghost', 'data-act': 'kid-restore', 'data-id': item.id, text: 'Restore' })
+          : (item.locked
+            ? kidLock()
+            : el('button', { type: 'button', class: 'btn ghost', 'data-act': 'kid-remove', 'data-id': item.id, text: 'Remove' }))
+      )
+    );
+    return card;
+  }
+
+  function paintKids() {
+    var bar = document.querySelector('.topbar');
+    if (bar) document.documentElement.style.setProperty('--topbar-h', bar.offsetHeight + 'px');
+    var items = ElfKids.list(kidsState());
+    var sum = ElfKids.totals(items);
+    var active = items.filter(function (item) { return !item.removed && (kidFilter === 'all' || item.person === kidFilter); });
+    var gone = items.filter(function (item) { return item.removed; });
+    var budget = el('div', { class: 'kids-budget' + (sum.under ? ' is-under' : ' is-over') },
+      el('div', { class: 'kids-budget-top' },
+        el('p', { class: 'kids-total', text: ElfKids.money(sum.totalCents) + ' of ' + ElfKids.money(sum.budgetCents) }),
+        sum.under ? el('span', { class: 'kids-badge', text: 'Under budget' }) : null
+      ),
+      el('p', { class: 'kids-delta', text: (sum.under ? 'Under by ' : 'Over by ') + ElfKids.money(sum.deltaCents) }),
+      el('div', { class: 'kids-subs' }, ElfKids.PEOPLE.map(function (name) {
+        return el('div', {},
+          el('span', { class: 'when', text: name }),
+          el('strong', { text: ElfKids.money(sum.people[name]) })
+        );
+      })),
+      el('div', { class: 'filters', role: 'group', 'aria-label': 'Whose list' },
+        ['all'].concat(ElfKids.PEOPLE).map(function (name) {
+          var label = name === 'all' ? 'All' : name;
+          return el('button', {
+            type: 'button',
+            'data-act': 'kid-filter',
+            'data-filter': name,
+            'aria-pressed': kidFilter === name ? 'true' : 'false',
+            text: label
+          });
+        })
+      )
+    );
+    var groups = kidFilter === 'all' ? ElfKids.PEOPLE : [kidFilter];
+    mount($('page'),
+      el('h2', { text: 'Gifts' }),
+      giftModeSwitch(),
+      budget,
+      groups.map(function (name) {
+        var rows = active.filter(function (item) { return item.person === name; });
+        if (!rows.length) return null;
+        return el('section', { class: 'kids-group' },
+          kidFilter === 'all' ? el('h3', { text: name }) : null,
+          el('div', { class: 'kids-grid' }, rows.map(function (item) { return kidCard(item, false); }))
+        );
+      }),
+      active.length ? null : el('p', { class: 'when', text: items.length ? 'Nothing in this filter.' : 'The kids list is empty on this phone.' }),
+      gone.length ? el('section', { class: 'kids-removed' },
+        el('h3', { text: 'Removed (' + gone.length + ')' }),
+        el('div', { class: 'kids-grid' }, gone.map(function (item) { return kidCard(item, true); })),
+        el('p', { class: 'row' },
+          kidsRestoreArmed
+            ? [
+              el('button', { type: 'button', class: 'btn', 'data-act': 'kid-restore-all', text: 'Yes, restore all' }),
+              el('button', { type: 'button', class: 'btn ghost', 'data-act': 'kid-restore-cancel', text: 'Cancel' })
+            ]
+            : el('button', { type: 'button', class: 'btn ghost', 'data-act': 'kid-restore-all', text: 'Restore all' })
+        )
+      ) : null
+    );
+  }
+
+  function giftModeSwitch() {
+    return el('div', { class: 'filters gift-modes', role: 'group', 'aria-label': 'Gift lists' },
+      el('button', { type: 'button', 'data-act': 'gift-mode', 'data-mode': 'ideas', 'aria-pressed': giftMode === 'ideas' ? 'true' : 'false', text: 'Ideas' }),
+      el('button', { type: 'button', 'data-act': 'gift-mode', 'data-mode': 'kids', 'aria-pressed': giftMode === 'kids' ? 'true' : 'false', text: 'Kids list' })
+    );
+  }
+
   function paintGifts() {
+    if (giftMode === 'kids') { paintKids(); return; }
     var gifts = allGifts();
     var people = fixture.recipients || [];
     var picked = chosenPerson(people);
@@ -586,6 +818,7 @@
     var shownPeople = picked === 'all' ? people : people.filter(function (person) { return person.id === picked; });
     mount($('page'),
       el('h2', { text: 'Gifts' }),
+      giftModeSwitch(),
       el('div', { class: 'gift-bar' },
         el('div', { class: 'person-picks', role: 'group', 'aria-label': 'Whose gifts' },
           [personChip('all', 'All', ElfGifts.remainingCount(gifts), picked === 'all')].concat(people.map(function (person) {
@@ -1132,6 +1365,10 @@
 
   function applyLiveValue(ch) {
     if (!ch || !overrides || typeof ch.path !== 'string') return;
+    if (ch.path.indexOf('kids/') === 0) {
+      applyKidValue(ch);
+      return;
+    }
     if (ch.path.indexOf('gifts/') === 0) {
       var id = ch.path.slice('gifts/'.length);
       if (ch.deleted || (ch.value && ch.value.deleted)) overrides.gifts = ElfGifts.deleteGift(overrides.gifts, id);
@@ -1960,6 +2197,23 @@
     else if (act === 'feature-play') askForFeature();
     else if (act === 'bonus-play') playBonus(button);
     else if (act === 'bonus-close') closeBonus();
+    else if (act === 'gift-mode') {
+      giftMode = button.dataset.mode === 'kids' ? 'kids' : 'ideas';
+      kidsRestoreArmed = false;
+      paint(true);
+    }
+    else if (act === 'kid-filter') {
+      var nextFilter = button.dataset.filter || 'all';
+      kidFilter = nextFilter === 'all' || ElfKids.PEOPLE.indexOf(nextFilter) >= 0 ? nextFilter : 'all';
+      paint(true);
+    }
+    else if (act === 'kid-remove') removeKid(button.dataset.id);
+    else if (act === 'kid-restore') restoreKid(button.dataset.id);
+    else if (act === 'kid-restore-cancel') { kidsRestoreArmed = false; paint(true); }
+    else if (act === 'kid-restore-all') {
+      if (!kidsRestoreArmed) { kidsRestoreArmed = true; paint(true); }
+      else restoreAllKids();
+    }
     else if (act === 'gift-filter') { giftFilter = button.dataset.filter || 'all'; paint(true); }
     else if (act === 'gift-person') {
       giftPerson = ElfGifts.keepPerson(button.dataset.id, (fixture && fixture.recipients) || []);
@@ -2091,6 +2345,10 @@
   document.addEventListener('focusout', function (event) { commitBlur(event.target); });
   document.addEventListener('change', function (event) {
     var target = event.target;
+    if (target.dataset && target.dataset.act === 'kid-person') {
+      assignKid(target.dataset.id, target.value);
+      return;
+    }
     if (target.id === 'peek') {
       ElfPlan.setMeta(overrides, 'peekDayId', target.value || null);
       scheduleSave();
