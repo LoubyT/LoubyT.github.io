@@ -184,8 +184,24 @@
       days: {},
       shopping: { patched: {}, added: [], removed: [] },
       gifts: { patched: {}, added: [], removed: [] },
-      kids: { byId: {} }
+      kids: { byId: {} },
+      people: { byId: {} }
     };
+  }
+
+  function copyPeople(raw) {
+    var byId = {};
+    var src = raw && raw.byId && typeof raw.byId === 'object' ? raw.byId : {};
+    Object.keys(src).forEach(function (id) {
+      if (!/^[A-Za-z0-9_-]{1,48}$/.test(id) || /^sample-/.test(id)) return;
+      var person = src[id];
+      if (!person || typeof person !== 'object' || person.deleted) return;
+      var name = String(person.name || '').replace(/\s+/g, ' ').trim().slice(0, 40);
+      var label = String(person.label || '').replace(/\s+/g, ' ').trim().slice(0, 24);
+      if (!name && !label) return;
+      byId[id] = { id: id, name: name, label: label };
+    });
+    return { byId: byId };
   }
 
   function copyKids(raw) {
@@ -237,7 +253,8 @@
         added: raw.gifts && Array.isArray(raw.gifts.added) ? raw.gifts.added : [],
         removed: raw.gifts && Array.isArray(raw.gifts.removed) ? raw.gifts.removed : []
       },
-      kids: copyKids(raw.kids)
+      kids: copyKids(raw.kids),
+      people: copyPeople(raw.people)
     };
     return { overrides: overrides, mode: privateLocal ? 'private-local' : 'ok', canWrite: true };
   }

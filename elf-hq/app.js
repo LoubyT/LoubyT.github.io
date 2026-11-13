@@ -18,7 +18,8 @@
   var giftFilter = 'all';
   var giftPerson = null;
   var giftOpen = {};
-  var giftMode = 'ideas';
+  var giftMode = 'kids';
+  var giftModeReady = false;
   var kidFilter = 'all';
   var kidsRestoreArmed = false;
   var kidsPaintTimer = 0;
@@ -494,7 +495,7 @@
     if (gift.status === 'purchased') {
       return gift.spentConfirmed && gift.spentCents != null ? 'Bought ' + money(gift.spentCents) : 'Bought';
     }
-    if (gift.offer && gift.offer.stale && gift.offer.amountCents) return money(gift.offer.amountCents) + ', may be old';
+    if (gift.offer && gift.offer.stale && gift.offer.amountCents) return money(gift.offer.amountCents);
     if (gift.offer && gift.offer.amountCents) return money(gift.offer.amountCents);
     return 'Choose the exact item';
   }
@@ -800,27 +801,100 @@
     );
   }
 
+  function currentGiftMode() {
+    if (!giftModeReady) {
+      giftModeReady = true;
+      var saved = '';
+      try { saved = localStorage.getItem('elf-hq-gift-mode') || ''; } catch (e) {}
+      giftMode = saved === 'ideas' ? 'ideas' : 'kids';
+    }
+    return giftMode;
+  }
+
   function giftModeSwitch() {
+    var mode = currentGiftMode();
     return el('div', { class: 'filters gift-modes', role: 'group', 'aria-label': 'Gift lists' },
-      el('button', { type: 'button', 'data-act': 'gift-mode', 'data-mode': 'ideas', 'aria-pressed': giftMode === 'ideas' ? 'true' : 'false', text: 'Ideas' }),
-      el('button', { type: 'button', 'data-act': 'gift-mode', 'data-mode': 'kids', 'aria-pressed': giftMode === 'kids' ? 'true' : 'false', text: 'Kids list' })
+      el('button', { type: 'button', 'data-act': 'gift-mode', 'data-mode': 'ideas', 'aria-pressed': mode === 'ideas' ? 'true' : 'false', text: 'Ideas' }),
+      el('button', { type: 'button', 'data-act': 'gift-mode', 'data-mode': 'kids', 'aria-pressed': mode === 'kids' ? 'true' : 'false', text: 'Kids list' })
     );
   }
 
+  function sampleId(id) {
+    return /^sample-/.test(String(id || ''));
+  }
+
+  function ideaGifts() {
+    var patched = overrides && overrides.gifts && overrides.gifts.patched;
+    return allGifts().filter(function (gift) {
+      if (!gift || sampleId(gift.recipientId) && sampleId(gift.id) && !(patched && patched[gift.id])) return false;
+      return true;
+    });
+  }
+
+  function ideaPeople(gifts) {
+    var stored = overrides && overrides.people && overrides.people.byId ? overrides.people.byId : {};
+    var byId = {};
+    Object.keys(stored).forEach(function (id) {
+      var person = stored[id];
+      if (!person || person.deleted) return;
+      var name = String(person.label || person.name || '').replace(/\s+/g, ' ').trim();
+      if (!name || sampleId(id)) return;
+      byId[id] = { id: id, name: name };
+    });
+    (gifts || []).forEach(function (gift) {
+      if (!gift.recipientId || byId[gift.recipientId]) return;
+      if (sampleId(gift.recipientId) && sampleId(gift.id)) return;
+      var known = (fixture.recipients || []).filter(function (person) { return person.id === gift.recipientId; })[0];
+      var name = String(gift.recipientName || (known && !sampleId(known.id) ? known.name : '') || '').trim();
+      if (!name) name = 'Someone';
+      byId[gift.recipientId] = { id: gift.recipientId, name: name };
+    });
+    return Object.keys(byId).map(function (id) { return byId[id]; }).sort(function (a, b) {
+      return a.name < b.name ? -1 : a.name > b.name ? 1 : 0;
+    });
+  }
+
+  function ideaCents(totals, kind) {
+    var bought = totals && totals.spentCents || 0;
+    var left = (totals && totals.remainingCents || 0) + (totals && totals.staleCents || 0);
+    if (kind === 'bought') return ElfGifts.boughtDisplay(totals);
+    if (kind === 'remaining') {
+      if (!left && totals && totals.unknownPriceCount && !totals.staleCount) return '$0.00';
+      return ElfGifts.moneyLabel(left);
+    }
+    return ElfGifts.moneyLabel(bought + left);
+  }
+
+  function ideaCaption(totals) {
+    if (!totals) return '';
+    var bits = [];
+    if (totals.staleCount) bits.push('Prices may be out of date');
+    if (totals.unknownPriceCount === 1) bits.push('1 item has no price');
+    else if (totals.unknownPriceCount) bits.push(totals.unknownPriceCount + ' items have no price');
+    return bits.join(' · ');
+  }
+
   function paintGifts() {
-    if (giftMode === 'kids') { paintKids(); return; }
-    var gifts = allGifts();
-    var people = fixture.recipients || [];
+    if (currentGiftMode() === 'kids') { paintKids(); return; }
+    var gifts = ideaGifts();
+    var people = ideaPeople(gifts);
     var picked = chosenPerson(people);
     var scoped = ElfGifts.giftsForPerson(gifts, picked);
     var whole = ElfGifts.totals(scoped);
-    var who = picked === 'all' ? 'Everyone' : (people.filter(function (person) { return person.id === picked; })[0] || {}).name || 'Everyone';
     var shownPeople = picked === 'all' ? people : people.filter(function (person) { return person.id === picked; });
+    var caption = ideaCaption(whole);
     mount($('page'),
       el('h2', { text: 'Gifts' }),
       giftModeSwitch(),
-      el('div', { class: 'gift-bar' },
-        el('div', { class: 'person-picks', role: 'group', 'aria-label': 'Whose gifts' },
+      el('div', { class: 'idea-board' },
+        el('p', { class: 'kids-total', text: 'Total ' + ideaCents(whole, 'total') }),
+        el('div', { class: 'kids-subs' },
+          el('div', {}, el('span', { class: 'when', text: 'Bought' }), el('strong', { text: ideaCents(whole, 'bought') })),
+          el('div', {}, el('span', { class: 'when', text: 'Remaining' }), el('strong', { text: ideaCents(whole, 'remaining') })),
+          el('div', {}, el('span', { class: 'when', text: 'Total' }), el('strong', { text: ideaCents(whole, 'total') }))
+        ),
+        caption ? el('p', { class: 'idea-note', text: caption }) : null,
+        el('div', { class: 'idea-people', role: 'group', 'aria-label': 'Whose gifts' },
           [personChip('all', 'All', ElfGifts.remainingCount(gifts), picked === 'all')].concat(people.map(function (person) {
             var mine = ElfGifts.giftsForPerson(gifts, person.id);
             return personChip(person.id, person.name, ElfGifts.remainingCount(mine), picked === person.id);
@@ -833,42 +907,16 @@
           })
         )
       ),
-      el('p', { class: 'totals-who', text: who }),
-      el('div', { class: 'gift-totals' },
-        el('div', {}, el('div', { class: 'when', text: 'Bought' }), el('strong', { text: ElfGifts.boughtDisplay(whole) })),
-        el('div', {}, el('div', { class: 'when', text: 'Remaining' }), el('strong', { text: ElfGifts.remainingDisplay(whole).text })),
-        el('div', {}, el('div', { class: 'when', text: 'Total' }), el('strong', { text: ElfGifts.totalDisplay(whole).text }))
-      ),
-      ElfGifts.remainingDisplay(whole).note ? el('p', { class: 'when', text: ElfGifts.remainingDisplay(whole).note }) : null,
-      whole.unknownPriceCount ? el('p', { class: 'when', text: whole.unknownPriceCount + (whole.unknownPriceCount === 1 ? ' with no price.' : ' with no price.') }) : null,
-      shownPeople.map(function (person) {
+      shownPeople.length ? shownPeople.map(function (person) {
         var mine = gifts.filter(function (gift) { return gift.recipientId === person.id; });
         var visible = mine.filter(function (gift) { return ElfGifts.passesFilter(gift, giftFilter); });
-        var sub = ElfGifts.totals(mine);
-        var boughtN = mine.filter(function (gift) { return gift.status === 'purchased'; }).length;
-        var open = giftOpen[person.id] !== false;
-        return el('section', { class: 'person' + (open ? ' is-open' : '') },
-          el('button', { type: 'button', class: 'person-head', 'data-act': 'gift-toggle', 'data-id': person.id, 'aria-expanded': open ? 'true' : 'false' },
-            ring(boughtN, mine.length),
-            el('span', {},
-              el('strong', { text: person.name }),
-              el('span', { class: 'when', text: 'Bought ' + ElfGifts.boughtDisplay(sub) + ' \u00b7 Remaining ' + ElfGifts.remainingDisplay(sub).text + (ElfGifts.remainingDisplay(sub).note ? ' (' + ElfGifts.remainingDisplay(sub).note + ')' : '') + ' \u00b7 Total ' + ElfGifts.totalDisplay(sub).text })
-            )
-          ),
-          open ? el('div', { class: 'person-body' },
-            visible.map(giftCard),
-            visible.length ? null : el('p', { class: 'when', text: 'Nothing in this filter.' }),
-            el('button', { type: 'button', class: 'btn', 'data-act': 'gift-add', 'data-id': person.id, text: 'Add gift' })
-          ) : null
+        return el('section', { class: 'kids-group' },
+          el('h3', { text: person.name }),
+          visible.length ? el('div', { class: 'kids-grid' }, visible.map(giftCard)) : el('p', { class: 'when', text: mine.length ? 'Nothing in this filter.' : 'No ideas yet.' }),
+          el('button', { type: 'button', class: 'btn', 'data-act': 'gift-add', 'data-id': person.id, text: 'Add gift' })
         );
-      })
+      }) : el('p', { class: 'lede', text: 'Ideas you add for each person show up here.' })
     );
-    var selected = document.querySelector('.person-pick[aria-pressed="true"]');
-    var row = selected && selected.parentNode;
-    if (row && selected) {
-      var left = selected.offsetLeft - Math.max(0, (row.clientWidth - selected.offsetWidth) / 2);
-      row.scrollLeft = Math.max(0, left);
-    }
   }
 
   function openGiftSheet(personId, gift) {
@@ -1365,6 +1413,16 @@
 
   function applyLiveValue(ch) {
     if (!ch || !overrides || typeof ch.path !== 'string') return;
+    if (ch.path.indexOf('people/') === 0) {
+      var personId = ch.path.slice('people/'.length);
+      if (!overrides.people || !overrides.people.byId) overrides.people = { byId: {} };
+      if (ch.deleted || (ch.value && ch.value.deleted)) delete overrides.people.byId[personId];
+      else if (ch.value && typeof ch.value === 'object') overrides.people.byId[personId] = ch.value;
+      overrides.containsPrivate = true;
+      scheduleSave();
+      if (parseHash().name === 'gifts' && currentGiftMode() === 'ideas') paint(true);
+      return;
+    }
     if (ch.path.indexOf('kids/') === 0) {
       applyKidValue(ch);
       return;
@@ -2281,7 +2339,9 @@
     else if (act === 'bonus-play') playBonus(button);
     else if (act === 'bonus-close') closeBonus();
     else if (act === 'gift-mode') {
-      giftMode = button.dataset.mode === 'kids' ? 'kids' : 'ideas';
+      giftModeReady = true;
+      giftMode = button.dataset.mode === 'ideas' ? 'ideas' : 'kids';
+      try { localStorage.setItem('elf-hq-gift-mode', giftMode); } catch (e) {}
       kidsRestoreArmed = false;
       paint(true);
     }
@@ -2299,7 +2359,7 @@
     }
     else if (act === 'gift-filter') { giftFilter = button.dataset.filter || 'all'; paint(true); }
     else if (act === 'gift-person') {
-      giftPerson = ElfGifts.keepPerson(button.dataset.id, (fixture && fixture.recipients) || []);
+      giftPerson = ElfGifts.keepPerson(button.dataset.id, ideaPeople(ideaGifts()));
       try { localStorage.setItem('elf-hq-gift-person', giftPerson); } catch (e) {}
       paint(true);
     }
@@ -2710,6 +2770,11 @@
     if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 8) followGesture(chapterSwipe, dx);
   });
   document.addEventListener('pointerup', function (event) {
+    var tabLink = event.target.closest && event.target.closest('#nav a[data-tab]');
+    if (tabLink) {
+      var href = tabLink.getAttribute('href');
+      if (href && href.charAt(0) === '#' && location.hash !== href) location.hash = href;
+    }
     if (swipe) {
       var dx = event.clientX - swipe.x;
       var dy = Math.abs(event.clientY - swipe.y);
