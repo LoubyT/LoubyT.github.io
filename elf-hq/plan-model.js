@@ -185,7 +185,8 @@
       shopping: { patched: {}, added: [], removed: [] },
       gifts: { patched: {}, added: [], removed: [] },
       kids: { byId: {} },
-      people: { byId: {} }
+      people: { byId: {} },
+      buying: { byId: {} }
     };
   }
 
@@ -200,6 +201,18 @@
       var label = String(person.label || '').replace(/\s+/g, ' ').trim().slice(0, 24);
       if (!name && !label) return;
       byId[id] = { id: id, name: name, label: label };
+    });
+    return { byId: byId };
+  }
+
+  function copyBuying(raw) {
+    var byId = {};
+    var src = raw && raw.byId && typeof raw.byId === 'object' ? raw.byId : {};
+    Object.keys(src).forEach(function (id) {
+      if (!/^buy-[A-Za-z0-9_-]{4,40}$/.test(id)) return;
+      var item = src[id];
+      if (!item || typeof item !== 'object') return;
+      byId[id] = item;
     });
     return { byId: byId };
   }
@@ -254,7 +267,8 @@
         removed: raw.gifts && Array.isArray(raw.gifts.removed) ? raw.gifts.removed : []
       },
       kids: copyKids(raw.kids),
-      people: copyPeople(raw.people)
+      people: copyPeople(raw.people),
+      buying: copyBuying(raw.buying)
     };
     return { overrides: overrides, mode: privateLocal ? 'private-local' : 'ok', canWrite: true };
   }

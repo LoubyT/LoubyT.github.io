@@ -163,6 +163,31 @@ a, button { touch-action: manipulation; }
 }
 .person-pick[aria-pressed="true"] .pick-count { background: rgba(255,255,255,.28); color: #fff; }
 .totals-who { margin: 0 0 6px; font-weight: 750; color: var(--cranberry); }
+.gift-nav { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; margin: 0 0 8px; position: relative; z-index: 4; }
+.text-btn { border: 0; background: transparent; color: var(--wine); font: inherit; font-weight: 700; min-height: 44px; padding: 0 2px; touch-action: manipulation; }
+.text-btn[aria-pressed="true"] { text-decoration: underline; }
+.gift-quiet { display: inline-flex; gap: 14px; }
+.buy-board { margin: 0 0 12px; }
+.buy-left { margin: 0; font-family: var(--serif); font-size: 1.8rem; line-height: 1.1; }
+.buy-board.is-under .buy-left { color: #1f8a4c; }
+.buy-pre { margin: 2px 0 4px; font-weight: 750; }
+.buy-list { display: grid; gap: 10px; }
+.buy-card {
+  display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 8px; align-items: start;
+  background: #fff; border-radius: 18px; padding: 10px;
+  box-shadow: 0 8px 18px rgba(110, 24, 48, .07);
+}
+.buy-main { color: inherit; text-decoration: none; min-width: 0; display: block; }
+.buy-main strong { display: block; overflow-wrap: anywhere; }
+.buy-price { margin: 4px 0 0; }
+.buy-price s { margin-left: 6px; color: var(--soft); font-weight: 500; }
+.buy-meta, .buy-deal { margin: 2px 0 0; color: var(--soft); font-size: .86rem; overflow-wrap: anywhere; }
+.buy-card.is-bought .buy-main strong { color: var(--soft); text-decoration: line-through; }
+.buy-check { width: 44px; height: 44px; border-radius: 14px; border: 2px solid var(--cranberry); background: #fff; }
+.buy-check.is-on { background: var(--cranberry); }
+.buy-check.is-on::after { content: ""; display: block; width: 12px; height: 7px; margin: 0 auto; border-left: 3px solid #fff; border-bottom: 3px solid #fff; transform: rotate(-45deg); }
+.buy-form { margin-top: 8px; }
+.idea-pair { grid-template-columns: 1fr 1fr; }
 .gift-modes { margin: 0 0 10px; position: relative; z-index: 4; touch-action: manipulation; }
 .idea-board { margin: 0 0 12px; }
 .idea-note { margin: 0 0 8px; color: var(--soft); font-size: .86rem; }
@@ -229,7 +254,7 @@ a, button { touch-action: manipulation; }
 .kid-lock svg { width: 22px; height: 22px; }
 .kids-removed { margin-top: 18px; }
 @media (min-width: 801px) {
-  .kids-grid { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+  .kids-grid, .buy-list { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
 }
 .filters { display: flex; gap: 8px; margin: 0; }
 .filters button { flex: 1; min-height: 44px; border-radius: 999px; border: 0; background: #fff; font-weight: 750; }

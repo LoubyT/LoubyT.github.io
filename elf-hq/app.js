@@ -18,8 +18,10 @@
   var giftFilter = 'all';
   var giftPerson = null;
   var giftOpen = {};
-  var giftMode = 'kids';
+  var giftMode = 'buying';
   var giftModeReady = false;
+  var ideasOpen = false;
+  var buyFormOpen = false;
   var kidFilter = 'all';
   var kidsRestoreArmed = false;
   var kidsPaintTimer = 0;
@@ -775,7 +777,7 @@
     var groups = kidFilter === 'all' ? ElfKids.PEOPLE : [kidFilter];
     mount($('page'),
       el('h2', { text: 'Gifts' }),
-      giftModeSwitch(),
+      giftNav(),
       budget,
       groups.map(function (name) {
         var rows = active.filter(function (item) { return item.person === name; });
@@ -805,17 +807,49 @@
     if (!giftModeReady) {
       giftModeReady = true;
       var saved = '';
-      try { saved = localStorage.getItem('elf-hq-gift-mode') || ''; } catch (e) {}
-      giftMode = saved === 'ideas' ? 'ideas' : 'kids';
+      var rev = '';
+      try {
+        saved = localStorage.getItem('elf-hq-gift-mode') || '';
+        rev = localStorage.getItem('elf-hq-gift-mode-rev') || '';
+      } catch (e) {}
+      if (rev !== '32') {
+        giftMode = 'buying';
+        try {
+          localStorage.setItem('elf-hq-gift-mode', 'buying');
+          localStorage.setItem('elf-hq-gift-mode-rev', '32');
+        } catch (err) {}
+      } else if (saved === 'ideas' || saved === 'kids' || saved === 'buying') giftMode = saved;
+      else giftMode = 'buying';
+      if (giftMode !== 'buying') ideasOpen = true;
     }
     return giftMode;
   }
 
-  function giftModeSwitch() {
+  function rememberGiftMode(mode) {
+    giftModeReady = true;
+    giftMode = mode;
+    ideasOpen = mode !== 'buying';
+    try {
+      localStorage.setItem('elf-hq-gift-mode', mode);
+      localStorage.setItem('elf-hq-gift-mode-rev', '32');
+    } catch (e) {}
+  }
+
+  function giftNav() {
     var mode = currentGiftMode();
-    return el('div', { class: 'filters gift-modes', role: 'group', 'aria-label': 'Gift lists' },
-      el('button', { type: 'button', 'data-act': 'gift-mode', 'data-mode': 'ideas', 'aria-pressed': mode === 'ideas' ? 'true' : 'false', text: 'Ideas' }),
-      el('button', { type: 'button', 'data-act': 'gift-mode', 'data-mode': 'kids', 'aria-pressed': mode === 'kids' ? 'true' : 'false', text: 'Kids list' })
+    return el('div', { class: 'gift-nav' },
+      mode === 'buying' ? null : el('button', { type: 'button', class: 'text-btn', 'data-act': 'gift-mode', 'data-mode': 'buying', text: 'Buying' }),
+      el('button', {
+        type: 'button',
+        class: 'text-btn',
+        'data-act': 'ideas-toggle',
+        'aria-expanded': ideasOpen ? 'true' : 'false',
+        text: 'All ideas'
+      }),
+      ideasOpen ? el('span', { class: 'gift-quiet' },
+        el('button', { type: 'button', class: 'text-btn', 'data-act': 'gift-mode', 'data-mode': 'kids', 'aria-pressed': mode === 'kids' ? 'true' : 'false', text: 'Kids list' }),
+        el('button', { type: 'button', class: 'text-btn', 'data-act': 'gift-mode', 'data-mode': 'ideas', 'aria-pressed': mode === 'ideas' ? 'true' : 'false', text: 'Ideas' })
+      ) : null
     );
   }
 
@@ -874,8 +908,98 @@
     return bits.join(' · ');
   }
 
+  function buyingState() {
+    if (!overrides.buying || !overrides.buying.byId) overrides.buying = ElfBuying.empty();
+    return overrides.buying;
+  }
+
+  function rememberBuy(item) {
+    var saved = ElfBuying.save(buyingState(), item);
+    if (!saved.ok) return null;
+    overrides.buying = saved.book;
+    overrides.containsPrivate = true;
+    scheduleSave();
+    pushLive('buying/' + saved.item.id, saved.item);
+    return saved.item;
+  }
+
+  function paintBuyingSoon() {
+    if (parseHash().name !== 'gifts' || currentGiftMode() !== 'buying') return;
+    clearTimeout(kidsPaintTimer);
+    kidsPaintTimer = setTimeout(function () { paint(true); }, 40);
+  }
+
+  function buyCard(item) {
+    var price = el('p', { class: 'buy-price' },
+      el('strong', { text: ElfBuying.priceLabel(item) }),
+      item.couponCents && item.priceCents ? el('s', { text: ElfBuying.money(item.priceCents) }) : null,
+      item.listCents && item.listCents > item.priceCents ? el('s', { text: ElfBuying.money(item.listCents) }) : null
+    );
+    var meta = [item.variant, item.note].filter(Boolean).join(' · ');
+    var body = el('a', {
+      class: 'buy-main',
+      href: item.url,
+      target: '_blank',
+      rel: 'noopener noreferrer'
+    },
+      el('strong', { text: item.title }),
+      price,
+      meta ? el('p', { class: 'buy-meta', text: meta }) : null,
+      item.deal ? el('p', { class: 'buy-deal', text: item.deal }) : null
+    );
+    return el('article', { class: 'buy-card' + (item.bought ? ' is-bought' : ''), 'data-buy': item.id },
+      el('button', {
+        type: 'button',
+        class: 'buy-check' + (item.bought ? ' is-on' : ''),
+        'data-act': 'buy-check',
+        'data-id': item.id,
+        'aria-pressed': item.bought ? 'true' : 'false',
+        'aria-label': item.bought ? 'Mark not bought' : 'Mark bought'
+      }),
+      body,
+      el('button', { type: 'button', class: 'text-btn', 'data-act': 'buy-remove', 'data-id': item.id, text: 'Delete' })
+    );
+  }
+
+  function paintBuying() {
+    var items = ElfBuying.list(buyingState());
+    var open = items.filter(function (item) { return !item.removed; });
+    var sum = ElfBuying.totals(open);
+    var groups = [
+      { timing: 'bf', label: ElfBuying.timingLabel('bf') },
+      { timing: 'later', label: ElfBuying.timingLabel('later') }
+    ];
+    mount($('page'),
+      el('h2', { text: 'Gifts' }),
+      giftNav(),
+      el('div', { class: 'buy-board' + (sum.under ? ' is-under' : '') },
+        el('p', { class: 'buy-left', text: ElfBuying.money(sum.leftCents) + ' left' }),
+        el('p', { class: 'buy-pre', text: ElfBuying.money(sum.preCents) + ' before tax' }),
+        el('p', { class: 'idea-note', text: ElfBuying.money(sum.fridayCents) + ' on Nov 27 · ' + ElfBuying.money(sum.decemberCents) + ' on Dec 18 · with tax ' + ElfBuying.money(sum.withTaxCents) + ' · ' + ElfBuying.money(sum.leftAfterTaxCents) + ' left after tax' })
+      ),
+      groups.map(function (group) {
+        var rows = open.filter(function (item) { return item.timing === group.timing; });
+        if (!rows.length) return null;
+        return el('section', { class: 'kids-group' },
+          el('h3', { text: group.label }),
+          el('div', { class: 'buy-list' }, rows.map(buyCard))
+        );
+      }),
+      open.length ? null : el('p', { class: 'lede', text: 'Nothing to buy yet.' }),
+      el('button', { type: 'button', class: 'text-btn', 'data-act': 'buy-add-toggle', 'aria-expanded': buyFormOpen ? 'true' : 'false', text: 'Add an item' }),
+      buyFormOpen ? el('div', { class: 'buy-form' },
+        el('label', { class: 'field' }, 'Title', el('input', { id: 'buyTitle', type: 'text', maxlength: '180' })),
+        el('label', { class: 'field' }, 'Price', el('input', { id: 'buyPrice', type: 'text', inputmode: 'decimal', placeholder: '12.00' })),
+        el('label', { class: 'field' }, 'Link', el('input', { id: 'buyUrl', type: 'url', inputmode: 'url', placeholder: 'https://' })),
+        el('button', { type: 'button', class: 'btn', 'data-act': 'buy-add', text: 'Add' })
+      ) : null
+    );
+  }
+
   function paintGifts() {
-    if (currentGiftMode() === 'kids') { paintKids(); return; }
+    var mode = currentGiftMode();
+    if (mode === 'kids') { paintKids(); return; }
+    if (mode === 'buying') { paintBuying(); return; }
     var gifts = ideaGifts();
     var people = ideaPeople(gifts);
     var picked = chosenPerson(people);
@@ -885,13 +1009,11 @@
     var caption = ideaCaption(whole);
     mount($('page'),
       el('h2', { text: 'Gifts' }),
-      giftModeSwitch(),
+      giftNav(),
       el('div', { class: 'idea-board' },
-        el('p', { class: 'kids-total', text: 'Total ' + ideaCents(whole, 'total') }),
-        el('div', { class: 'kids-subs' },
+        el('div', { class: 'kids-subs idea-pair' },
           el('div', {}, el('span', { class: 'when', text: 'Bought' }), el('strong', { text: ideaCents(whole, 'bought') })),
-          el('div', {}, el('span', { class: 'when', text: 'Remaining' }), el('strong', { text: ideaCents(whole, 'remaining') })),
-          el('div', {}, el('span', { class: 'when', text: 'Total' }), el('strong', { text: ideaCents(whole, 'total') }))
+          el('div', {}, el('span', { class: 'when', text: 'Remaining' }), el('strong', { text: ideaCents(whole, 'remaining') }))
         ),
         caption ? el('p', { class: 'idea-note', text: caption }) : null,
         el('div', { class: 'idea-people', role: 'group', 'aria-label': 'Whose gifts' },
@@ -1413,6 +1535,31 @@
 
   function applyLiveValue(ch) {
     if (!ch || !overrides || typeof ch.path !== 'string') return;
+    if (ch.path.indexOf('buying/') === 0) {
+      var buyId = ch.path.slice('buying/'.length);
+      if (!ElfBuying.validId(buyId)) return;
+      if (!overrides.buying || !overrides.buying.byId) overrides.buying = ElfBuying.empty();
+      if (ch.deleted) {
+        var existingBuy = ElfBuying.get(overrides.buying, buyId);
+        if (existingBuy) {
+          var marked = ElfBuying.patch(overrides.buying, buyId, { removed: true });
+          if (marked.ok) overrides.buying = marked.book;
+        }
+      } else if (ch.value) {
+        var incoming = ElfBuying.normalize(ch.value);
+        if (incoming && incoming.id === buyId && !ElfBuying.get(overrides.buying, buyId)) {
+          var placed = ElfBuying.ensureAll(overrides.buying, [incoming]);
+          overrides.buying = placed.book;
+        } else if (incoming && incoming.id === buyId) {
+          var savedBuy = ElfBuying.save(overrides.buying, incoming);
+          if (savedBuy.ok) overrides.buying = savedBuy.book;
+        }
+      }
+      overrides.containsPrivate = true;
+      scheduleSave();
+      paintBuyingSoon();
+      return;
+    }
     if (ch.path.indexOf('people/') === 0) {
       var personId = ch.path.slice('people/'.length);
       if (!overrides.people || !overrides.people.byId) overrides.people = { byId: {} };
@@ -2002,6 +2149,71 @@
     return liveSession.commit(path, value);
   }
 
+  function seedBuyingCatalog(catalog) {
+    if (document.documentElement.classList.contains('needs-pin') || !overrides || !sessionStillValid()) {
+      return Promise.reject(new Error('locked'));
+    }
+    if (!liveSession || !liveSession.view().connected || !liveSession.commitAll) return Promise.reject(new Error('not-synced'));
+    var raws = Array.isArray(catalog) ? catalog : (catalog && Array.isArray(catalog.items) ? catalog.items : null);
+    if (!raws) return Promise.reject(new Error('catalog'));
+    var seen = {};
+    var present = 0;
+    var toAdd = [];
+    var toPublish = [];
+    raws.forEach(function (raw) {
+      var item = ElfBuying.normalize(raw);
+      if (!item || seen[item.id]) return;
+      seen[item.id] = true;
+      var local = ElfBuying.get(buyingState(), item.id);
+      var remote = liveSession.get('buying/' + item.id);
+      if (local) {
+        present += 1;
+        if (remote == null) toPublish.push(local);
+        return;
+      }
+      if (remote != null) {
+        present += 1;
+        return;
+      }
+      toAdd.push(item);
+    });
+    var ensured = ElfBuying.ensureAll(buyingState(), toAdd);
+    var outgoing = ensured.added.concat(toPublish);
+    if (!outgoing.length) return Promise.resolve({ added: 0, present: present });
+    if (ensured.added.length) {
+      overrides.buying = ensured.book;
+      overrides.containsPrivate = true;
+      scheduleSave();
+    }
+    return liveSession.commitAll(outgoing.map(function (item) {
+      return { path: 'buying/' + item.id, value: item };
+    })).then(function () {
+      var live = liveSession.view();
+      if (live.conflicts && live.conflicts.length) return Promise.reject(new Error('conflict'));
+      if (live.unsent || live.state === 'offline' || live.state === 'reconnecting') return Promise.reject(new Error('not-synced'));
+      paintBuyingSoon();
+      return { added: ensured.added.length, present: present };
+    });
+  }
+
+  function addBuyingItem() {
+    var title = $('buyTitle') ? $('buyTitle').value : '';
+    var price = $('buyPrice') ? $('buyPrice').value : '';
+    var url = $('buyUrl') ? $('buyUrl').value : '';
+    var item = ElfBuying.normalize({
+      id: 'buy-' + Date.now().toString(36),
+      order: Date.now(),
+      title: title,
+      price: price,
+      url: url,
+      timing: 'later'
+    });
+    if (!item) { announce('Add a title, a price, and an https link.'); return; }
+    rememberBuy(item);
+    buyFormOpen = false;
+    paint(true);
+  }
+
   function seedKidsCatalog(catalog) {
     if (document.documentElement.classList.contains('needs-pin') || !overrides || !sessionStillValid()) {
       return Promise.reject(new Error('locked'));
@@ -2338,13 +2550,45 @@
     else if (act === 'feature-play') askForFeature();
     else if (act === 'bonus-play') playBonus(button);
     else if (act === 'bonus-close') closeBonus();
+    else if (act === 'ideas-toggle') {
+      ideasOpen = !ideasOpen;
+      paint(true);
+    }
     else if (act === 'gift-mode') {
-      giftModeReady = true;
-      giftMode = button.dataset.mode === 'ideas' ? 'ideas' : 'kids';
-      try { localStorage.setItem('elf-hq-gift-mode', giftMode); } catch (e) {}
+      var nextMode = button.dataset.mode === 'ideas' || button.dataset.mode === 'kids' ? button.dataset.mode : 'buying';
+      rememberGiftMode(nextMode);
       kidsRestoreArmed = false;
       paint(true);
     }
+    else if (act === 'buy-check') {
+      var buyItem = ElfBuying.get(buyingState(), button.dataset.id);
+      if (!buyItem || buyItem.removed) return;
+      var checked = ElfBuying.patch(buyingState(), buyItem.id, { bought: !buyItem.bought });
+      if (checked.ok) rememberBuy(checked.item);
+      paint(true);
+    }
+    else if (act === 'buy-remove') {
+      var removing = ElfBuying.get(buyingState(), button.dataset.id);
+      if (!removing) return;
+      var removedBuy = ElfBuying.patch(buyingState(), removing.id, { removed: true });
+      if (!removedBuy.ok) return;
+      rememberBuy(removedBuy.item);
+      paint(true);
+      announce('Removed.', {
+        label: 'Undo',
+        ms: 6000,
+        run: function () {
+          var back = ElfBuying.patch(buyingState(), removing.id, { removed: false });
+          if (back.ok) rememberBuy(back.item);
+          paint(true);
+        }
+      });
+    }
+    else if (act === 'buy-add-toggle') {
+      buyFormOpen = !buyFormOpen;
+      paint(true);
+    }
+    else if (act === 'buy-add') addBuyingItem();
     else if (act === 'kid-filter') {
       var nextFilter = button.dataset.filter || 'all';
       kidFilter = nextFilter === 'all' || ElfKids.PEOPLE.indexOf(nextFilter) >= 0 ? nextFilter : 'all';
@@ -2881,6 +3125,7 @@
       })();
       if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).catch(function () {});
       window.elfSeedKids = seedKidsCatalog;
+      window.elfSeedBuying = seedBuyingCatalog;
     }).catch(function () {
       $('boot').textContent = 'Elf HQ hit a snag while opening. Your notebook was not cleared. Reload the page.';
     });
