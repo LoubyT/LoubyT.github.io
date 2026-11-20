@@ -276,13 +276,54 @@
     tile.appendChild(thumb);
     tile.appendChild(copy);
     if (mediaVault.bonusPoster) {
-      mediaVault.bonusPoster().then(function (url) {
-        if (!url || tile._bonusToken !== token || !thumb.isConnected || tile.querySelector('video')) return;
-        var img = document.createElement('img');
-        img.alt = '';
-        img.src = url;
-        thumb.replaceChildren(img);
-      }, function () {});
+      var posterGen = 0;
+      var posterSettled = false;
+      function showPosterRetry() {
+        if (posterSettled || tile._bonusToken !== token || !copy.isConnected) return;
+        posterSettled = true;
+        var line = copy.querySelector('.film-loading');
+        if (line) line.remove();
+        if (!copy.querySelector('[data-act="bonus-retry"]')) {
+          copy.appendChild(el('button', { type: 'button', class: 'btn film-retry', 'data-act': 'bonus-retry', text: 'Tap to retry' }));
+        }
+      }
+      function loadBonusPoster() {
+        posterGen += 1;
+        var mine = posterGen;
+        posterSettled = false;
+        var old = copy.querySelector('[data-act="bonus-retry"]');
+        if (old) old.remove();
+        if (!copy.querySelector('.film-loading')) {
+          var play = copy.querySelector('[data-act="bonus-play"]');
+          var line = el('p', { class: 'film-loading', text: 'Loading film…' });
+          if (play) copy.insertBefore(line, play);
+          else copy.appendChild(line);
+        }
+        var timer = setTimeout(function () {
+          if (mine !== posterGen || posterSettled) return;
+          if (mine < 2) loadBonusPoster();
+          else showPosterRetry();
+        }, 25000);
+        mediaVault.bonusPoster().then(function (url) {
+          clearTimeout(timer);
+          if (posterSettled || tile._bonusToken !== token || !thumb.isConnected || tile.querySelector('video')) return;
+          posterSettled = true;
+          var line = copy.querySelector('.film-loading');
+          if (line) line.remove();
+          if (!url) return;
+          var img = document.createElement('img');
+          img.alt = '';
+          img.src = url;
+          thumb.replaceChildren(img);
+        }, function () {
+          clearTimeout(timer);
+          if (posterSettled || mine !== posterGen || tile._bonusToken !== token) return;
+          if (mine < 2) loadBonusPoster();
+          else showPosterRetry();
+        });
+      }
+      tile._reloadPoster = loadBonusPoster;
+      loadBonusPoster();
     }
     return tile;
   }
@@ -1969,9 +2010,38 @@
       showFilmDiag();
       return block;
     }
+    host.appendChild(el('p', { class: 'film-loading', text: 'Loading film…' }));
     var asked = filmAsked;
-    mediaVault.openDay(day.number, { play: asked || !reduced(), reduced: reduced() }).then(function (slot) {
-      if (!slot || host._filmToken !== token || !host.isConnected) return;
+    var openGen = 0;
+    var openSettled = false;
+    function openFail(err) {
+      if (openSettled || host._filmToken !== token || !host.isConnected) return;
+      openSettled = true;
+      filmTrace({ key: 'yes', manifest: 'yes', film: 'no', err: errBit(err) });
+      showFilmDiag();
+      host.classList.add('is-waiting');
+      mount(host, posterCard(labelOf(day), false), el('button', { type: 'button', class: 'btn film-retry', 'data-act': 'film-retry', text: 'Tap to retry' }));
+    }
+    function openAttempt() {
+      openGen += 1;
+      var mine = openGen;
+      var timer = setTimeout(function () {
+        if (mine !== openGen || openSettled) return;
+        if (mine < 2) openAttempt();
+        else openFail(new Error('timeout'));
+      }, 25000);
+      mediaVault.openDay(day.number, { play: asked || !reduced(), reduced: reduced() }).then(function (slot) {
+        clearTimeout(timer);
+        if (host._filmToken !== token || !host.isConnected) return;
+        if (!slot) {
+          if (openSettled) return;
+          if (mine !== openGen) return;
+          if (mine < 2) openAttempt();
+          else openFail(new Error('noday'));
+          return;
+        }
+        if (openSettled) return;
+        openSettled = true;
       host.classList.remove('is-waiting');
       var bits = [];
       if (slot.badge && slot.badge !== 'Rough cut') bits.push(el('p', { class: 'cut-badge', text: slot.badge }));
@@ -2025,14 +2095,14 @@
         var started = playing.play();
         if (started && started.catch) started.catch(function () {});
       }
-    }, function (err) {
-      filmTrace({ key: 'yes', manifest: 'yes', film: 'no', err: errBit(err) });
-      showFilmDiag();
-      if (host.isConnected && host._filmToken === token) {
-        host.classList.add('is-waiting');
-        mount(host, posterCard(labelOf(day), false), el('button', { type: 'button', class: 'btn film-retry', 'data-act': 'film-retry', text: 'Tap to retry' }));
-      }
-    });
+      }, function (err) {
+        clearTimeout(timer);
+        if (openSettled || mine !== openGen || host._filmToken !== token) return;
+        if (mine < 2) openAttempt();
+        else openFail(err);
+      });
+    }
+    openAttempt();
     return block;
   }
 
@@ -2687,6 +2757,10 @@
     else if (act === 'elf-connect') connectPhones();
     else if (act === 'film-play') { filmAsked = true; if (sheetDay) paintSheet(); }
     else if (act === 'film-retry') { filmGaveUp = false; armMedia(); paint(true); }
+    else if (act === 'bonus-retry') {
+      var story = document.getElementById('whole-story');
+      if (story && story._reloadPoster) story._reloadPoster();
+    }
     else if (act === 'keep-local' || act === 'keep-server') {
       if (!liveSession) return;
       var path = button.dataset.path;
