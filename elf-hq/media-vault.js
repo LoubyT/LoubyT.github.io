@@ -182,8 +182,27 @@
       bonusCurrent = null;
     }
 
+    function fetchTimed(url, ms) {
+      var last = null;
+      function once() {
+        var ctrl = typeof AbortController === 'function' ? new AbortController() : null;
+        var timer = ctrl ? setTimeout(function () { try { ctrl.abort(); } catch (e) {} }, ms) : 0;
+        var opts = { cache: 'no-store' };
+        if (ctrl) opts.signal = ctrl.signal;
+        return fetchImpl(url, opts).then(function (res) {
+          clearTimeout(timer);
+          return res;
+        }, function (err) {
+          clearTimeout(timer);
+          last = err;
+          throw err;
+        });
+      }
+      return once().catch(function () { return once(); }).catch(function () { throw last || new Error('timeout'); });
+    }
+
     async function decryptFile(ref) {
-      var res = await fetchImpl(base + ref.file, { cache: 'no-store' });
+      var res = await fetchTimed(base + ref.file, 25000);
       if (!res.ok) throw new Error('file');
       var packed = new Uint8Array(await res.arrayBuffer());
       var plain = await decryptRaw(key, packed);
@@ -208,7 +227,7 @@
       loadManifest: async function () {
         if (!key || !fetchImpl) throw new Error('not-configured');
         var cryptoKey = await importKey(key);
-        var res = await fetchImpl(base + 'manifest.enc.json?v=7', { cache: 'no-store' });
+        var res = await fetchTimed(base + 'manifest.enc.json?v=7', 12000);
         if (!res.ok) throw new Error('manifest');
         var text = await res.text();
         var wrap = JSON.parse(text);
